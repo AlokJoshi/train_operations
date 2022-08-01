@@ -1,0 +1,25 @@
+*{
+  margin:0;
+  padding:0;
+}
+#canvas,#canvas_tracks{
+  width:1200px;
+  height:800px;
+  position:absolute;
+  top:0px;
+  left:0px;
+}
+#canvas{
+  opacity:0.6;
+}
+#buttonGroup{
+  position:absolute;
+  top:800px;
+  left:0px;
+}
+button{
+  font-size: 2em;
+}
+button:hover{
+  cursor:pointer;
+}
