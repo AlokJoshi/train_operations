@@ -1,4 +1,4 @@
-import { Engine } from './Engine.js'
+import { Train } from './Train.js'
 import { Track } from './Track.js'
 import { Tracks} from './Tracks.js'
 import { Game} from './Game.js'
@@ -40,19 +40,19 @@ const track = new Track(ctxTracks,
   // ]
   [
   { x: 0, y: 0 },
-  { x: 50, y: 0 },
-  { x: 50, y: 50 },
-  { x: 100, y: 50 },
+  { x: 100, y: 0 },
   { x: 100, y: 100 },
-  { x: 150, y: 100 },
-  { x: 150, y: 150 },
-  { x: 150, y: 200 },
-  { x: 100, y: 200 },
-  { x: 0, y: 0 }
+  { x: 0, y: 100 },
+  { x: 0, y: 0 },
+  // { x: 150, y: 100 },
+  // { x: 150, y: 150 },
+  // { x: 150, y: 200 },
+  // { x: 100, y: 200 },
+  // { x: 0, y: 0 }
 ]
 
 )
-game.addEngine(new Engine(ctx, 2, track, 'rgba(212,0,212,0.5)'))
+game.addEngine(new Train(ctx, 2, track, 'rgba(212,0,212,0.5)'))
 
 const drawScene = () => {
   if(!paused){
@@ -103,7 +103,7 @@ window.addEventListener('load',()=>{
       tracks.add(track)
       tracks.draw()
       let speed = Math.ceil(Math.random()*5)
-      game.addEngine(new Engine(ctx,speed,track,'rgb(0,255,100'))
+      game.addEngine(new Train(ctx,speed,track,'rgb(0,255,100'))
       positions = []
     }
   })
