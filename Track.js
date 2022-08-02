@@ -41,33 +41,91 @@ class Track {
       let previousModifiedPosition = newPositions.pop()
       const d1 = tr *(1-Math.cos(Math.PI/6)) //cos 30
       const d2 = tr *(1-Math.sin(Math.PI/6)) //sin 30
-
-      //check for right
+      //p1 and p2 are two additional points
+      const p1 = p
+      const p2 = p
+      let p1Deltax = 0 
+      let p1Deltay = 0
+      let p2Deltax = 0
+      let p2Deltay = 0
+      //check for left to right movement
       if(pp.x<p.x && p.x==c.x && pp.y==p.y){
         //previousModifiedPosition x value is decreased by tr
         previousModifiedPosition.x -= tr
         
         //check for right down
         if(p.y<c.y){
-          
+          p1Deltax = -(tr - tr*sin(Math.PI/6))
+          p1Deltay = tr-tr*cos(Math.PI/6)
+          p2Deltax = -(tr-tr*sin(Math.PI/3))
+          p2Deltay = tr-tr*cos(Math.PI/3) 
         }
         //check for right up
         if(p.y>c.y){
-          
+          p1Deltax = -(tr - tr*sin(Math.PI/6))
+          p1Deltay = -(tr-tr*cos(Math.PI/6))
+          p2Deltax = -(tr-tr*sin(Math.PI/3))
+          p2Deltay = -(tr-tr*cos(Math.PI/3)) 
         }
       }
       
-      //check for left
+      //check for right to left movement
       if(pp.x>p.x && p.x==c.x && pp.y==p.y){
-        //previousModifiedPosition x value is decreased by tr
+        //previousModifiedPosition x value is increased by tr
         previousModifiedPosition.x += tr
         //check for left down
         if(p.y<c.y){
-          
+          p1Deltax = (tr - tr*sin(Math.PI/6))
+          p1Deltay = tr-tr*cos(Math.PI/6)
+          p2Deltax = (tr-tr*sin(Math.PI/3))  
+          p2Deltay = tr-tr*cos(Math.PI/3)       
         }
         //check for left up
         if(p.y>c.y){
+          p1Deltax = (tr - tr*sin(Math.PI/6))
+          p1Deltay = -(tr-tr*cos(Math.PI/6))
+          p2Deltax = (tr-tr*sin(Math.PI/3))
+          p2Deltay = -(tr-tr*cos(Math.PI/3)) 
+        }
+      }
 
+      //check for down to up movement
+      if(pp.y>p.y && p.y==c.y && pp.x==p.x){
+        //previousModifiedPosition y value is increased by tr
+        previousModifiedPosition.y += tr
+        //check for up and left
+        if(p.x>c.x){
+          p1Deltax = (tr - tr*sin(Math.PI/6))
+          p1Deltay = tr-tr*cos(Math.PI/6)
+          p2Deltax = (tr-tr*sin(Math.PI/3))  
+          p2Deltay = tr-tr*cos(Math.PI/3)       
+        }
+        //check for up and right
+        if(p.x<c.x){
+          p1Deltax = (tr - tr*cos(Math.PI/6))
+          p1Deltay = (tr-tr*sin(Math.PI/6))
+          p2Deltax = (tr-tr*cos(Math.PI/3))
+          p2Deltay = (tr-tr*sin(Math.PI/3)) 
+        }
+      }
+
+      //check for Up to down movement
+      if(pp.y>p.y && p.y==c.y && pp.x==p.x){
+        //previousModifiedPosition y value is increased by tr
+        previousModifiedPosition.y -= tr
+        //check for down and left
+        if(p.x>c.x){
+          p1Deltax = (tr - tr*sin(Math.PI/6))
+          p1Deltay = tr-tr*sin(Math.PI/6)
+          p2Deltax = (tr-tr*sin(Math.PI/3))  
+          p2Deltay = tr-tr*cos(Math.PI/3)       
+        }
+        //check for down and right
+        if(p.x<c.x){
+          p1Deltax = (tr - tr*cos(Math.PI/6))
+          p1Deltay = (tr-tr*sin(Math.PI/6))
+          p2Deltax = (tr-tr*cos(Math.PI/3))
+          p2Deltay = (tr-tr*sin(Math.PI/3)) 
         }
       }
       
