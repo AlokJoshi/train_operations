@@ -1,10 +1,12 @@
 class Train {
-  static length = 20
-  static width = 10
-  static lengthCoach = 25
+  static lengthEngine = 20
+  static widthEngine = 10
+  static lengthCoach = 15
   static widthCoach = 8
-  static chimneyRadius = 4
+  static chimney_r = 30
   static smokeColor = `#222`
+  static coachColor = `#00ff00`
+
   constructor(ctx, engineSpeed, track, color) {
     this.ctx = ctx
     this.track = track
@@ -26,7 +28,7 @@ class Train {
       this.ctx.fillStyle = this.color
       this.ctx.translate(x, y)
       this.ctx.rotate(direction)
-      this.ctx.translate(-1 * Train.length * 0.5 , -1 * Train.width * 0.5)
+      this.ctx.translate(-1 * Train.lengthEngine * 0.5 , -1 * Train.widthEngine * 0.5)
       this.drawEngine(0, 0)
       this.ctx.restore()
 
@@ -36,39 +38,41 @@ class Train {
       this.ctx.fillStyle = this.color
       this.ctx.translate(x2, y2)
       this.ctx.rotate(direction2)
-      this.ctx.translate(-1 * Train.lengthCoach * 0.5-Train.length  , -1 * Train.widthCoach * 0.5)
+      this.ctx.translate(-1 * Train.lengthCoach * 0.5-Train.lengthEngine  , -1 * Train.widthCoach * 0.5)
       this.drawCoach()
       this.ctx.restore()
     }
   }
   drawEngine(x, y) {
 
+    let chimneyRadius = Train.widthEngine*Train.chimney_r/100
+
     this.ctx.save()
     this.ctx.beginPath()
-    this.ctx.rect(x, y, Train.length * 3 / 4, Train.width)
+    this.ctx.rect(x, y, Train.lengthEngine * 3 / 4, Train.widthEngine)
     this.ctx.fill()
     this.ctx.closePath()
 
     //steam outlet
     this.ctx.beginPath()
-    this.ctx.moveTo(x + Train.length * 0.5 + Train.chimneyRadius, y + Train.width * 0.5)
-    this.ctx.arc(x + Train.length * 0.5 + Train.chimneyRadius, y + Train.width * 0.5, Train.chimneyRadius, 0, 2 * Math.PI)
+    this.ctx.moveTo(x + Train.lengthEngine * 0.5 + chimneyRadius, y + Train.widthEngine * 0.5)
+    this.ctx.arc(x + Train.lengthEngine * 0.5 + chimneyRadius, y + Train.widthEngine * 0.5, chimneyRadius, 0, 2 * Math.PI)
     this.ctx.fillStyle = Train.smokeColor
     this.ctx.fill()
     this.ctx.closePath()
 
     //front portion
     this.ctx.beginPath()
-    this.ctx.moveTo(x + Train.length * 3 / 4, y)
-    this.ctx.quadraticCurveTo(x + Train.length, y + Train.width * 0.5, x + Train.length * 3 / 4, y + Train.width)
-    // this.ctx.lineTo(x+Train.length*3/4, y+Train.width)
+    this.ctx.moveTo(x + Train.lengthEngine * 3 / 4, y)
+    this.ctx.quadraticCurveTo(x + Train.lengthEngine, y + Train.widthEngine * 0.5, x + Train.lengthEngine * 3 / 4, y + Train.widthEngine)
+    // this.ctx.lineTo(x+Train.lengthEngine*3/4, y+Train.widthEngine)
     this.ctx.fillStyle = this.color
     this.ctx.fill()
     this.ctx.closePath()
 
     //Coal section
     this.ctx.beginPath()
-    this.ctx.rect(x, y, Train.length / 4, Train.width)
+    this.ctx.rect(x, y, Train.lengthEngine / 4, Train.widthEngine)
     this.ctx.fillStyle = `#000`
     this.ctx.fill()
     this.ctx.closePath()
@@ -80,6 +84,7 @@ class Train {
 
     this.ctx.save()
     this.ctx.beginPath()
+    this.ctx.fillStyle=Train.coachColor
     this.ctx.rect(0, 0, Train.lengthCoach * 3 / 4, Train.widthCoach)
     this.ctx.fill()
     this.ctx.closePath()

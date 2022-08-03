@@ -2,7 +2,7 @@
   margin:0;
   padding:0;
 }
-#canvas,#canvas_tracks{
+#canvas,#canvas_tracks,#canvas_temp{
   width:1200px;
   height:800px;
   position:absolute;
@@ -18,7 +18,10 @@
   left:0px;
 }
 button{
-  font-size: 2em;
+  font-size: 1.5em;
+  background-color: #222;
+  color:#eee;
+  border-radius: 5px;
 }
 button:hover{
   cursor:pointer;
