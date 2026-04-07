@@ -2,17 +2,19 @@
   margin:0;
   padding:0;
 }
+
 #canvas,#canvas_tracks,#canvas_temp{
   width:1200px;
   height:800px;
   position:absolute;
-  top:0px;
-  left:0px;
 }
 #canvas{
-  opacity:0.6;
+  opacity:1;
 }
-#buttonGroup{
+#canvas_tracks{
+  background-color: lightyellow;
+}
+#controls{
   position:absolute;
   top:800px;
   left:0px;

@@ -1,11 +1,13 @@
 class Track {
-  constructor(ctxTracks, positions) {
+  constructor(ctxTracks, positions, trainName) {
     //positions is an array of position objects
     //each position object is {x:?,y:?}
     this.positions = positions
     this.newPositions = []
     this.segments = []
+    this.totalLength = 0
     this.ctxTracks = ctxTracks
+    this.trainName=trainName 
     //this.draw()
     //this.updateSegments()
     this.updatePositions()
@@ -18,13 +20,14 @@ class Track {
     const index = this.positions.findIndex(item => item.x == position.x && item.y == position.y)
     this.positions.splice(index, 1)
     this.draw()
-    this.updateSegments()
+    this.updateSegmentsFromNewPositions()
   }
   display() {
     // this.positions.forEach(item => console.log(JSON.stringify(item)))
   }
+
   updatePositions() {
-    const tr = 20 //turning radius in pixels
+    const tr = 100 //turning radius in pixels
     this.newPositions.push(this.positions[0])
     this.newPositions.push(this.positions[1])
     let pp, p, c
@@ -44,31 +47,43 @@ class Track {
 
       //p1 and p2 are two additional points
       const p0 = {x:p.x,y:p.y}
-      const p1 = {x:p.x,y:p.y}
-      const p2 = {x:p.x,y:p.y}
+      // const p1 = {x:p.x,y:p.y}
+      // const p2 = {x:p.x,y:p.y}
       const p3 = {x:p.x,y:p.y}
-      let p1Deltax = 0
-      let p1Deltay = 0
-      let p2Deltax = 0
-      let p2Deltay = 0
+      // let p1Deltax = 0
+      // let p1Deltay = 0
+      // let p2Deltax = 0
+      // let p2Deltay = 0
+      let n = 10 //number of points to be added between two straight lines
+      let deltax = new Array(n).fill(0)
+      let deltay = new Array(n).fill(0)
       //check for left to right movement
+      let theta = Math.PI/(2*(n+1))
       if (pp.x < p.x && p.x == c.x && pp.y == p.y) {
         //previousModifiedPosition x value is decreased by tr
         p0.x -= tr
         //check for right down
         if (p.y < c.y) {
-          p1Deltax = -(tr - tr * Math.sin(Math.PI / 6))
-          p1Deltay = tr - tr * Math.cos(Math.PI / 6)
-          p2Deltax = -(tr - tr * Math.sin(Math.PI / 3))
-          p2Deltay = tr - tr * Math.cos(Math.PI / 3)
+          // p1Deltax = -(tr - tr * Math.sin(Math.PI / 6))
+          // p1Deltay = tr - tr * Math.cos(Math.PI / 6)
+          // p2Deltax = -(tr - tr * Math.sin(Math.PI / 3))
+          // p2Deltay = tr - tr * Math.cos(Math.PI / 3)
+          for(let i=0;i<n;i++){
+            deltax[i] = -tr * (1- Math.sin(theta * (i+1)))
+            deltay[i] = tr * (1- Math.cos(theta * (i+1)))
+          }
           p3.y += tr
         }
         //check for right up
         if (p.y > c.y) {
-          p1Deltax = -(tr - tr * Math.sin(Math.PI / 6))
-          p1Deltay = -(tr - tr * Math.cos(Math.PI / 6))
-          p2Deltax = -(tr - tr * Math.sin(Math.PI / 3))
-          p2Deltay = -(tr - tr * Math.cos(Math.PI / 3))
+          // p1Deltax = -(tr - tr * Math.sin(Math.PI / 6))
+          // p1Deltay = -(tr - tr * Math.cos(Math.PI / 6))
+          // p2Deltax = -(tr - tr * Math.sin(Math.PI / 3))
+          // p2Deltay = -(tr - tr * Math.cos(Math.PI / 3))
+          for(let i=0;i<n;i++){
+            deltax[i] = -tr * (1- Math.sin(theta * (i+1)))
+            deltay[i] = -tr * (1- Math.cos(theta * (i+1)))
+          }
           p3.y -= tr
         }
       }
@@ -79,18 +94,26 @@ class Track {
         p0.x += tr
         //check for left down
         if (p.y < c.y) {
-          p1Deltax = (tr - tr * Math.sin(Math.PI / 6))
-          p1Deltay = tr - tr * Math.cos(Math.PI / 6)
-          p2Deltax = (tr - tr * Math.sin(Math.PI / 3))
-          p2Deltay = tr - tr * Math.cos(Math.PI / 3)
+          // p1Deltax = (tr - tr * Math.sin(Math.PI / 6))
+          // p1Deltay = tr - tr * Math.cos(Math.PI / 6)
+          // p2Deltax = (tr - tr * Math.sin(Math.PI / 3))
+          // p2Deltay = tr - tr * Math.cos(Math.PI / 3)
+          for(let i=0;i<n;i++){
+            deltax[i] = tr * (1- Math.sin(theta * (i+1)))
+            deltay[i] = tr * (1- Math.cos(theta * (i+1)))
+          }
           p3.y += tr
         }
         //check for left up
         if (p.y > c.y) {
-          p1Deltax = (tr - tr * Math.sin(Math.PI / 6))
-          p1Deltay = -(tr - tr * Math.cos(Math.PI / 6))
-          p2Deltax = (tr - tr * Math.sin(Math.PI / 3))
-          p2Deltay = -(tr - tr * Math.cos(Math.PI / 3))
+          // p1Deltax = (tr - tr * Math.sin(Math.PI / 6))
+          // p1Deltay = -(tr - tr * Math.cos(Math.PI / 6))
+          // p2Deltax = (tr - tr * Math.sin(Math.PI / 3))
+          // p2Deltay = -(tr - tr * Math.cos(Math.PI / 3))
+          for(let i=0;i<n;i++){
+            deltax[i] = tr * (1- Math.sin(theta * (i+1)))
+            deltay[i] = -tr * (1- Math.cos(theta * (i+1)))
+          }
           p3.y -= tr
         }
       }
@@ -101,18 +124,26 @@ class Track {
         p0.y += tr
         //check for up and left
         if (p.x > c.x) {
-          p1Deltax = -(tr - tr * Math.cos(Math.PI / 6))
-          p1Deltay = (tr - tr * Math.sin(Math.PI / 6))
-          p2Deltax = -(tr - tr * Math.cos(Math.PI / 3))
-          p2Deltay = tr - tr * Math.sin(Math.PI / 3)
+          // p1Deltax = -(tr - tr * Math.cos(Math.PI / 6))
+          // p1Deltay = (tr - tr * Math.sin(Math.PI / 6))
+          // p2Deltax = -(tr - tr * Math.cos(Math.PI / 3))
+          // p2Deltay = tr - tr * Math.sin(Math.PI / 3)
+          for(let i=0;i<n;i++){
+            deltax[i] = -tr * (1- Math.cos(theta * (i+1)))
+            deltay[i] = tr * (1- Math.sin(theta * (i+1)))
+          }
           p3.x -= tr
         }
         //check for up and right
         if (p.x < c.x) {
-          p1Deltax = (tr - tr * Math.cos(Math.PI / 6))
-          p1Deltay = (tr - tr * Math.sin(Math.PI / 6))
-          p2Deltax = (tr - tr * Math.cos(Math.PI / 3))
-          p2Deltay = (tr - tr * Math.sin(Math.PI / 3))
+          // p1Deltax = (tr - tr * Math.cos(Math.PI / 6))
+          // p1Deltay = (tr - tr * Math.sin(Math.PI / 6))
+          // p2Deltax = (tr - tr * Math.cos(Math.PI / 3))
+          // p2Deltay = (tr - tr * Math.sin(Math.PI / 3))
+          for(let i=0;i<n;i++){
+            deltax[i] = tr * (1- Math.cos(theta * (i+1)))
+            deltay[i] = tr * (1- Math.sin(theta * (i+1)))
+          }
           p3.x += tr
         }
       }
@@ -123,99 +154,112 @@ class Track {
         p0.y -= tr
         //check for down and left
         if (p.x > c.x) {
-          p1Deltax = -(tr - tr * Math.cos(Math.PI / 6))
-          p1Deltay = -(tr - tr * Math.sin(Math.PI / 6))
-          p2Deltax = -(tr - tr * Math.cos(Math.PI / 3))
-          p2Deltay = -(tr - tr * Math.sin(Math.PI / 3))
+          // p1Deltax = -(tr - tr * Math.cos(Math.PI / 6))
+          // p1Deltay = -(tr - tr * Math.sin(Math.PI / 6))
+          // p2Deltax = -(tr - tr * Math.cos(Math.PI / 3))
+          // p2Deltay = -(tr - tr * Math.sin(Math.PI / 3))
+          for(let i=0;i<n;i++){
+            deltax[i] = -tr * (1- Math.cos(theta * (i+1)))
+            deltay[i] = -tr * (1- Math.sin(theta * (i+1)))
+          }
           p3.x -= tr
         }
         //check for down and right
         if (p.x < c.x) {
-          p1Deltax = (tr - tr * Math.cos(Math.PI / 6))
-          p1Deltay = -(tr - tr * Math.sin(Math.PI / 6))
-          p2Deltax = (tr - tr * Math.cos(Math.PI / 3))
-          p2Deltay = -(tr - tr * Math.sin(Math.PI / 3))
+          // p1Deltax = (tr - tr * Math.cos(Math.PI / 6))
+          // p1Deltay = -(tr - tr * Math.sin(Math.PI / 6))
+          // p2Deltax = (tr - tr * Math.cos(Math.PI / 3))
+          // p2Deltay = -(tr - tr * Math.sin(Math.PI / 3))
+          for(let i=0;i<n;i++){
+            deltax[i] = tr * (1- Math.cos(theta * (i+1)))
+            deltay[i] = -tr * (1- Math.sin(theta * (i+1)))
+          }
           p3.x += tr
         }
       }
 
       //update p,p1,p2
-      p1.x = p1.x + p1Deltax
-      p1.y = p1.y + p1Deltay
-      p2.x = p2.x + p2Deltax
-      p2.y = p2.y + p2Deltay
+      // p1.x = p1.x + p1Deltax
+      // p1.y = p1.y + p1Deltay
+      // p2.x = p2.x + p2Deltax
+      // p2.y = p2.y + p2Deltay
 
       this.newPositions.push(p0)
-      this.newPositions.push(p1)
-      this.newPositions.push(p2)
+      for(let i=0;i<n;i++){
+        const newP = {x:p.x + deltax[i], y:p.y + deltay[i]}
+        this.newPositions.push(newP)
+      }
+      // this.newPositions.push(p1)
+      // this.newPositions.push(p2)
       this.newPositions.push(p3)
       this.newPositions.push(c)
     }
   }
   updateSegmentsFromNewPositions() {
-    // this.updatePositions()
-    console.log('this.newPositions')
-    console.log(this.newPositions)
     this.segments = []
-    let diffx, diffy, direction
-    let distanceFromStart = 0, length = 0
+    this.totalLength = 0
+
+    let distanceFromStart = 0
     for (let i = 0; i < this.newPositions.length - 1; i++) {
-      diffx = this.newPositions[i + 1].x - this.newPositions[i].x
-      diffy = this.newPositions[i + 1].y - this.newPositions[i].y
-      if (diffx == 0) diffx = 0.001
-      //direction in radians
-      direction = Math.atan(diffy / diffx)  //this is in radians
-      if (diffx < 0) direction += Math.PI
-      length = Math.hypot(diffx, diffy)
-      this.segments.push(
-        {
-          distanceFromStart,
-          length,
-          startx: this.newPositions[i].x,
-          starty: this.newPositions[i].y,
-          endx: this.newPositions[i + 1].x,
-          endy: this.newPositions[i + 1].y,
-          direction: direction
-        })
-      distanceFromStart += length
+      const start = this.newPositions[i]
+      const end = this.newPositions[i + 1]
+      const dx = end.x - start.x
+      const dy = end.y - start.y
+      const length = Math.hypot(dx, dy)
+
+      if (length === 0) continue
+
+      const direction = Math.atan2(dy, dx)
+      const endDistance = distanceFromStart + length
+
+      this.segments.push({
+        startDistance: distanceFromStart,
+        endDistance,
+        distanceFromStart,
+        length,
+        startx: start.x,
+        starty: start.y,
+        endx: end.x,
+        endy: end.y,
+        dx,
+        dy,
+        unitX: dx / length,
+        unitY: dy / length,
+        direction
+      })
+
+      distanceFromStart = endDistance
     }
-    // console.log(this.positions)
-    // console.log(this.segments)
+
+    this.totalLength = distanceFromStart
   }
-  updateSegments() {
-    // this.updatePositions()
-    // console.log('this.newPositions')
-    // console.log(this.newPositions)
-    this.segments = []
-    let diffx, diffy, direction
-    let distanceFromStart = 0, length = 0
-    for (let i = 0; i < this.positions.length - 1; i++) {
-      diffx = this.positions[i + 1].x - this.positions[i].x
-      diffy = this.positions[i + 1].y - this.positions[i].y
-      if (diffx == 0) diffx = 0.001
-      //direction in radians
-      direction = Math.atan(diffy / diffx)  //this is in radians
-      if (diffx < 0) direction += Math.PI
-      length = Math.hypot(diffx, diffy)
-      this.segments.push(
-        {
-          distanceFromStart,
-          length,
-          startx: this.positions[i].x,
-          starty: this.positions[i].y,
-          endx: this.positions[i + 1].x,
-          endy: this.positions[i + 1].y,
-          direction: direction
-        })
-      distanceFromStart += length
+
+  getPoseAtDistance(distance) {
+    if (this.segments.length === 0 || distance < 0) {
+      return {
+        x: -1,
+        y: -1,
+        direction: undefined,
+        segment: null
+      }
     }
-    // console.log(this.positions)
-    // console.log(this.segments)
+
+    const wrappedDistance = this.totalLength > 0 ? distance % this.totalLength : 0
+    const segment = this.segments.find(seg => wrappedDistance <= seg.endDistance) || this.segments[this.segments.length - 1]
+    const distanceIntoSegment = wrappedDistance - segment.startDistance
+
+    return {
+      x: segment.startx + segment.unitX * distanceIntoSegment,
+      y: segment.starty + segment.unitY * distanceIntoSegment,
+      direction: segment.direction,
+      segment
+    }
   }
+  
   draw() {
     // this.drawGrid()
     this.ctxTracks.save()
-    this.ctxTracks.strokeStyle = 'rgb(0,0,50)'
+    this.ctxTracks.strokeStyle = 'rgb(0,0,250)'
     this.ctxTracks.beginPath()
     this.ctxTracks.moveTo(this.positions[0].x, this.positions[0].y)
     for (let i = 1; i < this.positions.length; i++) {
@@ -225,10 +269,35 @@ class Track {
     this.ctxTracks.stroke()
     this.ctxTracks.restore()
   }
+
   drawUsingNewPositions() {
     // this.drawGrid()
+    
+    //The name of the train
+    let name_x = this.newPositions[0].x==1200? this.newPositions[0].x-100 : this.newPositions[0].x
+    let name_y = this.newPositions[0].y==0? this.newPositions[0].y+100 :this.newPositions[0].y
+    
+    this.ctxTracks.moveTo(this.newPositions[0].x,this.newPositions[0].y-20)
+    this.ctxTracks.fillText(this.trainName,name_x,name_y)
+    
+    
     this.ctxTracks.save()
+    //draw the thick single line as backdrop
+    this.ctxTracks.strokeStyle = 'rgb(255,0,255)'
+    this.ctxTracks.lineWidth = 3
+    this.ctxTracks.beginPath()
+    this.ctxTracks.moveTo(this.newPositions[0].x, this.newPositions[0].y)
+    for (let i = 1; i < this.newPositions.length; i++) {
+      this.ctxTracks.lineTo(this.newPositions[i].x, this.newPositions[i].y)
+    }
+    // this.ctxTracks.closePath()
+    this.ctxTracks.stroke()
+    this.ctxTracks.restore()
+    
+    this.ctxTracks.save()
+    //draw the thin single lline
     this.ctxTracks.strokeStyle = 'rgb(0,0,50)'
+    this.ctxTracks.lineWidth = 1
     this.ctxTracks.beginPath()
     this.ctxTracks.moveTo(this.newPositions[0].x, this.newPositions[0].y)
     for (let i = 1; i < this.newPositions.length; i++) {

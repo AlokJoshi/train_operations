@@ -1,15 +1,29 @@
-class Game{
-  constructor (ctxGame,ctxTracks){
-    this.engines = []
+
+class Game {
+  constructor() {
+    this.trains = []
+    // this.intersections = intersections
   }
-  addEngine(engine){
-    this.engines.push(engine)
+  addTrain(train) {
+    // if(!train.intersections){
+    //   train.intersections=this.intersections
+    // }
+    this.trains.push(train)
   }
-  draw(){
-    this.engines.forEach(engine=>{
-      engine.draw()
+  startStopTrain(trainNumber) {
+    if(trainNumber<this.trains.length){
+      this.trains[trainNumber - 1].startStop()
+    }
+  }
+  draw() {
+    this.trains.forEach((train, index) => {
+      train.draw()
     })
+    // this.checkForCollissions()
   }
+  // checkForCollissions(){
+
+  // }
 }
 export {
   Game

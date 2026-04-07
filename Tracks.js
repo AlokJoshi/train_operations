@@ -8,7 +8,7 @@ class Tracks{
   }
   draw(){
     this.tracks.forEach(track => {
-      track.draw()
+      //track.draw()
     });
   }
   
