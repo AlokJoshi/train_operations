@@ -12,7 +12,8 @@
   opacity:1;
 }
 #canvas_tracks{
-  background-color: lightyellow;
+  background-image:url('Dirt6.png');
+  background-size:cover;
 }
 #controls{
   position:absolute;
@@ -28,3 +29,8 @@ button{
 button:hover{
   cursor:pointer;
 }
+.health{
+  width:20px;
+  height:20px;
+  background-color:green;
+} 

@@ -50,10 +50,7 @@ class Track {
       // const p1 = {x:p.x,y:p.y}
       // const p2 = {x:p.x,y:p.y}
       const p3 = {x:p.x,y:p.y}
-      // let p1Deltax = 0
-      // let p1Deltay = 0
-      // let p2Deltax = 0
-      // let p2Deltay = 0
+      
       let n = 10 //number of points to be added between two straight lines
       let deltax = new Array(n).fill(0)
       let deltay = new Array(n).fill(0)
@@ -64,10 +61,7 @@ class Track {
         p0.x -= tr
         //check for right down
         if (p.y < c.y) {
-          // p1Deltax = -(tr - tr * Math.sin(Math.PI / 6))
-          // p1Deltay = tr - tr * Math.cos(Math.PI / 6)
-          // p2Deltax = -(tr - tr * Math.sin(Math.PI / 3))
-          // p2Deltay = tr - tr * Math.cos(Math.PI / 3)
+          
           for(let i=0;i<n;i++){
             deltax[i] = -tr * (1- Math.sin(theta * (i+1)))
             deltay[i] = tr * (1- Math.cos(theta * (i+1)))
@@ -76,10 +70,7 @@ class Track {
         }
         //check for right up
         if (p.y > c.y) {
-          // p1Deltax = -(tr - tr * Math.sin(Math.PI / 6))
-          // p1Deltay = -(tr - tr * Math.cos(Math.PI / 6))
-          // p2Deltax = -(tr - tr * Math.sin(Math.PI / 3))
-          // p2Deltay = -(tr - tr * Math.cos(Math.PI / 3))
+          
           for(let i=0;i<n;i++){
             deltax[i] = -tr * (1- Math.sin(theta * (i+1)))
             deltay[i] = -tr * (1- Math.cos(theta * (i+1)))
@@ -94,10 +85,7 @@ class Track {
         p0.x += tr
         //check for left down
         if (p.y < c.y) {
-          // p1Deltax = (tr - tr * Math.sin(Math.PI / 6))
-          // p1Deltay = tr - tr * Math.cos(Math.PI / 6)
-          // p2Deltax = (tr - tr * Math.sin(Math.PI / 3))
-          // p2Deltay = tr - tr * Math.cos(Math.PI / 3)
+          
           for(let i=0;i<n;i++){
             deltax[i] = tr * (1- Math.sin(theta * (i+1)))
             deltay[i] = tr * (1- Math.cos(theta * (i+1)))
@@ -106,10 +94,7 @@ class Track {
         }
         //check for left up
         if (p.y > c.y) {
-          // p1Deltax = (tr - tr * Math.sin(Math.PI / 6))
-          // p1Deltay = -(tr - tr * Math.cos(Math.PI / 6))
-          // p2Deltax = (tr - tr * Math.sin(Math.PI / 3))
-          // p2Deltay = -(tr - tr * Math.cos(Math.PI / 3))
+          
           for(let i=0;i<n;i++){
             deltax[i] = tr * (1- Math.sin(theta * (i+1)))
             deltay[i] = -tr * (1- Math.cos(theta * (i+1)))
@@ -124,10 +109,7 @@ class Track {
         p0.y += tr
         //check for up and left
         if (p.x > c.x) {
-          // p1Deltax = -(tr - tr * Math.cos(Math.PI / 6))
-          // p1Deltay = (tr - tr * Math.sin(Math.PI / 6))
-          // p2Deltax = -(tr - tr * Math.cos(Math.PI / 3))
-          // p2Deltay = tr - tr * Math.sin(Math.PI / 3)
+          
           for(let i=0;i<n;i++){
             deltax[i] = -tr * (1- Math.cos(theta * (i+1)))
             deltay[i] = tr * (1- Math.sin(theta * (i+1)))
@@ -136,10 +118,7 @@ class Track {
         }
         //check for up and right
         if (p.x < c.x) {
-          // p1Deltax = (tr - tr * Math.cos(Math.PI / 6))
-          // p1Deltay = (tr - tr * Math.sin(Math.PI / 6))
-          // p2Deltax = (tr - tr * Math.cos(Math.PI / 3))
-          // p2Deltay = (tr - tr * Math.sin(Math.PI / 3))
+          
           for(let i=0;i<n;i++){
             deltax[i] = tr * (1- Math.cos(theta * (i+1)))
             deltay[i] = tr * (1- Math.sin(theta * (i+1)))
@@ -154,10 +133,7 @@ class Track {
         p0.y -= tr
         //check for down and left
         if (p.x > c.x) {
-          // p1Deltax = -(tr - tr * Math.cos(Math.PI / 6))
-          // p1Deltay = -(tr - tr * Math.sin(Math.PI / 6))
-          // p2Deltax = -(tr - tr * Math.cos(Math.PI / 3))
-          // p2Deltay = -(tr - tr * Math.sin(Math.PI / 3))
+          
           for(let i=0;i<n;i++){
             deltax[i] = -tr * (1- Math.cos(theta * (i+1)))
             deltay[i] = -tr * (1- Math.sin(theta * (i+1)))
@@ -166,10 +142,7 @@ class Track {
         }
         //check for down and right
         if (p.x < c.x) {
-          // p1Deltax = (tr - tr * Math.cos(Math.PI / 6))
-          // p1Deltay = -(tr - tr * Math.sin(Math.PI / 6))
-          // p2Deltax = (tr - tr * Math.cos(Math.PI / 3))
-          // p2Deltay = -(tr - tr * Math.sin(Math.PI / 3))
+          
           for(let i=0;i<n;i++){
             deltax[i] = tr * (1- Math.cos(theta * (i+1)))
             deltay[i] = -tr * (1- Math.sin(theta * (i+1)))
@@ -178,19 +151,13 @@ class Track {
         }
       }
 
-      //update p,p1,p2
-      // p1.x = p1.x + p1Deltax
-      // p1.y = p1.y + p1Deltay
-      // p2.x = p2.x + p2Deltax
-      // p2.y = p2.y + p2Deltay
+      
 
       this.newPositions.push(p0)
       for(let i=0;i<n;i++){
         const newP = {x:p.x + deltax[i], y:p.y + deltay[i]}
         this.newPositions.push(newP)
       }
-      // this.newPositions.push(p1)
-      // this.newPositions.push(p2)
       this.newPositions.push(p3)
       this.newPositions.push(c)
     }
@@ -326,6 +293,16 @@ class Track {
     }
     this.ctxTracks.closePath()
     this.ctxTracks.stroke()
+  }
+   getTotalLength() {
+    let length = 0
+    const positions = this.positions;
+    for (let i = 1; i < positions.length; i++) {
+      const dx = positions[i].x - positions[i - 1].x
+      const dy = positions[i].y - positions[i - 1].y
+      length += Math.sqrt(dx * dx + dy * dy)
+    }
+    return length
   }
 }
 
