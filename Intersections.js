@@ -48,6 +48,9 @@ class Intersections {
     if (row < 0 || row >= this.rowCount || col < 0 || col >= this.colCount) {
       return
     }
+    if (this.intersections[row][col] === "station") {
+      return
+    }
     if (trainNumber === null || trainNumber === undefined) {
       this.intersections[row][col] = null
       return
@@ -68,6 +71,13 @@ class Intersections {
     } else {
       this.intersections[row][col] = trainNumber
     }
+  }
+
+  updateIntersectionsWithStationLocation(row, col, station) {
+    if (row < 0 || row >= this.rowCount || col < 0 || col >= this.colCount) {
+      return
+    }
+    this.intersections[row][col] = station? "station" : null
   }
 
   removeTrain(trainNumber) {

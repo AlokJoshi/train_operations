@@ -4,6 +4,10 @@ import { Tracks } from './Tracks.js'
 import { Game } from './Game.js'
 import { Intersections } from './Intersections.js'
 import { financials } from './Financials.js'
+import { Station } from './Station.js'
+import { Stations } from './Stations.js'
+
+globalThis.globalTicks = 0
 
 let collisionCount = 0
 const CANVASHEIGHT = 840
@@ -31,6 +35,7 @@ canvas.width = canvasTracks.width = canvasTemp.width = canvasResults.width = CAN
 
 let paused = true
 let startTrack = false
+let startStation = false
 let click_error = 20
 let validTrackPoints = new Set()
 
@@ -73,30 +78,26 @@ track = new Track(ctxTracks,
 
 )
 game.addTrain(ctx, ctxTemp, 18, track, 5, 'Express Train', 0, intersections)
-let time = 0
+
 const drawScene = () => {
   if (!paused) {
-    time++
-    if (time % 100 === 0) {
-      // console.log(`Time: ${time}`)
+    globalThis.globalTicks++
+    if (globalThis.globalTicks % 100 === 0) {
+      // console.log(`Time: ${globalThis.globalTicks}`)
       //display Financials for one second
-      const resultsEl = document.querySelector('#canvas_results')
-      // if (resultsEl) {
-      //   resultsEl.style.display = 'block'
-      //   resultsEl.style.zIndex = 10
-      // }
       ctxResults.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
       ctxResults.font = '20px Arial'
       ctxResults.fillStyle = 'black'
-      const financialsText = `Revenue: $${Math.round(financials.totalRevenue / 1000000)}M | Cost: $${Math.round(financials.totalExpenses / 1000000)}M | Profit: $${Math.round(financials.profit / 1000000)}M`
+      const financialSummary = financials.getFinancialSummary(globalThis.globalTicks)
+      const financialsText = `Revenue: $${Math.round(financialSummary.totalRevenue / 1000000)}M | Cost: $${Math.round(financialSummary.totalExpenses / 1000000)}M | Profit: $${Math.round(financialSummary.profit / 1000000)}M`
       ctxResults.fillText(financialsText, 10, 30)
-      // setTimeout(() => {
-      //   if (resultsEl) {
-      //     resultsEl.style.display = 'none'
-      //     resultsEl.style.zIndex = -10
-
-      //   } 
-      // },6000)
+      const finacialSummaryByTrain = financials.getFinancialSummaryByTrain(globalThis.globalTicks)
+      finacialSummaryByTrain.totalRevenue.forEach((revenue, index) => {
+        if (revenue > 0 || finacialSummaryByTrain.totalExpenses[index] > 0) {
+          const trainFinancialsText = `Train ${index + 1} - Revenue: $${Math.round(revenue / 1000000)}M | Cost: $${Math.round(finacialSummaryByTrain.totalExpenses[index] / 1000000)}M | Profit: $${Math.round(finacialSummaryByTrain.profit[index] / 1000000)}M`
+          ctxResults.fillText(trainFinancialsText, 10, 60 + index * 30)
+        }
+      })
     }
     ctx.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
     game.draw()
@@ -124,12 +125,21 @@ window.addEventListener('load', () => {
   }
 
   startPausebutton.addEventListener('click', () => {
+    //switch the play button to pause
+    const startPauseButton = document.querySelector('#startPauseBtn')
+    if (startPauseButton.classList.contains('fa-play')) {
+      startPauseButton.classList.remove('fa-play')
+      startPauseButton.classList.add('fa-pause')
+    } else {
+      startPauseButton.classList.remove('fa-pause')
+      startPauseButton.classList.add('fa-play')
+    }
     paused = !paused
     drawScene()
   })
-
+  
   document.addEventListener('keydown', handleTrainHotkeys)
-
+  
   document.querySelector('#canvas_temp').addEventListener('click', (event) => {
     if (startTrack) {
       const x = CANVASMARGIN + Math.round((event.pageX - CANVASMARGIN) / 100) * 100
@@ -142,8 +152,18 @@ window.addEventListener('load', () => {
         }
         positions.push({ x, y })
         updateCanvasTemp(x, y)
-      } else {
-        // console.log(`Clicked at ${event.pageX},${event.pageY}, not close enough to snap to a grid point`)
+      }
+    }
+    if (startStation) {
+      const x = CANVASMARGIN + Math.round((event.pageX - CANVASMARGIN) / 100) * 100
+      const y = CANVASMARGIN + Math.round((event.pageY - CANVASMARGIN) / 100) * 100
+      if ((Math.abs(x - event.pageX) < click_error) && (Math.abs(y - event.pageY) < click_error)) {
+        // console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y}`)
+        alert(`Station added at (${x/gridSize},${y/ gridSize})`)
+        const n = Stations.stations.length;
+        const station = new Station(`Station${n + 1}`,x/gridSize,y/gridSize)
+        Stations.addStation(station)
+        intersections.updateIntersectionsWithStationLocation(y/gridSize, x/gridSize , true)
       }
     }
   })
@@ -164,6 +184,15 @@ window.addEventListener('load', () => {
         event.target.style = "cursor:default"
       }
     }
+    if (startStation) {
+      const x = CANVASMARGIN + Math.round((event.pageX - CANVASMARGIN) / 100) * 100
+      const y = CANVASMARGIN + Math.round((event.pageY - CANVASMARGIN) / 100) * 100
+      if (Math.abs(x - event.pageX) < click_error && Math.abs(y - event.pageY) < click_error) {
+        event.target.style = "cursor:pointer"
+      } else {
+        event.target.style = "cursor:default"
+      }
+    }
   })
 
   document.querySelector('#startTrack').addEventListener('click', () => {
@@ -171,12 +200,41 @@ window.addEventListener('load', () => {
     document.querySelector('#canvas_temp').style = 'cursor:crosshair'
     setValidTrackPoints()
     positions = []
-    // const endTrackBtn = document.querySelector('#endTrack')
-    // if (endTrackBtn) {
-    //   endTrackBtn.style.visibility = 'visible'
-    // }
-    //console.log(`Start Track Button clicked`)
   })
+
+  window.startStation = function() {
+    startStation = true
+    document.querySelector('#canvas_temp').style = 'cursor:pointer'
+    //on canvas_temp highlight all the points where a station can be placed which is basically all the intersections. We can get the intersections from the intersections object and then highlight them on the canvas_temp
+    for (let row = 0; row < intersections.rowCount; row++) {
+      for (let col = 0; col < intersections.colCount; col++) {
+        const x = OFFSET_X + col * gridSize
+        const y = OFFSET_Y + row * gridSize
+        ctxTemp.beginPath()
+        ctxTemp.moveTo(x, y)
+        ctxTemp.fillStyle = 'yellow'
+        ctxTemp.arc(x, y, 10, 0, Math.PI * 2)
+        ctxTemp.closePath()
+        ctxTemp.fill()
+      }
+    }
+    // intersections.intersections.forEach(intersection => {
+    //   const x = OFFSET_X + intersection.col * gridSize
+    //   const y = OFFSET_Y + intersection.row * gridSize
+    //   ctxTemp.beginPath()
+    //   ctxTemp.moveTo(x, y)
+    //   ctxTemp.fillStyle = 'yellow'
+    //   ctxTemp.arc(x, y, 10, 0, Math.PI * 2)
+    //   ctxTemp.closePath()
+    //   ctxTemp.fill()
+    // })  
+  }
+  window.cancelStation = function() {
+    startStation = false
+    document.querySelector('#canvas_temp').style = 'cursor:default'
+    ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+  }
+
 
   // document.querySelector('#endTrack').addEventListener('click', () => {
   //   ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
@@ -259,7 +317,7 @@ window.addEventListener('load', () => {
     // count total collisions
     collisionCount++
     displayCollision(event.col, event.row)
-    financials.incrementCollisionCost()
+    financials.incrementCollisionCost(globalThis.globalTicks, event.train1, event.train2)
     pauseBothTrains(event.train1, event.train2)
     showCustomAlert(`Collision detected between train ${event.train1} and train ${event.train2} at intersection (${event.row},${event.col}). Total collisions: ${collisionCount}`)
     setTimeout(() => {
@@ -334,7 +392,7 @@ window.addEventListener('load', () => {
       }
       return
     }
-    
+
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
     const speedEl = document.querySelector('#speed')
     const numCoachesEl = document.querySelector('#numcoaches')

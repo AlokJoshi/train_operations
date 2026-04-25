@@ -5,6 +5,7 @@ class Track {
     this.positions = positions
     this.newPositions = []
     this.segments = []
+    this.returnSegments = []
     this.totalLength = 0
     this.ctxTracks = ctxTracks
     this.trainName=trainName 
@@ -162,14 +163,13 @@ class Track {
       this.newPositions.push(c)
     }
   }
-  updateSegmentsFromNewPositions() {
-    this.segments = []
-    this.totalLength = 0
-
+  buildSegments(positions) {
+    const segments = []
     let distanceFromStart = 0
-    for (let i = 0; i < this.newPositions.length - 1; i++) {
-      const start = this.newPositions[i]
-      const end = this.newPositions[i + 1]
+
+    for (let i = 0; i < positions.length - 1; i++) {
+      const start = positions[i]
+      const end = positions[i + 1]
       const dx = end.x - start.x
       const dy = end.y - start.y
       const length = Math.hypot(dx, dy)
@@ -179,7 +179,7 @@ class Track {
       const direction = Math.atan2(dy, dx)
       const endDistance = distanceFromStart + length
 
-      this.segments.push({
+      segments.push({
         startDistance: distanceFromStart,
         endDistance,
         distanceFromStart,
@@ -198,11 +198,25 @@ class Track {
       distanceFromStart = endDistance
     }
 
-    this.totalLength = distanceFromStart
+    return {
+      segments,
+      totalLength: distanceFromStart
+    }
   }
 
-  getPoseAtDistance(distance) {
-    if (this.segments.length === 0 || distance < 0) {
+  updateSegmentsFromNewPositions() {
+    const forwardPath = this.buildSegments(this.newPositions)
+    const returnPath = this.buildSegments([...this.newPositions].reverse())
+
+    this.segments = forwardPath.segments
+    this.returnSegments = returnPath.segments
+    this.totalLength = forwardPath.totalLength
+  }
+
+  getPoseAtDistance(distance, useReturnSegments = false) {
+    const activeSegments = useReturnSegments ? this.returnSegments : this.segments
+
+    if (activeSegments.length === 0) {
       return {
         x: -1,
         y: -1,
@@ -211,9 +225,9 @@ class Track {
       }
     }
 
-    const wrappedDistance = this.totalLength > 0 ? distance % this.totalLength : 0
-    const segment = this.segments.find(seg => wrappedDistance <= seg.endDistance) || this.segments[this.segments.length - 1]
-    const distanceIntoSegment = wrappedDistance - segment.startDistance
+    const clampedDistance = Math.max(0, Math.min(distance, this.totalLength))
+    const segment = activeSegments.find(seg => clampedDistance <= seg.endDistance) || activeSegments[activeSegments.length - 1]
+    const distanceIntoSegment = clampedDistance - segment.startDistance
 
     return {
       x: segment.startx + segment.unitX * distanceIntoSegment,

@@ -24,9 +24,9 @@ class Game {
     const color = this.TRAINCOLORS[(trainNumber - 1) % this.TRAINCOLORS.length]
     const train = new Train(ctx, ctxTemp, engineSpeed, track, color, numCoaches, trainName, delayBeforeStart, trainNumber, intersections)
     const length = track.getTotalLength()
-    financials.incrementTrackCost(length)
-    financials.buyEngine()
-    financials.buyCoach(numCoaches)
+    financials.incrementTrackCost(globalThis.globalTicks,trainNumber,length)
+    financials.buyEngine(globalThis.globalTicks,trainNumber)
+    financials.buyCoach(globalThis.globalTicks,trainNumber,numCoaches)
     this.trains[trainNumber - 1] = train
     const trainElement = document.querySelector(`#train${trainNumber}`)
     if (trainElement) {
