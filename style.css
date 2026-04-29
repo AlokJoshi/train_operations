@@ -4,16 +4,40 @@
 }
 
 #canvas,#canvas_tracks,#canvas_temp{
-  width:1200px;
-  height:800px;
+  width:2400px;
+  height:1600px;
   position:absolute;
+}
+#canvas_tracks{
+  z-index: 1;
 }
 #canvas{
   opacity:1;
+  z-index: 2;
 }
 #canvas_tracks{
   background-image:url('Dirt6.png');
   background-size:cover;
+  pointer-events: none;
+}
+#canvas_results{
+  position:absolute;
+  top:0px;
+  left:0px;
+  width:2400px;
+  height:1600px;
+  background-color:rgba(0,0,0,0);
+  color:#eee;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  font-size:3em;
+  pointer-events: none;
+  z-index: 3;
+}
+#canvas_temp {
+  z-index: 4;
 }
 #controls{
   position:absolute;
@@ -34,3 +58,26 @@ button:hover{
   height:20px;
   background-color:green;
 } 
+
+#controls {
+  position: fixed; /* Or relative if it's a child of a fixed element */
+  z-index: 9999;   /* Use a very high number to be safe */
+  pointer-events: auto;
+}
+
+.modal{
+  background-color:rgba(0,0,0,0.1);
+  padding:20px;
+  border-radius:10px;
+  color:#eee;
+  border-top: #222 10px solid;
+  z-index: 1000;
+}
+
+#buttonGroup1,
+#buttonGroup2,
+#buttonGroup1 input,
+#buttonGroup2 input {
+  pointer-events: auto;
+}
+

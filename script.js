@@ -1,17 +1,11 @@
-import { Train } from './Train.js'
-import { Track } from './Track.js'
-import { Tracks } from './Tracks.js'
 import { Game } from './Game.js'
 import { Intersections } from './Intersections.js'
-import { financials } from './Financials.js'
-import { Station } from './Station.js'
-import { Stations } from './Stations.js'
 
 globalThis.globalTicks = 0
 
 let collisionCount = 0
-const CANVASHEIGHT = 840
-const CANVASWIDTH = 1240
+const CANVASHEIGHT = 800 * 2
+const CANVASWIDTH = 1200 * 2
 const CANVASMARGIN = 0
 const OFFSET_X = 0
 const OFFSET_Y = 0
@@ -19,9 +13,6 @@ const gridSize = 100
 
 const canvas = document.querySelector('#canvas')
 const ctx = canvas.getContext('2d')
-
-// canvas.height = CANVASHEIGHT
-// canvas.width = CANVASWIDTH
 
 const canvasTracks = document.querySelector('#canvas_tracks')
 const canvasResults = document.querySelector('#canvas_results')
@@ -50,34 +41,31 @@ function setValidTrackPoints() {
 
 let intersections = new Intersections(CANVASWIDTH - OFFSET_X * 2, CANVASHEIGHT - OFFSET_Y * 2, gridSize, OFFSET_X, OFFSET_Y)
 
-const game = new Game()
+const game = new Game(ctx, ctxTracks, ctxTemp, gridSize, OFFSET_X, OFFSET_Y)
 
-let tracks = new Tracks(ctxTracks)
-let track = new Track(ctxTracks,
-  [
-    { x: CANVASMARGIN + 0, y: CANVASMARGIN + 0 },
-    { x: CANVASMARGIN + 400, y: CANVASMARGIN + 0 },
-    { x: CANVASMARGIN + 400, y: CANVASMARGIN + 800 },
-    { x: CANVASMARGIN + 0, y: CANVASMARGIN + 800 },
-    { x: CANVASMARGIN + 0, y: CANVASMARGIN + 0 },
-  ], 'Bullet Train'
 
-)
-game.addTrain(ctx, ctxTemp, 19, track, 10, 'Bullet Train', 0, intersections)
+let positions = [
+  { x: CANVASMARGIN + 0, y: CANVASMARGIN + 0 },
+  { x: CANVASMARGIN + 400, y: CANVASMARGIN + 0 },
+  { x: CANVASMARGIN + 400, y: CANVASMARGIN + 800 },
+  { x: CANVASMARGIN + 0, y: CANVASMARGIN + 800 },
+  { x: CANVASMARGIN + 0, y: CANVASMARGIN + 0 },
+]
 
-track = new Track(ctxTracks,
-  [
-    { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 },
-    { x: CANVASMARGIN + 500, y: CANVASMARGIN + 200 },
-    { x: CANVASMARGIN + 500, y: CANVASMARGIN + 500 },
-    { x: CANVASMARGIN + 1100, y: CANVASMARGIN + 500 },
-    { x: CANVASMARGIN + 1100, y: CANVASMARGIN + 700 },
-    { x: CANVASMARGIN + 800, y: CANVASMARGIN + 700 },
-    { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 },
-  ], 'Express Train'
 
-)
-game.addTrain(ctx, ctxTemp, 18, track, 5, 'Express Train', 0, intersections)
+game.addTrain(positions, 19, 10, 'Bullet Train', 0, intersections)
+
+
+positions = [
+  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 },
+  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 200 },
+  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 500 },
+  { x: CANVASMARGIN + 1100, y: CANVASMARGIN + 500 },
+  { x: CANVASMARGIN + 1100, y: CANVASMARGIN + 700 },
+  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 700 },
+  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 },
+]
+game.addTrain(positions, 18, 5, 'Express Train', 0, intersections)
 
 const drawScene = () => {
   if (!paused) {
@@ -88,10 +76,10 @@ const drawScene = () => {
       ctxResults.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
       ctxResults.font = '20px Arial'
       ctxResults.fillStyle = 'black'
-      const financialSummary = financials.getFinancialSummary(globalThis.globalTicks)
+      const financialSummary = game.getFinancialSummary(globalThis.globalTicks)
       const financialsText = `Revenue: $${Math.round(financialSummary.totalRevenue / 1000000)}M | Cost: $${Math.round(financialSummary.totalExpenses / 1000000)}M | Profit: $${Math.round(financialSummary.profit / 1000000)}M`
       ctxResults.fillText(financialsText, 10, 30)
-      const finacialSummaryByTrain = financials.getFinancialSummaryByTrain(globalThis.globalTicks)
+      const finacialSummaryByTrain = game.getFinancialSummaryByTrain(globalThis.globalTicks)
       finacialSummaryByTrain.totalRevenue.forEach((revenue, index) => {
         if (revenue > 0 || finacialSummaryByTrain.totalExpenses[index] > 0) {
           const trainFinancialsText = `Train ${index + 1} - Revenue: $${Math.round(revenue / 1000000)}M | Cost: $${Math.round(finacialSummaryByTrain.totalExpenses[index] / 1000000)}M | Profit: $${Math.round(finacialSummaryByTrain.profit[index] / 1000000)}M`
@@ -110,18 +98,35 @@ window.addEventListener('load', () => {
   const startPausebutton = document.querySelector('#startPauseBtn')
   let positions = []
   const handleTrainHotkeys = (event) => {
+
+    // NEW: Do nothing if the user is typing in an input or textarea
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+      return;
+    }
+
     if (event.repeat || !event.code) return
-
-    // console.log('Event object:', event);
-    // console.log('Event code:', event.code);
-
     const isDigitKey = event.code.startsWith('Digit') || event.code.startsWith('Numpad')
-    if (!isDigitKey) return
-
-    const trainNumber = Number.parseInt(event.key, 10)
-    if (!Number.isInteger(trainNumber) || trainNumber < 1 || trainNumber > 9) return
-
-    game.startStopTrain(trainNumber)
+    if (isDigitKey) {
+      const trainNumber = Number.parseInt(event.key, 10)
+      if (!Number.isInteger(trainNumber) || trainNumber < 1 || trainNumber > 9) return
+      game.startStopTrain(trainNumber)
+    } else if (event.code === 'KeyT') {
+      //if the code is T then show the Button Group 1 (trains)
+      const buttonGroup1 = document.querySelector('#buttonGroup1')
+      if (buttonGroup1.style.display === 'none') {
+        buttonGroup1.style.display = 'flex'
+      } else {
+        buttonGroup1.style.display = 'none'
+      }
+    } else if (event.code === 'KeyS') {
+      //if the code is S then show the possible station related controls
+      const stationControls = document.querySelector('#buttonGroup2')
+      if (stationControls.style.display === 'none') {
+        stationControls.style.display = 'flex'
+      } else {
+        stationControls.style.display = 'none'
+      }
+    }
   }
 
   startPausebutton.addEventListener('click', () => {
@@ -137,14 +142,24 @@ window.addEventListener('load', () => {
     paused = !paused
     drawScene()
   })
-  
+
+
   document.addEventListener('keydown', handleTrainHotkeys)
-  
+
+  const getCanvasPoint = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    }
+  }
+
   document.querySelector('#canvas_temp').addEventListener('click', (event) => {
+    const point = getCanvasPoint(event)
     if (startTrack) {
-      const x = CANVASMARGIN + Math.round((event.pageX - CANVASMARGIN) / 100) * 100
-      const y = CANVASMARGIN + Math.round((event.pageY - CANVASMARGIN) / 100) * 100
-      if ((Math.abs(x - event.pageX) < click_error) && (Math.abs(y - event.pageY) < click_error)) {
+      const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
+      const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
+      if ((Math.abs(x - point.x) < click_error) && (Math.abs(y - point.y) < click_error)) {
         // console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y}`)
         if (!validTrackPoints.has(`${x},${y}`)) {
           // console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y} but it's not a valid track point`)
@@ -155,26 +170,56 @@ window.addEventListener('load', () => {
       }
     }
     if (startStation) {
-      const x = CANVASMARGIN + Math.round((event.pageX - CANVASMARGIN) / 100) * 100
-      const y = CANVASMARGIN + Math.round((event.pageY - CANVASMARGIN) / 100) * 100
-      if ((Math.abs(x - event.pageX) < click_error) && (Math.abs(y - event.pageY) < click_error)) {
+      const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
+      const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
+      if ((Math.abs(x - point.x) < click_error) && (Math.abs(y - point.y) < click_error)) {
         // console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y}`)
-        alert(`Station added at (${x/gridSize},${y/ gridSize})`)
-        const n = Stations.stations.length;
-        const station = new Station(`Station${n + 1}`,x/gridSize,y/gridSize)
-        Stations.addStation(station)
-        intersections.updateIntersectionsWithStationLocation(y/gridSize, x/gridSize , true)
+        console.log(`Flyover added at (${x / gridSize},${y / gridSize})`)
+        swal.fire({
+          title: `Add Flyover`,
+          text: `Do you want to add a station at (Row ${y / gridSize}, Col ${x / gridSize})?`,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'No'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            const n = game.getNumberOfStations()
+            intersections.updateIntersectionsWithStationLocation(y / gridSize, x / gridSize, true)
+            //use swal to ask user for station name and then add the station to the game with the given name and the row and col corresponding to the x and y coordinates of the click event. The station name should be in the format "Flyover n" where n is the number of stations currently in the game + 1. After adding the station, we should also update the intersections object to mark the intersection at the station location as a station intersection so that we do not register collisions at that intersection.
+            swal.fire({
+              title: 'Enter Flyover Name',
+              input: 'text',
+              inputLabel: 'Flyover Name',
+              inputValue: `Flyover${n + 1}`,
+              showCancelButton: true,
+              confirmButtonText: 'Add Flyover',
+              cancelButtonText: 'Cancel',
+              inputValidator: (value) => {
+                if (!value) {
+                  return 'Please enter a station name'
+                }
+                return null
+              }
+            }).then((result) => {
+              if (result.isConfirmed) {
+                game.addStation(result.value, y / gridSize, x / gridSize)
+              }
+            })
+          }
+        })
       }
     }
   })
   document.querySelector('#canvas_temp').addEventListener('mousemove', (event) => {
+    const point = getCanvasPoint(event)
     //console.log(`mouse move event listener added`)
     if (startTrack) {
       //console.log(`mouse movin inside startTrack`)
-      const x = CANVASMARGIN + Math.round((event.pageX - CANVASMARGIN) / 100) * 100
-      const y = CANVASMARGIN + Math.round((event.pageY - CANVASMARGIN) / 100) * 100
+      const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
+      const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
       // console.log(`Mouse moved at Page(${event.pageX},${event.pageY}), x and y (${x},${y})`)
-      if (Math.abs(x - event.pageX) < click_error && Math.abs(y - event.pageY) < click_error) {
+      if (Math.abs(x - point.x) < click_error && Math.abs(y - point.y) < click_error) {
         if (!validTrackPoints.has(`${x},${y}`)) {
           event.target.style = "cursor:default"
           return
@@ -185,9 +230,9 @@ window.addEventListener('load', () => {
       }
     }
     if (startStation) {
-      const x = CANVASMARGIN + Math.round((event.pageX - CANVASMARGIN) / 100) * 100
-      const y = CANVASMARGIN + Math.round((event.pageY - CANVASMARGIN) / 100) * 100
-      if (Math.abs(x - event.pageX) < click_error && Math.abs(y - event.pageY) < click_error) {
+      const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
+      const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
+      if (Math.abs(x - point.x) < click_error && Math.abs(y - point.y) < click_error) {
         event.target.style = "cursor:pointer"
       } else {
         event.target.style = "cursor:default"
@@ -202,59 +247,60 @@ window.addEventListener('load', () => {
     positions = []
   })
 
-  window.startStation = function() {
+  window.startStation = function () {
     startStation = true
-    document.querySelector('#canvas_temp').style = 'cursor:pointer'
-    //on canvas_temp highlight all the points where a station can be placed which is basically all the intersections. We can get the intersections from the intersections object and then highlight them on the canvas_temp
-    for (let row = 0; row < intersections.rowCount; row++) {
-      for (let col = 0; col < intersections.colCount; col++) {
-        const x = OFFSET_X + col * gridSize
-        const y = OFFSET_Y + row * gridSize
-        ctxTemp.beginPath()
-        ctxTemp.moveTo(x, y)
-        ctxTemp.fillStyle = 'yellow'
-        ctxTemp.arc(x, y, 10, 0, Math.PI * 2)
-        ctxTemp.closePath()
-        ctxTemp.fill()
-      }
-    }
-    // intersections.intersections.forEach(intersection => {
-    //   const x = OFFSET_X + intersection.col * gridSize
-    //   const y = OFFSET_Y + intersection.row * gridSize
-    //   ctxTemp.beginPath()
-    //   ctxTemp.moveTo(x, y)
-    //   ctxTemp.fillStyle = 'yellow'
-    //   ctxTemp.arc(x, y, 10, 0, Math.PI * 2)
-    //   ctxTemp.closePath()
-    //   ctxTemp.fill()
-    // })  
+    startTrack = false
+    window.showPossibleStationLocations()
   }
-  window.cancelStation = function() {
+
+  window.cancelStation = function () {
     startStation = false
     document.querySelector('#canvas_temp').style = 'cursor:default'
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
   }
 
+  window.setPossibleStationLocations = function () {
+    const possibleLocations = []
+    game.trains.forEach((train, index) => {
+      train.track.possibleStationLocations.forEach(location => {
+        possibleLocations.forEach(possibleLocation => {
+          if (possibleLocation.location.x === location.x && possibleLocation.location.y === location.y && possibleLocation.index !== index) {
+            possibleLocation.count++
+          }
+        })
+        possibleLocations.push({ location: location, index, count: 1 })
+      })
+    })
+    stations.setPossibleStationLocations(possibleLocations.map(location => location.location))
+  }
 
-  // document.querySelector('#endTrack').addEventListener('click', () => {
-  //   ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-  //   if (startTrack) {
-  //     startTrack = false
-  //     document.querySelector('#canvas').style = 'cursor:default'
-  //     const track = new Track(ctxTracks, positions,'SuperFast')
-  //     tracks.add(track)
-  //     tracks.draw()
-  //     let speed = Math.ceil(Math.random() * 19)
-  //     game.addTrain(ctx, ctxTemp, speed, track, 5, 'SuperFast', 0, intersections)
-  //     positions = []
-  //     setValidTrackPoints()
-  //     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-  //   }
-  //   const startTrackBtn = document.querySelector('#startTrack')
-  //   if (startTrackBtn) {
-  //     startTrackBtn.style.visibility = 'visible'
-  //   }
-  // })
+  window.showPossibleStationLocations = function () {
+    const possibleLocations = []
+    game.trains.forEach((train, index) => {
+      train.track.possibleStationLocations.forEach(location => {
+        possibleLocations.forEach(possibleLocation => {
+          if (possibleLocation.location.x === location.x && possibleLocation.location.y === location.y && possibleLocation.index !== index) {
+            possibleLocation.count++
+          }
+        })
+        possibleLocations.push({ location: location, index, count: 1 })
+      })
+    })
+    ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+    possibleLocations.forEach(location => {
+      if (!(location.count > 1)) {
+        return;
+      }
+      const x = location.location.x
+      const y = location.location.y
+      ctxTemp.beginPath()
+      ctxTemp.moveTo(x, y)
+      ctxTemp.fillStyle = 'yellow'
+      ctxTemp.arc(x, y, 10, 0, Math.PI * 2)
+      ctxTemp.closePath()
+      ctxTemp.fill()
+    })
+  }
 
   //set up the grid
   drawGrid(ctxTracks)
@@ -278,9 +324,22 @@ window.addEventListener('load', () => {
 
     //mark all points in the same row and column as the last position with a light green
     const { x: last_x, y: last_y } = positions[positions.length - 1]
+    let x_before_last_x = null
+    let y_before_last_y = null
+    if (positions.length > 1) {
+      x_before_last_x = positions[positions.length - 2].x
+      y_before_last_y = positions[positions.length - 2].y
+    }
+
     const lastRow = last_y / gridSize
+    const lastCol = last_x / gridSize
+    const increasingRow = y_before_last_y !== null && last_y > y_before_last_y
+    const decreasingRow = y_before_last_y !== null && last_y < y_before_last_y
+    const increasingCol = x_before_last_x !== null && last_x > x_before_last_x
+    const decreasingCol = x_before_last_x !== null && last_x < x_before_last_x
+
     for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
-      if (row == lastRow || row == lastRow - 1 || row == lastRow + 1) {
+      if (row == lastRow || row == lastRow - 1 || row == lastRow + 1 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
         //go to next iteration since we want only gradual change in track direction and not sharp turns
         continue
       } else {
@@ -295,9 +354,8 @@ window.addEventListener('load', () => {
       }
     }
 
-    const lastCol = last_x / gridSize
     for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
-      if (col == lastCol || col == lastCol - 1 || col == lastCol + 1) {
+      if (col == lastCol || col == lastCol - 1 || col == lastCol + 1 || (x_before_last_x !== null && ((increasingCol && col < lastCol) || (decreasingCol && col > lastCol)))) {
         //go to next iteration since we want only gradual change in track direction and not sharp turns
         continue
       } else {
@@ -317,9 +375,9 @@ window.addEventListener('load', () => {
     // count total collisions
     collisionCount++
     displayCollision(event.col, event.row)
-    financials.incrementCollisionCost(globalThis.globalTicks, event.train1, event.train2)
+    game.incrementCollisionCost(globalThis.globalTicks, event.train1, event.train2)
     pauseBothTrains(event.train1, event.train2)
-    showCustomAlert(`Collision detected between train ${event.train1} and train ${event.train2} at intersection (${event.row},${event.col}). Total collisions: ${collisionCount}`)
+    showCustomAlert(`Collision detected between train ${event.train1} and train ${event.train2} at intersection (${event.col + 1},${event.row + 1}). Total collisions: ${collisionCount}`)
     setTimeout(() => {
       clearCollision(event.col, event.row)
     }, 3000)
@@ -374,14 +432,27 @@ window.addEventListener('load', () => {
   }
 
   window.removetrain = (trainnumber) => {
-    ctxTracks.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-    drawGrid(ctxTracks)
-    game.removeTrain(trainnumber)
-    intersections.removeTrain(trainnumber)
-    //clear intersections from ctxTemp for the removed train
-    ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+    const train = game.trains[trainnumber - 1]
+    const trainName = train ? train.name : `Train ${trainnumber}`
+    swal.fire({
+      title: `Remove ${trainName}`,
+      text: `Are you sure you want to remove ${trainName}? This action cannot be undone. Also please note that 
+      you will only recover the deperciated cost of coaches and engine but not the track.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, remove it!',
+      cancelButtonText: 'No, keep it'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        ctxTracks.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        drawGrid(ctxTracks)
+        game.removeTrain(trainnumber)
+        intersections.removeTrain(trainnumber)
+        //clear intersections from ctxTemp for the removed train
+        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+      }
+    })
   }
-
   window.newtrain = () => {
 
     if (positions.length < 2) {
@@ -409,14 +480,10 @@ window.addEventListener('load', () => {
 
     const defaultTrainName = `Train${game.trains.length + 1}`
     const trainName = trainNameEl?.value?.trim() ? trainNameEl.value.trim() : defaultTrainName
-    const track = new Track(ctxTracks, positions, trainName)
-    tracks.add(track)
-    tracks.draw()
-    if (track) {
-      game.addTrain(ctx, ctxTemp, speed, track, numCoaches, trainName, 0, intersections)
-    } else {
-      console.log(`No tracks available to add a new train`)
-    }
+
+    game.addTrain(positions, speed, numCoaches, trainName, 0, intersections)
+    game.setPossibleStationLocations()
+
     //set the icon to play
     const startTrackBtn = document.querySelector('#startTrack')
     if (startTrackBtn) {
@@ -427,7 +494,61 @@ window.addEventListener('load', () => {
       cancelTrackBtn.style.display = 'none'
     }
 
+    startTrack = false
   }
+
+  function makeDraggable(element) {
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+    // You can use the whole div or a specific handle to drag
+    element.onmousedown = dragMouseDown;
+
+    function dragMouseDown(e) {
+      const interactiveSelector = 'input, textarea, select, button, label, i, a'
+      if (e.target.closest(interactiveSelector)) {
+        return
+      }
+      e.preventDefault();
+      // Get cursor position at startup
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      document.onmouseup = closeDragElement;
+      document.onmousemove = elementDrag;
+    }
+
+    function elementDrag(e) {
+      e.preventDefault();
+      // Calculate new cursor position
+      pos1 = pos3 - e.clientX;
+      pos2 = pos4 - e.clientY;
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      // Set the element's new position
+      element.style.top = (element.offsetTop - pos2) + "px";
+      element.style.left = (element.offsetLeft - pos1) + "px";
+    }
+
+    function closeDragElement() {
+      // Stop moving when mouse button is released
+      document.onmouseup = null;
+      document.onmousemove = null;
+    }
+
+  }
+
+  window.addCoach = function(trainNumber) {
+    game.addCoach(trainNumber)
+  }
+
+  window.removeCoach = function(trainNumber) {
+    game.removeCoach(trainNumber)
+  }
+
+  // Initialize dragging for your control group
+  const buttonGroup = document.querySelector('#buttonGroup1');
+  makeDraggable(buttonGroup);
+
+
 })
 
 function displayCollision(col, row) {
@@ -468,12 +589,6 @@ async function showCustomAlert(message) {
   new swal({
     title: 'Train Operations-Alert',
     text: message
-    // buttons: {
-    //   confirm: {
-    //     text: 'OK',
-    //     className: 'custom-confirm-button'
-    //   }
-    // }
   });
 }
 

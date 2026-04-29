@@ -1,5 +1,5 @@
 class Track {
-  constructor(ctxTracks, positions, trainName) {
+  constructor(ctxTracks, positions, trainName, gridSize = 100) {
     //positions is an array of position objects
     //each position object is {x:?,y:?}
     this.positions = positions
@@ -9,11 +9,14 @@ class Track {
     this.totalLength = 0
     this.ctxTracks = ctxTracks
     this.trainName=trainName 
+    this.gridSize = gridSize
+    this.possibleStationLocations = []
     //this.draw()
     //this.updateSegments()
     this.updatePositions()
     this.drawUsingNewPositions()
     this.updateSegmentsFromNewPositions()
+    this.updatePossibleStationLocations()
   }
 
   delete(position) {
@@ -29,8 +32,15 @@ class Track {
 
   updatePositions() {
     const tr = 100 //turning radius in pixels
-    this.newPositions.push(this.positions[0])
-    this.newPositions.push(this.positions[1])
+    const pushIfNotLast = (point) => {
+      if (!point) return
+      const lastPoint = this.newPositions[this.newPositions.length - 1]
+      if (lastPoint && lastPoint.x === point.x && lastPoint.y === point.y) return
+      this.newPositions.push(point)
+    }
+
+    pushIfNotLast(this.positions[0])
+    pushIfNotLast(this.positions[1])
     let pp, p, c
     for (let i = 2; i < this.positions.length; i++) {
       pp = this.positions[i - 2]  //previous to previous position
@@ -40,7 +50,7 @@ class Track {
       //check for straight line pattern
       if ((pp.x == p.x && p.x == c.x) || (pp.y == p.y && p.y == c.y)) {
         //do nothing
-        this.newPositions.push(this.positions[i])
+        pushIfNotLast(this.positions[i])
         continue
       }
       //pop the old value of p
@@ -152,15 +162,15 @@ class Track {
         }
       }
 
-      
 
-      this.newPositions.push(p0)
+
+      pushIfNotLast(p0)
       for(let i=0;i<n;i++){
         const newP = {x:p.x + deltax[i], y:p.y + deltay[i]}
-        this.newPositions.push(newP)
+        pushIfNotLast(newP)
       }
-      this.newPositions.push(p3)
-      this.newPositions.push(c)
+      pushIfNotLast(p3)
+      pushIfNotLast(c)
     }
   }
   buildSegments(positions) {
@@ -211,6 +221,30 @@ class Track {
     this.segments = forwardPath.segments
     this.returnSegments = returnPath.segments
     this.totalLength = forwardPath.totalLength
+  }
+
+  updatePossibleStationLocations() {
+    //possible station locations are the positions where the train changes direction. These are the positions where the train can stop without blocking the track for other trains.
+    this.possibleStationLocations = []
+    for (let i = 1; i < this.newPositions.length; i++) {
+      const prev = this.newPositions[i - 1]
+      const current = this.newPositions[i]
+      if ((prev.x !== current.x ) && (prev.y !== current.y )) {
+        continue
+      } else {
+        if (prev.x === current.x){
+          for(let n = 0; n <= Math.abs(current.y - prev.y)/this.gridSize; n ++){
+            this.possibleStationLocations.push({x:current.x,y:current.y + n*this.gridSize * Math.sign(prev.y - current.y)})
+          }
+        }
+        if (prev.y === current.y){
+          for(let n = 0; n <= Math.abs(current.x - prev.x)/this.gridSize; n ++){
+            this.possibleStationLocations.push({x:current.x + n*this.gridSize * Math.sign(prev.x - current.x),y:current.y})
+          }
+        }
+      } 
+    }
+    return this.possibleStationLocations
   }
 
   getPoseAtDistance(distance, useReturnSegments = false) {
@@ -289,7 +323,7 @@ class Track {
     this.ctxTracks.restore()
   }
   drawGrid() {
-    const gridSize = 100
+    const gridSize = this.gridSize
     const numCols = 1200 / gridSize
     const numRows = 800 / gridSize
     this.ctxTracks.strokeStyle = 'rgba(50,0,0,0.2)'
