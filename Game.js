@@ -4,13 +4,20 @@ import { Tracks } from './Tracks.js'
 import { Financials } from './Financials.js'
 import { Flyovers } from './Flyovers.js'
 import { Flyover } from './Flyover.js'
+import { createStation } from './Station.js'
+import { Intersections } from './Intersections.js'
+import { Population } from './Population.js'
+import { TravelPopulation} from './TravelPopulation.js'
 class Game {
-  TRAINCOLORS = ['rgba(255,0,0,0.5)',
-    'rgba(125,0,255,0.5)',
-    'rgba(0,0,255,0.5)',
-    'rgba(255,255,0,0.5)',
-    'rgba(255,0,255,0.5)',
-    'rgba(0,255,255,0.5)']
+
+  TRAINCONFIG = [
+    { defaultName: 'Red', Color: 'rgba(255,0,0,0.5)' },
+    { defaultName: 'Violet', Color: 'rgba(125,0,255,0.5)' },
+    { defaultName: 'Blue', Color: 'rgba(0,0,255,0.5)' },
+    { defaultName: 'Yellow', Color: 'rgba(255,255,0,0.5)' },
+    { defaultName: 'Magenta', Color: 'rgba(255,0,255,0.5)' },
+    { defaultName: 'Cyan', Color: 'rgba(0,255,255,0.5)' }
+  ]
 
   constructor(ctx, ctxTracks, ctxTemp, gridSize, OFFSET_X, OFFSET_Y) {
     this.ctx = ctx
@@ -20,12 +27,17 @@ class Game {
     this.OFFSET_X = OFFSET_X
     this.OFFSET_Y = OFFSET_Y
     this.trains = []
-    this.stations = new Flyovers(ctxTracks, gridSize, OFFSET_X, OFFSET_Y)
+    this.Flyovers = new Flyovers(ctxTracks, gridSize, OFFSET_X, OFFSET_Y)
     this.tracks = new Tracks(ctxTracks)
     this.ticksPerTimeUnit = 10000
     this.totalTimeUnits = 100
     this.financials = new Financials(this.totalTimeUnits)
     // this.intersections = intersections
+    this.population = new Population(ctx.canvas.width, ctx.canvas.height, gridSize)
+    this.travelPopulation = new TravelPopulation(this.population, ctx.canvas.width, ctx.canvas.height, gridSize)
+    //log population to check the values
+    console.log(this.population)
+    console.log(this.travelPopulation)
   }
   
   getCurrentTimePeriod() {
@@ -66,17 +78,17 @@ class Game {
     this.tracks.add(track)
   }
 
-  setPossibleStationLocations(locations){
-    this.stations.setPossibleStationLocations(locations)
+  setPossibleFlyoverLocations(locations){
+    this.Flyovers.setPossibleFlyoverLocations(locations)
   }
 
-  addStation(name, row, col) {
-    const station = new Flyover(name, row, col)
-    this.stations.addStation(station)
+  addFlyover(name, row, col) {
+    const flyover = new Flyover(name, row, col)
+    this.Flyovers.addFlyover(flyover)
   }
 
-  getNumberOfStations(){
-    return this.stations.getAllStations().length
+  getNumberOfFlyovers(){
+    return this.Flyovers.getAllFlyovers().length
   }
 
   addTrain( positions, engineSpeed,  numCoaches, trainName, delayBeforeStart, intersections) {
@@ -89,10 +101,29 @@ class Game {
     } else {
       trainNumber = this.trains.length + 1
     }
-    const track = new Track(this.ctxTracks, positions)
+    const stations = []
+    const stationType = numCoaches <= 5 ? 'small' : numCoaches <= 10 ? 'medium' : 'large'
+    const firstPosition = positions[0]
+    const lastPosition = positions[positions.length - 1]
+    if(firstPosition.x == lastPosition.x && firstPosition.y == lastPosition.y){
+      // if the first and the last position are same, then we can add a small station at the first position only
+      stations.push(createStation(this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0,trainNumber, `${trainName}-S`, 30, false, stationType))
+      intersections.updateIntersectionsWithStationLocation(firstPosition.y/this.gridSize, firstPosition.x/this.gridSize, 'Station')
+      this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
+    } else{
+      //we add small stations at both starting and ending points
+      stations.push(createStation(this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0,trainNumber, `${trainName}-S`, 30, false, stationType))
+      stations.push(createStation(this.ctxTracks, lastPosition.x, lastPosition.y, this.gridSize, 0, trainNumber, `${trainName}-E`, 30, false, stationType))
+      intersections.updateIntersectionsWithStationLocation(firstPosition.y/this.gridSize, firstPosition.x/this.gridSize, 'Station')
+      intersections.updateIntersectionsWithStationLocation(lastPosition.y/this.gridSize, lastPosition.x/this.gridSize, 'Station')
+      this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
+      this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
+    }
+    const track = new Track(this.ctxTracks, positions,trainName,this.gridSize, stations)
     this.addTrack(track)
-    const color = this.TRAINCOLORS[(trainNumber - 1) % this.TRAINCOLORS.length]
-    const train = new Train(this.ctx, this.ctxTemp, engineSpeed, track, color, numCoaches, trainName, delayBeforeStart, trainNumber, intersections, this.financials, () => this.getCurrentTimeIndex())
+    const colorConfig = this.TRAINCONFIG[(trainNumber - 1) % this.TRAINCONFIG.length]
+    const color = colorConfig.Color
+    const train = new Train(this.ctx, this.ctxTemp, engineSpeed, track, color, numCoaches, trainName, delayBeforeStart, trainNumber, intersections, this.financials, this.travelPopulation, () => this.getCurrentTimeIndex())
     const length = track.getTotalLength()
     const currentTimeIndex = this.getCurrentTimeIndex()
     this.financials.incrementTrackCost(currentTimeIndex, trainNumber, length)
@@ -156,7 +187,7 @@ class Game {
       if (trainElement) {
         trainElement.style.filter = "blur(5px)"
       }
-      this.stations.draw()
+      this.Flyovers.draw()
     }
   }
 }

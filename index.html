@@ -19,7 +19,7 @@
     <canvas id="canvas_results" style="position:fixed"></canvas>
     <canvas id="canvas_temp"></canvas>
     <div id="controls">
-      <div id="buttonGroup1" class= "modal" style="display:none; position:fixed; top:10px; left:10px; flex-direction:column; gap:10px">
+      <div id="buttonGroup1" class= "modal" style="width:200px; display:none; position:fixed; top:10px; left:10px; flex-direction:column; gap:10px">
         <div>
           <label for="startPauseBtn">Start/Pause All:</label>
           <i class="fas fa-play" id="startPauseBtn" title="Start/Pause All Trains" style="cursor:pointer"></i>
@@ -216,13 +216,16 @@
         </div>
         <div>
           <label for="cancelTrack">Abort/Cancel Track & Train:</label>
-          <i class="fas fa-times" title="Cancel Track" id="cancelTrack" style="display:none" onclick="canceltrack()"></i>
+          <i class="fas fa-times" title="Cancel Track" id="cancelTrack" onclick="canceltrack()"></i>
         </div>
       </div>
-      <div id="buttonGroup2" class= "modal" style="display:none; position:fixed; top:10px;left:100px; flex-direction:column; gap:10px">
-        <label for="startStation">Start Flyover Specification. Please note that </label>
-        <i class="fas fa-play" id="startStation" title="Add Flyover" onclick="startStation()"></i>
-        <i class="fas fa-times" id="cancelStation" title="Cancel Flyover" onclick="cancelStation()"></i>
+      <div id="buttonGroup2" class= "modal" style="width:200px; display:none; position:fixed; top:10px;left:100px; flex-direction:column; gap:10px">
+        <label for="startFlyover">Start Flyover Specification. Please note that the game will display the locations where you will gain
+          by building a flyover to avoid collisions.
+        </label>
+        <i class="fas fa-play" id="startFlyover" title="Add Flyover" onclick="startFlyover()"></i>
+        <label for="cancelFlyover">If you change your mind you can Cancel the flyover specification.</label>
+        <i class="fas fa-times" id="cancelFlyover" title="Cancel Flyover" onclick="cancelFlyover()"></i>
       </div>
     </div>
     

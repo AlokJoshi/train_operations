@@ -6,33 +6,33 @@ class Flyovers {
     this.gridSize = gridSize
     this.offsetX = offsetX
     this.offsetY = offsetY
-    this.stations = []
-    this.possibleStationLocations = []
+    this.Flyovers = []
+    this.possibleFlyoverLocations = []
   }
-  setPossibleStationLocations(locations) {
-    this.possibleStationLocations = locations
+  setPossibleFlyoverLocations(locations) {
+    this.possibleFlyoverLocations = locations
   }
-  addStation(station) {
-    this.stations.push(station)
-    station.draw(this.ctx, this.gridSize, this.offsetX, this.offsetY)
-    return station
+  addFlyover(Flyover) {
+    this.Flyovers.push(Flyover)
+    Flyover.draw(this.ctx, this.gridSize, this.offsetX, this.offsetY)
+    return Flyover
   }
-  getStationAtPosition(row, col) {
-    return this.stations.find(station => station.row === row && station.col === col)
+  getFlyoverAtPosition(row, col) {
+    return this.Flyovers.find(Flyover => Flyover.row === row && Flyover.col === col)
   }
-  isStationAtPosition(row, col) {
-    return this.stations.some(station => station.row === row && station.col === col)
+  isFlyoverAtPosition(row, col) {
+    return this.Flyovers.some(Flyover => Flyover.row === row && Flyover.col === col)
   }
-  getAllStations() {
-    return this.stations
+  getAllFlyovers() {
+    return this.Flyovers
   }
-  deleteStation(row, col) {
-    this.stations = this.stations.filter(station => !(station.row === row && station.col === col))
+  deleteFlyover(row, col) {
+    this.Flyovers = this.Flyovers.filter(Flyover => !(Flyover.row === row && Flyover.col === col))
     // Intersections.updateIntersection(row, col, null)
   }
   draw() {
-    this.stations.forEach(station => {
-      station.draw(this.ctx, this.gridSize, this.offsetX, this.offsetY)
+    this.Flyovers.forEach(Flyover => {
+      Flyover.draw(this.ctx, this.gridSize, this.offsetX, this.offsetY)
     })
   }
 }

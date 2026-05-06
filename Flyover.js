@@ -1,6 +1,6 @@
 class Flyover{
-  //station objet becomes necessary so that we do not register collisions at the station intersection
-  //row and col are 0 based indices of the station in the grid. They are used to determine the position of the station and to check for collisions at the station intersection.
+  //Flyover objet becomes necessary so that we do not register collisions at the Flyover intersection
+  //row and col are 0 based indices of the Flyover in the grid. They are used to determine the position of the Flyover and to check for collisions at the Flyover intersection.
   constructor(name, row, col) {
     this.name = name
     this.row = row

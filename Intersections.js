@@ -48,7 +48,7 @@ class Intersections {
     if (row < 0 || row >= this.rowCount || col < 0 || col >= this.colCount) {
       return
     }
-    if (this.intersections[row][col] === "station") {
+    if (this.intersections[row][col] === "Flyover" || this.intersections[row][col] === "Station") {
       return
     }
     if (trainNumber === null || trainNumber === undefined) {
@@ -73,11 +73,18 @@ class Intersections {
     }
   }
 
-  updateIntersectionsWithStationLocation(row, col, station) {
+  updateIntersectionsWithFlyoverLocation(row, col, Flyover) {
     if (row < 0 || row >= this.rowCount || col < 0 || col >= this.colCount) {
       return
     }
-    this.intersections[row][col] = station? "station" : null
+    this.intersections[row][col] = Flyover? "Flyover" : null
+  }
+
+  updateIntersectionsWithStationLocation(row, col, Station) {
+    if (row < 0 || row >= this.rowCount || col < 0 || col >= this.colCount) {
+      return
+    }
+    this.intersections[row][col] = Station? "Station" : null
   }
 
   removeTrain(trainNumber) {

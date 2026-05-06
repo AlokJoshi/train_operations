@@ -1,5 +1,5 @@
 class Track {
-  constructor(ctxTracks, positions, trainName, gridSize = 100) {
+  constructor(ctxTracks, positions, trainName, gridSize = 100, stations) {
     //positions is an array of position objects
     //each position object is {x:?,y:?}
     this.positions = positions
@@ -10,13 +10,16 @@ class Track {
     this.ctxTracks = ctxTracks
     this.trainName=trainName 
     this.gridSize = gridSize
-    this.possibleStationLocations = []
+    this.stations = stations || []
+    this.possibleFlyoverLocations = []
     //this.draw()
     //this.updateSegments()
     this.updatePositions()
     this.drawUsingNewPositions()
     this.updateSegmentsFromNewPositions()
-    this.updatePossibleStationLocations()
+    this.updatePossibleFlyoverLocations()
+    //when the track is created we already know the location of the two stations (unless the user has created a circular 
+    //track in which case we will be adding only one station.) So we can directly add the two stations at the beginning and the end of the track. This way we can ensure that there are always two stations on the track for the train to stop at and generate revenue from operations.
   }
 
   delete(position) {
@@ -223,9 +226,11 @@ class Track {
     this.totalLength = forwardPath.totalLength
   }
 
-  updatePossibleStationLocations() {
-    //possible station locations are the positions where the train changes direction. These are the positions where the train can stop without blocking the track for other trains.
-    this.possibleStationLocations = []
+  updatePossibleFlyoverLocations() {
+    //possible Flyover locations are the positions where two trains cross each other.
+    //User need not invest in the flyover but then he/she has to manually make sure that two trains do 
+    // not cross each other at the same time at these locations. If user invests in the flyover, then the trains can cross each other at these locations without any issue. So these are the positions where the train can stop without blocking the track for other trains.
+    this.possibleFlyoverLocations = []
     for (let i = 1; i < this.newPositions.length; i++) {
       const prev = this.newPositions[i - 1]
       const current = this.newPositions[i]
@@ -234,17 +239,17 @@ class Track {
       } else {
         if (prev.x === current.x){
           for(let n = 0; n <= Math.abs(current.y - prev.y)/this.gridSize; n ++){
-            this.possibleStationLocations.push({x:current.x,y:current.y + n*this.gridSize * Math.sign(prev.y - current.y)})
+            this.possibleFlyoverLocations.push({x:current.x,y:current.y + n*this.gridSize * Math.sign(prev.y - current.y)})
           }
         }
         if (prev.y === current.y){
           for(let n = 0; n <= Math.abs(current.x - prev.x)/this.gridSize; n ++){
-            this.possibleStationLocations.push({x:current.x + n*this.gridSize * Math.sign(prev.x - current.x),y:current.y})
+            this.possibleFlyoverLocations.push({x:current.x + n*this.gridSize * Math.sign(prev.x - current.x),y:current.y})
           }
         }
       } 
     }
-    return this.possibleStationLocations
+    return this.possibleFlyoverLocations
   }
 
   getPoseAtDistance(distance, useReturnSegments = false) {
@@ -321,6 +326,8 @@ class Track {
     // this.ctxTracks.closePath()
     this.ctxTracks.stroke()
     this.ctxTracks.restore()
+
+    this.stations.forEach(station => station.draw())
   }
   drawGrid() {
     const gridSize = this.gridSize

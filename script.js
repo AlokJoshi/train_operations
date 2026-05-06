@@ -26,7 +26,7 @@ canvas.width = canvasTracks.width = canvasTemp.width = canvasResults.width = CAN
 
 let paused = true
 let startTrack = false
-let startStation = false
+let startFlyover = false
 let click_error = 20
 let validTrackPoints = new Set()
 
@@ -48,12 +48,11 @@ let positions = [
   { x: CANVASMARGIN + 0, y: CANVASMARGIN + 0 },
   { x: CANVASMARGIN + 400, y: CANVASMARGIN + 0 },
   { x: CANVASMARGIN + 400, y: CANVASMARGIN + 800 },
-  { x: CANVASMARGIN + 0, y: CANVASMARGIN + 800 },
-  { x: CANVASMARGIN + 0, y: CANVASMARGIN + 0 },
+  { x: CANVASMARGIN + 200, y: CANVASMARGIN + 800 }
 ]
 
 
-game.addTrain(positions, 19, 10, 'Bullet Train', 0, intersections)
+game.addTrain(positions, 19, 3, 'Bullet Train', 0, intersections)
 
 
 positions = [
@@ -62,10 +61,9 @@ positions = [
   { x: CANVASMARGIN + 500, y: CANVASMARGIN + 500 },
   { x: CANVASMARGIN + 1100, y: CANVASMARGIN + 500 },
   { x: CANVASMARGIN + 1100, y: CANVASMARGIN + 700 },
-  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 700 },
-  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 },
+  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 700 }
 ]
-game.addTrain(positions, 18, 5, 'Express Train', 0, intersections)
+game.addTrain(positions, 18, 5, 'Express Train', 1, intersections)
 
 const drawScene = () => {
   if (!paused) {
@@ -97,6 +95,7 @@ drawScene()
 window.addEventListener('load', () => {
   const startPausebutton = document.querySelector('#startPauseBtn')
   let positions = []
+  let showingPopulationMap = false
   const handleTrainHotkeys = (event) => {
 
     // NEW: Do nothing if the user is typing in an input or textarea
@@ -118,18 +117,45 @@ window.addEventListener('load', () => {
       } else {
         buttonGroup1.style.display = 'none'
       }
-    } else if (event.code === 'KeyS') {
-      //if the code is S then show the possible station related controls
-      const stationControls = document.querySelector('#buttonGroup2')
-      if (stationControls.style.display === 'none') {
-        stationControls.style.display = 'flex'
+    } else if (event.code === 'KeyF') {
+      //if the code is F then show the possible Flyover related controls
+      const FlyoverControls = document.querySelector('#buttonGroup2')
+      if (FlyoverControls.style.display === 'none') {
+        FlyoverControls.style.display = 'flex'
       } else {
-        stationControls.style.display = 'none'
+        FlyoverControls.style.display = 'none'
       }
+    } else if (event.code === 'KeyX') {
+      //if the code is X then show the population Map
+      if (!showingPopulationMap) {
+        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        const populationMap = game.population.getAll()
+        const maxPopulation = Math.max(...populationMap.map(p => p.population))
+        const rMaxSquare = (gridSize / 2) ** 2
+        populationMap.forEach(p => {
+          const radiusSquare = rMaxSquare * (p.population / maxPopulation)
+          const radius = Math.sqrt(radiusSquare)
+          ctxTemp.beginPath()
+          ctxTemp.arc(p.x, p.y, radius, 0, 2 * Math.PI)
+          ctxTemp.fillStyle = 'rgba(255,0,0,0.5)'
+          ctxTemp.fill()
+        })
+      } else {
+        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+      }
+      showingPopulationMap = !showingPopulationMap
+
+    } else if (event.code === 'KeyP') {
+      //if the code is P then Start/Pause the game
+      startPauseGame()
     }
   }
 
   startPausebutton.addEventListener('click', () => {
+    startPauseGame()
+  })
+
+  const startPauseGame = () => {
     //switch the play button to pause
     const startPauseButton = document.querySelector('#startPauseBtn')
     if (startPauseButton.classList.contains('fa-play')) {
@@ -141,8 +167,7 @@ window.addEventListener('load', () => {
     }
     paused = !paused
     drawScene()
-  })
-
+  }
 
   document.addEventListener('keydown', handleTrainHotkeys)
 
@@ -169,41 +194,45 @@ window.addEventListener('load', () => {
         updateCanvasTemp(x, y)
       }
     }
-    if (startStation) {
+    if (startFlyover) {
       const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
       const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
       if ((Math.abs(x - point.x) < click_error) && (Math.abs(y - point.y) < click_error)) {
         // console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y}`)
-        console.log(`Flyover added at (${x / gridSize},${y / gridSize})`)
+        console.log(`Flyover added at (${(x / gridSize) + 1},${(y / gridSize) + 1})`)
         swal.fire({
           title: `Add Flyover`,
-          text: `Do you want to add a station at (Row ${y / gridSize}, Col ${x / gridSize})?`,
+          text: `Do you want to add a Flyover at (Row ${(y / gridSize) + 1}, Col ${(x / gridSize) + 1})?`,
           icon: 'question',
           showCancelButton: true,
           confirmButtonText: 'Yes',
           cancelButtonText: 'No'
         }).then((result) => {
           if (result.isConfirmed) {
-            const n = game.getNumberOfStations()
-            intersections.updateIntersectionsWithStationLocation(y / gridSize, x / gridSize, true)
-            //use swal to ask user for station name and then add the station to the game with the given name and the row and col corresponding to the x and y coordinates of the click event. The station name should be in the format "Flyover n" where n is the number of stations currently in the game + 1. After adding the station, we should also update the intersections object to mark the intersection at the station location as a station intersection so that we do not register collisions at that intersection.
+            const n = game.getNumberOfFlyovers()
+            intersections.updateIntersectionsWithFlyoverLocation(y / gridSize, x / gridSize, true)
+            //use swal to ask user for Flyover name and then add the Flyover to the game with the given name and the row and col corresponding to the x and y coordinates of the click event. The Flyover name should be in the format "Flyover n" where n is the number of Flyovers currently in the game + 1. After adding the Flyover, we should also update the intersections object to mark the intersection at the Flyover location as a Flyover intersection so that we do not register collisions at that intersection.
+            //convert flyover name to 04-08 format where 04 is the row and 08 is the column. This is to make it easier for the user to identify the location of the Flyover based on its name.
+            const defaultFlyoverName = `Flyover ${String((y / gridSize) + 1).padStart(2, '0')}-${String((x / gridSize) + 1).padStart(2, '0')}`
             swal.fire({
               title: 'Enter Flyover Name',
               input: 'text',
               inputLabel: 'Flyover Name',
-              inputValue: `Flyover${n + 1}`,
+              inputValue: defaultFlyoverName,
               showCancelButton: true,
               confirmButtonText: 'Add Flyover',
               cancelButtonText: 'Cancel',
               inputValidator: (value) => {
                 if (!value) {
-                  return 'Please enter a station name'
+                  return 'Please enter a Flyover name'
                 }
                 return null
               }
             }).then((result) => {
               if (result.isConfirmed) {
-                game.addStation(result.value, y / gridSize, x / gridSize)
+                //as far as game is concerned the Flyover is added counting row and column from 0
+                game.addFlyover(result.value, y / gridSize, x / gridSize)
+                startFlyover = false
               }
             })
           }
@@ -229,7 +258,7 @@ window.addEventListener('load', () => {
         event.target.style = "cursor:default"
       }
     }
-    if (startStation) {
+    if (startFlyover) {
       const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
       const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
       if (Math.abs(x - point.x) < click_error && Math.abs(y - point.y) < click_error) {
@@ -247,22 +276,22 @@ window.addEventListener('load', () => {
     positions = []
   })
 
-  window.startStation = function () {
-    startStation = true
+  window.startFlyover = function () {
+    startFlyover = true
     startTrack = false
-    window.showPossibleStationLocations()
+    window.showPossibleFlyoverLocations()
   }
 
-  window.cancelStation = function () {
-    startStation = false
+  window.cancelFlyover = function () {
+    startFlyover = false
     document.querySelector('#canvas_temp').style = 'cursor:default'
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
   }
 
-  window.setPossibleStationLocations = function () {
+  window.setPossibleFlyoverLocations = function () {
     const possibleLocations = []
     game.trains.forEach((train, index) => {
-      train.track.possibleStationLocations.forEach(location => {
+      train.track.possibleFlyoverLocations.forEach(location => {
         possibleLocations.forEach(possibleLocation => {
           if (possibleLocation.location.x === location.x && possibleLocation.location.y === location.y && possibleLocation.index !== index) {
             possibleLocation.count++
@@ -271,13 +300,13 @@ window.addEventListener('load', () => {
         possibleLocations.push({ location: location, index, count: 1 })
       })
     })
-    stations.setPossibleStationLocations(possibleLocations.map(location => location.location))
+    Flyovers.setPossibleFlyoverLocations(possibleLocations.map(location => location.location))
   }
 
-  window.showPossibleStationLocations = function () {
+  window.showPossibleFlyoverLocations = function () {
     const possibleLocations = []
     game.trains.forEach((train, index) => {
-      train.track.possibleStationLocations.forEach(location => {
+      train.track.possibleFlyoverLocations.forEach(location => {
         possibleLocations.forEach(possibleLocation => {
           if (possibleLocation.location.x === location.x && possibleLocation.location.y === location.y && possibleLocation.index !== index) {
             possibleLocation.count++
@@ -478,11 +507,12 @@ window.addEventListener('load', () => {
       ? parsedNumCoaches
       : 5
 
-    const defaultTrainName = `Train${game.trains.length + 1}`
+    const colorConfig = game.TRAINCONFIG[(game.trains.length) % game.TRAINCONFIG.length]
+    const defaultTrainName = colorConfig.defaultName
     const trainName = trainNameEl?.value?.trim() ? trainNameEl.value.trim() : defaultTrainName
 
     game.addTrain(positions, speed, numCoaches, trainName, 0, intersections)
-    game.setPossibleStationLocations()
+    game.setPossibleFlyoverLocations()
 
     //set the icon to play
     const startTrackBtn = document.querySelector('#startTrack')
@@ -536,17 +566,20 @@ window.addEventListener('load', () => {
 
   }
 
-  window.addCoach = function(trainNumber) {
+  window.addCoach = function (trainNumber) {
     game.addCoach(trainNumber)
   }
 
-  window.removeCoach = function(trainNumber) {
+  window.removeCoach = function (trainNumber) {
     game.removeCoach(trainNumber)
   }
 
   // Initialize dragging for your control group
-  const buttonGroup = document.querySelector('#buttonGroup1');
-  makeDraggable(buttonGroup);
+  const buttonGroup1 = document.querySelector('#buttonGroup1');
+  makeDraggable(buttonGroup1);
+
+  const buttonGroup2 = document.querySelector('#buttonGroup2');
+  makeDraggable(buttonGroup2);
 
 
 })

@@ -1,0 +1,22 @@
+A factory function like createStation(name, x, y, dwellTicks) has these advantages over new Station(...):
+
+No new keyword required
+
+Calling createStation(...) is just a function call — no risk of forgetting new and silently getting undefined or corrupting the global scope.
+Flexible return type
+
+The factory can decide what to return — a plain object, a class instance, a frozen object, or even a different subtype based on input (e.g., a terminus station vs. a passing station), without changing the call site.
+Easier to compose and test
+
+A plain object returned from a factory has no prototype chain to worry about. Mocking in tests is trivial — just pass in a literal { name, x, y, dwellTicks }.
+Encapsulation without classes
+
+You can close over private state using variables in the factory's scope, without needing #privateField syntax.
+Consistent with how your codebase works
+
+Your existing objects (Flyover, Intersection) are constructed with new, but station data is essentially a value object — it holds data, not behavior. A factory returning a plain object is idiomatic for that.
+Practical example in your context:
+
+
+// Factory — returns a plain data objectfunction createStation(name, x, y, dwellTicks, stopOnReturn = true) {  return { name, x, y, dwellTicks, stopOnReturn, distanceFromStart: null }}// vs class — adds prototype overhead for a pure data recordclass Station {  constructor(name, x, y, dwellTicks, stopOnReturn = true) { ... }}
+For a station, which is just a data record attached to a route, the factory is the right choice — it produces plain, serializable objects with no overhead.

@@ -1,15 +1,17 @@
 class Financials {
   constructor(totalTimeUnits = 100) {
-    this.totalRevenue = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0)) 
-    this.totalExpenses = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0)) 
-    this.profit = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0)) 
-
-    this.stationCost = 20000000
+    this.totalRevenue = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0))
+    this.totalExpenses = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0))
+    this.profit = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0))
+    this.STATION_COST_SMALL = 100000
+    this.STATION_COST_MEDIUM = 400000
+    this.STATION_COST_LARGE = 1000000
+    this.FlyoverCost = 20000000
     this.engineCost = 3000000
     this.coachCost = 500000
-    this.collisionCost = 20000000 
+    this.collisionCost = 20000000
     this.trackCostPerUnit = 1000
-    this.depreciationOnEngineAndCoaches=0.80
+    this.depreciationOnEngineAndCoaches = 0.80
     this.revenuePerUnitDistancePerCoach = 5
   }
   incrementRevenue(timeIndex, trainIndex, amount) {
@@ -49,28 +51,28 @@ class Financials {
   }
 
   //this is called externally and hence we use ticks, trainNumber to call it
-  buyCoach(timeIndex,trainNumber,numCoaches) {
+  buyCoach(timeIndex, trainNumber, numCoaches) {
     const trainIndex = trainNumber - 1
     const cost = this.coachCost * numCoaches
-    this.incrementExpenses(timeIndex,trainIndex,cost)
+    this.incrementExpenses(timeIndex, trainIndex, cost)
     return cost
   }
 
   //this is called externally and hence we use ticks, trainNumber to call it
-  buyEngine(timeIndex,trainNumber) {
+  buyEngine(timeIndex, trainNumber) {
     const trainIndex = trainNumber - 1
-    this.incrementExpenses(timeIndex,trainIndex,this.engineCost)
+    this.incrementExpenses(timeIndex, trainIndex, this.engineCost)
     return this.engineCost
   }
-  
+
   //this is called externally and hence we use ticks, trainNumber to call it
-  incrementTrackCost(timeIndex,trainNumber,distance) {
+  incrementTrackCost(timeIndex, trainNumber, distance) {
     const trainIndex = trainNumber - 1
     const cost = this.trackCostPerUnit * distance
-    this.incrementExpenses(timeIndex,trainIndex,cost)
+    this.incrementExpenses(timeIndex, trainIndex, cost)
     return cost
   }
-  
+
   //this is called externally and hence we use ticks, trainNumber to call it
   incrementRevenueFromOperations(timeIndex, trainNumber, distance, numCoaches) {
     const trainIndex = trainNumber - 1
@@ -83,9 +85,28 @@ class Financials {
   incrementCollisionCost(timeIndex, trainNumber1, trainNumber2) {
     const trainIndex1 = trainNumber1 - 1
     const trainIndex2 = trainNumber2 - 1
-    this.incrementExpenses(timeIndex, trainIndex1, this.collisionCost/2)
-    this.incrementExpenses(timeIndex, trainIndex2, this.collisionCost/2)
+    this.incrementExpenses(timeIndex, trainIndex1, this.collisionCost / 2)
+    this.incrementExpenses(timeIndex, trainIndex2, this.collisionCost / 2)
     return this.collisionCost
+  }
+
+  //increment the cost of flyover which is shared by two trains that are involved
+  incrementFlyoverCost(timeIndex, trainNumber1, trainNumber2) {
+    const trainIndex1 = trainNumber1 - 1
+    const trainIndex2 = trainNumber2 - 1
+    this.incrementExpenses(timeIndex, trainIndex1, this.FlyoverCost / 2)
+    this.incrementExpenses(timeIndex, trainIndex2, this.FlyoverCost / 2)
+    return this.FlyoverCost
+  }
+
+  getStationCost(type){
+    return type === 'small' ? this.STATION_COST_SMALL : type === 'medium' ? this.STATION_COST_MEDIUM : this.STATION_COST_LARGE
+  }
+  
+  addStation(timeIndex, trainNumber, type) {
+    const cost = this.getStationCost(type)
+    const trainIndex = trainNumber - 1
+    this.incrementExpenses(timeIndex, trainIndex, cost)
   }
 }
 export { Financials }
