@@ -213,9 +213,11 @@ class Train {
             // if (this.isReturning) debugger
             const toKey = `${nextStation.stationNumber}`
             const travelPopTo = this.travelPopulation.travelPopulation.get(`${nextStation.x},${nextStation.y}`)?.population ?? 0
-            totalBoarding += Math.ceil(travelPopTo * travelPopFrom / this.totalTravelPopulation)
+            //add randomness of +- 30% to the number of passengers boarding to make it more realistic and to avoid having the same number of passengers boarding at each station for the same travel population numbers. This is because in reality, the number of passengers boarding at a station can vary even if the travel population is the same due to various factors such as time of day, day of week, special events, etc. This will add some variability to our simulation and make it more interesting.
+            let boarding = Math.ceil(travelPopTo * travelPopFrom * (0.7+0.6*Math.random())/ this.totalTravelPopulation)
+            totalBoarding += boarding
             const routeKey = `${thisStationKey}-${toKey}`
-            this.passengerMap.set(routeKey, Math.ceil(travelPopTo * travelPopFrom / this.totalTravelPopulation))
+            this.passengerMap.set(routeKey, boarding)
           }
         }
         // }
@@ -233,15 +235,17 @@ class Train {
             }
           }
         }
+
+        const prevPassengersOnBoard = this.passengersOnBoard
         this.passengersOnBoard = this.passengersOnBoard + totalBoarding - totalDeboarding
         // ticket sales is based on total boarding passengers and a fixed ticket price to keep it simple. We can also add a multiplier based on the distance between the from station and to station to make it more realistic but for now we will keep it simple with a fixed ticket price.
         const currentTimeIndex = this.getCurrentTimeIndex()
         this.financials.incrementRevenueFromTickets(currentTimeIndex, this.trainNumber, totalBoarding * Train.ticketPrice)
-        console.log(`Train ${this.trainNumber} at station ${thisStationKey} deboarded ${totalDeboarding} passengers, boarded ${totalBoarding} passengers, total passengers on board: ${this.passengersOnBoard}`)
+        // console.log(`Train ${this.trainNumber} at station ${thisStationKey} deboarded ${totalDeboarding} passengers, boarded ${totalBoarding} passengers, total passengers on board: ${this.passengersOnBoard}`)
         if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
-        this.infodiv.textContent = `T${this.trainNumber} alighted ${totalDeboarding} boarded ${totalBoarding} on board ${this.passengersOnBoard}`
+          this.infodiv.textContent = `T${this.trainNumber} Passengers: ${prevPassengersOnBoard} - ${totalDeboarding} + ${totalBoarding} = ${this.passengersOnBoard}`
         } else {
-          this.infodiv.textContent = `T${this.trainNumber} boarded ${totalBoarding}, on board ${this.passengersOnBoard}`
+          this.infodiv.textContent = `T${this.trainNumber} Passengers: + ${totalBoarding} = ${this.passengersOnBoard}`
         }
       }
     }
