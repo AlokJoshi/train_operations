@@ -8,6 +8,7 @@ import { createStation } from './Station.js'
 import { Intersections } from './Intersections.js'
 import { Population } from './Population.js'
 import { TravelPopulation} from './TravelPopulation.js'
+
 class Game {
 
   TRAINCONFIG = [
@@ -91,6 +92,21 @@ class Game {
     return this.Flyovers.getAllFlyovers().length
   }
 
+  validateUniqueStationDistances(stations, trainName) {
+    const seenDistances = new Map()
+    for (const station of stations) {
+      const distance = station.distanceFromStart
+      if (seenDistances.has(distance)) {
+        const firstStationName = seenDistances.get(distance)
+        console.warn(
+          `[Station Guard] Duplicate distanceFromStart (${distance}) for train ${trainName}: ${firstStationName} and ${station.name}`
+        )
+      } else {
+        seenDistances.set(distance, station.name)
+      }
+    }
+  }
+
   addTrain( positions, engineSpeed,  numCoaches, trainName, delayBeforeStart, intersections) {
 
     // if there is a train that is removed and has null value in the trains array, we can reuse that train slot for the new train. This way we can keep the train number consistent and avoid issues with train numbers changing after a train is removed.
@@ -101,25 +117,32 @@ class Game {
     } else {
       trainNumber = this.trains.length + 1
     }
-    const stations = []
+    // const stations = new Stations()
     const stationType = numCoaches <= 5 ? 'small' : numCoaches <= 10 ? 'medium' : 'large'
     const firstPosition = positions[0]
     const lastPosition = positions[positions.length - 1]
+    const track = new Track(this.ctxTracks, positions,trainName,this.gridSize)
+
     if(firstPosition.x == lastPosition.x && firstPosition.y == lastPosition.y){
+      alert('The starting and ending positions are the same. Please choose different positions for the starting and ending points.')
+      return
       // if the first and the last position are same, then we can add a small station at the first position only
-      stations.push(createStation(this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0,trainNumber, `${trainName}-S`, 30, false, stationType))
-      intersections.updateIntersectionsWithStationLocation(firstPosition.y/this.gridSize, firstPosition.x/this.gridSize, 'Station')
-      this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
+      // stations.addStation(createStation(this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0 , `${trainName}-S`, 30, stationType))
+      // intersections.updateIntersectionsWithStationLocation(firstPosition.y/this.gridSize, firstPosition.x/this.gridSize, 'Station')
+      // this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
     } else{
       //we add small stations at both starting and ending points
-      stations.push(createStation(this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0,trainNumber, `${trainName}-S`, 30, false, stationType))
-      stations.push(createStation(this.ctxTracks, lastPosition.x, lastPosition.y, this.gridSize, 0, trainNumber, `${trainName}-E`, 30, false, stationType))
+      track.addStation(createStation(this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0 , `${trainName}-S`, 30, false, stationType))
+      track.addStation(createStation(this.ctxTracks, lastPosition.x, lastPosition.y, this.gridSize, 0,  `${trainName}-E`, 30, false, stationType))
       intersections.updateIntersectionsWithStationLocation(firstPosition.y/this.gridSize, firstPosition.x/this.gridSize, 'Station')
       intersections.updateIntersectionsWithStationLocation(lastPosition.y/this.gridSize, lastPosition.x/this.gridSize, 'Station')
       this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
       this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
     }
-    const track = new Track(this.ctxTracks, positions,trainName,this.gridSize, stations)
+    // if (stations.length > 1) {
+    //   stations[1].distanceFromStart = track.totalLength
+    // }
+    this.validateUniqueStationDistances(track.stations.getAllStations(), trainName)
     this.addTrack(track)
     const colorConfig = this.TRAINCONFIG[(trainNumber - 1) % this.TRAINCONFIG.length]
     const color = colorConfig.Color
@@ -139,6 +162,7 @@ class Game {
       }
       trainElement.style.backgroundColor = color
     }
+    return trainNumber
   }
   startStopTrain(trainNumber) {
     if (trainNumber <= this.trains.length) {
@@ -188,6 +212,14 @@ class Game {
         trainElement.style.filter = "blur(5px)"
       }
       this.Flyovers.draw()
+    }
+  }
+  addStation(trainNumber, x, y, name, stopDuration, stationType) {
+    if (trainNumber <= this.trains.length) {
+      const train = this.trains[trainNumber - 1]
+      const station = createStation(this.ctxTracks, x, y, this.gridSize, 0, name, stopDuration, stationType)
+      train.addStation(station)
+      this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
     }
   }
 }

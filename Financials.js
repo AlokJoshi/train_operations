@@ -102,11 +102,17 @@ class Financials {
   getStationCost(type){
     return type === 'small' ? this.STATION_COST_SMALL : type === 'medium' ? this.STATION_COST_MEDIUM : this.STATION_COST_LARGE
   }
-  
+
   addStation(timeIndex, trainNumber, type) {
     const cost = this.getStationCost(type)
     const trainIndex = trainNumber - 1
     this.incrementExpenses(timeIndex, trainIndex, cost)
+  }
+
+  incrementRevenueFromTickets(timeIndex, trainNumber, amount) {
+    const trainIndex = trainNumber - 1
+    this.incrementRevenue(timeIndex, trainIndex, amount)
+    return amount
   }
 }
 export { Financials }

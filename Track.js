@@ -1,5 +1,7 @@
+import { Stations } from './Stations.js'
+
 class Track {
-  constructor(ctxTracks, positions, trainName, gridSize = 100, stations) {
+  constructor(ctxTracks, positions, trainName, gridSize = 100) {
     //positions is an array of position objects
     //each position object is {x:?,y:?}
     this.positions = positions
@@ -10,7 +12,7 @@ class Track {
     this.ctxTracks = ctxTracks
     this.trainName=trainName 
     this.gridSize = gridSize
-    this.stations = stations || []
+    this.stations = new Stations()
     this.possibleFlyoverLocations = []
     //this.draw()
     //this.updateSegments()
@@ -20,6 +22,44 @@ class Track {
     this.updatePossibleFlyoverLocations()
     //when the track is created we already know the location of the two stations (unless the user has created a circular 
     //track in which case we will be adding only one station.) So we can directly add the two stations at the beginning and the end of the track. This way we can ensure that there are always two stations on the track for the train to stop at and generate revenue from operations.
+  }
+
+  getStations() {
+    return this.stations.getAllStations()
+  }
+
+  addStation(station) {
+    // Project station point onto the nearest forward segment and use that projected
+    // distance along the route. This works even when station coordinates are not
+    // exactly equal to segment start/end points.
+    let nearestDistance = 0
+    let nearestSquaredDistance = Number.POSITIVE_INFINITY
+
+    for (const seg of this.segments) {
+      const vx = seg.dx
+      const vy = seg.dy
+      const wx = station.x - seg.startx
+      const wy = station.y - seg.starty
+      const vv = vx * vx + vy * vy
+      if (vv === 0) continue
+
+      // t is projection factor along the segment, clamped to [0, 1].
+      const t = Math.max(0, Math.min(1, (wx * vx + wy * vy) / vv))
+      const projX = seg.startx + t * vx
+      const projY = seg.starty + t * vy
+      const dx = station.x - projX
+      const dy = station.y - projY
+      const squaredDistance = dx * dx + dy * dy
+
+      if (squaredDistance < nearestSquaredDistance) {
+        nearestSquaredDistance = squaredDistance
+        nearestDistance = seg.startDistance + t * seg.length
+      }
+    }
+
+    station.distanceFromStart = nearestDistance
+    this.stations.addStation(station)
+    station.draw()
   }
 
   delete(position) {
@@ -327,7 +367,7 @@ class Track {
     this.ctxTracks.stroke()
     this.ctxTracks.restore()
 
-    this.stations.forEach(station => station.draw())
+    // this.stations.forEach(station => station.draw())
   }
   drawGrid() {
     const gridSize = this.gridSize

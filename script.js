@@ -63,7 +63,9 @@ positions = [
   { x: CANVASMARGIN + 1100, y: CANVASMARGIN + 700 },
   { x: CANVASMARGIN + 800, y: CANVASMARGIN + 700 }
 ]
-game.addTrain(positions, 18, 5, 'Express Train', 1, intersections)
+const trainNumber = game.addTrain(positions, 18, 2, 'Express Train', 1, intersections)
+game.addStation(trainNumber, 500, 300, `NS1`, 30, 'medium')
+game.addStation(trainNumber, 800, 500, `NS2`, 30, 'medium')
 
 const drawScene = () => {
   if (!paused) {
