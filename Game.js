@@ -8,6 +8,8 @@ import { createStation } from './Station.js'
 import { Intersections } from './Intersections.js'
 import { Population } from './Population.js'
 import { TravelPopulation} from './TravelPopulation.js'
+import { Rawmaterials } from './Rawmaterials.js'
+import { RawmaterialDemand } from './RawmaterialDemand.js'
 
 class Game {
 
@@ -36,9 +38,13 @@ class Game {
     // this.intersections = intersections
     this.population = new Population(ctx.canvas.width, ctx.canvas.height, gridSize)
     this.travelPopulation = new TravelPopulation(this.population, ctx.canvas.width, ctx.canvas.height, gridSize)
+    this.rawmaterials = new Rawmaterials(ctx.canvas.width, ctx.canvas.height, gridSize)
+    this.rawmaterialDemand = new RawmaterialDemand(ctx.canvas.width, ctx.canvas.height, gridSize)
     //log population to check the values
     console.log(this.population)
     console.log(this.travelPopulation)
+    console.log(this.rawmaterialDemand)
+    this.rawmaterialDemand.displayStatistics()
   }
   
   getCurrentTimePeriod() {
@@ -92,14 +98,14 @@ class Game {
     return this.Flyovers.getAllFlyovers().length
   }
 
-  validateUniqueStationDistances(stations, trainName) {
+  validateUniqueStationDistances(stations, trainNumber) {
     const seenDistances = new Map()
     for (const station of stations) {
       const distance = station.distanceFromStart
       if (seenDistances.has(distance)) {
         const firstStationName = seenDistances.get(distance)
         console.warn(
-          `[Station Guard] Duplicate distanceFromStart (${distance}) for train ${trainName}: ${firstStationName} and ${station.name}`
+          `[Station Guard] Duplicate distanceFromStart (${distance}) for train ${trainNumber}: ${firstStationName} and ${station.name}`
         )
       } else {
         seenDistances.set(distance, station.name)
@@ -107,7 +113,7 @@ class Game {
     }
   }
 
-  addTrain( positions, engineSpeed,  numCoaches, trainName, delayBeforeStart, intersections) {
+  addTrain( positions, engineSpeed,  numCoaches, delayBeforeStart, intersections) {
 
     // if there is a train that is removed and has null value in the trains array, we can reuse that train slot for the new train. This way we can keep the train number consistent and avoid issues with train numbers changing after a train is removed.
     const nullIndex = this.trains.findIndex(train => train === null)
@@ -121,19 +127,16 @@ class Game {
     const stationType = numCoaches <= 5 ? 'small' : numCoaches <= 10 ? 'medium' : 'large'
     const firstPosition = positions[0]
     const lastPosition = positions[positions.length - 1]
-    const track = new Track(this.ctxTracks, positions,trainName,this.gridSize)
+
+    const track = new Track(this.ctxTracks, positions,'',this.gridSize)
 
     if(firstPosition.x == lastPosition.x && firstPosition.y == lastPosition.y){
       alert('The starting and ending positions are the same. Please choose different positions for the starting and ending points.')
       return
-      // if the first and the last position are same, then we can add a small station at the first position only
-      // stations.addStation(createStation(this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0 , `${trainName}-S`, 30, stationType))
-      // intersections.updateIntersectionsWithStationLocation(firstPosition.y/this.gridSize, firstPosition.x/this.gridSize, 'Station')
-      // this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
     } else{
       //we add small stations at both starting and ending points
-      track.addStation(createStation(this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0 , `${trainName}-S`, 30, false, stationType))
-      track.addStation(createStation(this.ctxTracks, lastPosition.x, lastPosition.y, this.gridSize, 0,  `${trainName}-E`, 30, false, stationType))
+      track.addStation(createStation(this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0 , `S${trainNumber}${String((firstPosition.x / this.gridSize) + 1).padStart(2, '0')}${String((firstPosition.y / this.gridSize) + 1).padStart(2, '0')}`, 30, false, stationType))
+      track.addStation(createStation(this.ctxTracks, lastPosition.x, lastPosition.y, this.gridSize, 0,  `S${trainNumber}${String((lastPosition.x / this.gridSize) + 1).padStart(2, '0')}${String((lastPosition.y / this.gridSize) + 1).padStart(2, '0')}`, 30, false, stationType))
       intersections.updateIntersectionsWithStationLocation(firstPosition.y/this.gridSize, firstPosition.x/this.gridSize, 'Station')
       intersections.updateIntersectionsWithStationLocation(lastPosition.y/this.gridSize, lastPosition.x/this.gridSize, 'Station')
       this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
@@ -142,10 +145,11 @@ class Game {
     // if (stations.length > 1) {
     //   stations[1].distanceFromStart = track.totalLength
     // }
-    this.validateUniqueStationDistances(track.stations.getAllStations(), trainName)
+    this.validateUniqueStationDistances(track.stations.getAllStations(), trainNumber)
     this.addTrack(track)
     const colorConfig = this.TRAINCONFIG[(trainNumber - 1) % this.TRAINCONFIG.length]
     const color = colorConfig.Color
+    const trainName = colorConfig.defaultName
     const train = new Train(this.ctx, this.ctxTemp, engineSpeed, track, color, numCoaches, trainName, delayBeforeStart, trainNumber, intersections, this.financials, this.travelPopulation, () => this.getCurrentTimeIndex())
     const length = track.getTotalLength()
     const currentTimeIndex = this.getCurrentTimeIndex()

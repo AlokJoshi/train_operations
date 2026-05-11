@@ -399,6 +399,34 @@ class Track {
     }
     return length
   }
+  getPossibleStationLocations() {
+    //locations are those where the train can stop between the starting and ending station and where there is no station already.
+    const locations = []
+    for (let i = 1; i <= this.newPositions.length - 1; i++) {
+      const prev = this.newPositions[i - 1]
+      const current = this.newPositions[i]
+      //if prev and current are in the same straight line horizontally or vertically then we can consider all the points
+      //on that line at intervals of gridSize
+      if (prev.x === current.x) {
+        for(let n = 0; n <= Math.abs(current.y - prev.y)/this.gridSize; n ++){
+          const pos = {x:current.x,y:current.y + n*this.gridSize * Math.sign(prev.y - current.y)}
+          const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
+          if (!hasStation) {
+            locations.push(pos)
+          }
+        }
+      } else if (prev.y === current.y) {
+        for(let n = 0; n <= Math.abs(current.x - prev.x)/this.gridSize; n ++){
+          const pos = {x:current.x + n*this.gridSize * Math.sign(prev.x - current.x),y:current.y}
+          const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
+          if (!hasStation) {
+            locations.push(pos)
+          }
+        }
+      }
+    }
+    return locations
+  }
 }
 
 export {

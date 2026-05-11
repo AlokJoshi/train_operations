@@ -196,7 +196,7 @@
         </div>
         <div>
           <label for="startTrack">Start Track Specification:</label>
-          <i class="fas fa-play" title="Start Track" id="startTrack" onclick="starttrack()"></i>
+          <i class="fas fa-play" title="Start Track" id="startTrack" style="cursor:pointer;" onclick="starttrack()"></i>
         </div>
         <div>
           <label for="trainname">Train Name:</label>
@@ -212,13 +212,14 @@
         </div>
         <div>
           <label for="starttrain">Flag off the new Train:</label>
-          <i class="fas fa-flag-checkered" title="Start Train" id="starttrain" onclick="newtrain()"></i>
+          <i class="fas fa-flag-checkered" style="cursor:pointer;" title="Start Train" id="starttrain" onclick="newtrain()"></i>
         </div>
         <div>
           <label for="cancelTrack">Abort/Cancel Track & Train:</label>
-          <i class="fas fa-times" title="Cancel Track" id="cancelTrack" onclick="canceltrack()"></i>
+          <i class="fas fa-times" style="cursor:pointer;" title="Cancel Track" id="cancelTrack" onclick="canceltrack()"></i>
         </div>
       </div>
+
       <div id="buttonGroup2" class= "modal" style="width:200px; display:none; position:fixed; top:10px;left:100px; flex-direction:column; gap:10px">
         <label for="startFlyover">Start Flyover Specification. Please note that the game will display the locations where you will gain
           by building a flyover to avoid collisions.
@@ -227,6 +228,23 @@
         <label for="cancelFlyover">If you change your mind you can Cancel the flyover specification.</label>
         <i class="fas fa-times" id="cancelFlyover" title="Cancel Flyover" onclick="cancelFlyover()"></i>
       </div>
+
+      <div id="buttonGroup3" class= "modal" style="width:200px; display:none; position:fixed; top:10px;left:100px; flex-direction:column; gap:10px">
+        <!-- <label for="startStation">Start Station Specification. Please note that the you will select a train. The game will display the locations where you will gain
+          by building a Station.
+        </label>
+        <i class="fas fa-play" id="startStation" title="Add Station" onclick="startStation()"></i> -->
+        <label for="stationFortrain">Select the Train for which you want to build the station. Please note that the game will display the 
+          locations where you can click to build a Station.</label>
+        <div id="stationFortrain"></div> 
+        <div id="instuctionforflaggingoffstation" style="display:none;">
+            <label for="flagoffStation">Flag off the Station specification. Please note that you will click to build a Station for the selected train.</label>
+            <i class="fas fa-flag-checkered" style="cursor:pointer;" id="flagoffStation" title="Start Station" onclick="flagoffStation()"></i>
+        </div>
+        <label for="cancelStation">If you change your mind you can Cancel the Station specification.</label>
+        <i class="fas fa-times" style="cursor:pointer;" id="cancelStation" title="Cancel Station" onclick="cancelStation()"></i>
+      </div>
+
     </div>
     <div id="info1" class="traininfo" style="position:fixed;top: 10000px;left: 10000px;">1</div>
     <div id="info2" class="traininfo" style="position:fixed;top: 10000px;left: 10000px;">2</div>
