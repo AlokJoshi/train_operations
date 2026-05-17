@@ -114,5 +114,11 @@ class Financials {
     this.incrementRevenue(timeIndex, trainIndex, amount)
     return amount
   }
+
+  incrementRevenueFromRawMaterial(timeIndex, trainNumber, amount) {
+    const trainIndex = trainNumber - 1
+    this.incrementRevenue(timeIndex, trainIndex, amount)
+    return amount
+  }
 }
 export { Financials }

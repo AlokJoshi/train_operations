@@ -53,7 +53,7 @@ let positions = [
 ]
 
 
-game.addTrain(positions, 19, 3, 0, intersections)
+game.addTrain(positions, 20, 3, 0, intersections, {trainType: 'passenger'})
 
 
 positions = [
@@ -64,13 +64,27 @@ positions = [
   { x: CANVASMARGIN + 1100, y: CANVASMARGIN + 700 },
   { x: CANVASMARGIN + 800, y: CANVASMARGIN + 700 }
 ]
-const trainNumber = game.addTrain(positions, 18, 2, 1, intersections)
+let trainNumber = game.addTrain(positions, 19, 2, 1, intersections, 
+  {trainType: 'passenger'})
 game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, 'medium')
 game.addStation(trainNumber, 800, 500, `S${trainNumber}0906`, 30, 'medium')
+
+// check statically entered freight train
+positions = [
+  { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 200 },
+  { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 600 },
+  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 600 }
+]
+trainNumber = game.addFreightTrain(positions, 1, 30, 0, intersections,
+  {trainType: 'freight'})
+game.addStation(trainNumber, 1800, 600, `S${trainNumber}1907`, 30, 'large')
 
 const drawScene = () => {
   if (!paused) {
     globalThis.globalTicks++
+    if (globalThis.globalTicks % game.ticksPerTimeUnit === 0) {
+      game.incrementTimeUnit()
+    }
     if (globalThis.globalTicks % 100 === 0) {
       // console.log(`Time: ${globalThis.globalTicks}`)
       //display Financials for one second
@@ -197,8 +211,8 @@ window.addEventListener('load', () => {
         })
       } else {
         ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-        showingRawmaterialDemandMap = !showingRawmaterialDemandMap
       }
+      showingRawmaterialDemandMap = !showingRawmaterialDemandMap
     } else if (event.code === 'KeyP') {
     //if the code is P then Start/Pause the game
     startPauseGame()
@@ -392,7 +406,7 @@ window.cancelStation = function () {
 window.startStation = function () {
   startFlyover = false
   startTrack = false
-  startStation = true
+  // startStation = true
   document.querySelector('#stationFortrain').style.display = 'block'
   const div = document.querySelector('#stationFortrain')
   div.replaceChildren()
@@ -400,11 +414,12 @@ window.startStation = function () {
     if (event.target.tagName === 'SPAN') {
       div.querySelectorAll('span').forEach(span => span.classList.remove('selected'))
       event.target.classList.add('selected')
-
+      
       const trainNumber = Number.parseInt(event.target.dataset.value, 10)
       console.log(`Selected train number: ${trainNumber}`)
       const train = game.trains[trainNumber - 1]
       if (train) {
+        startStation = true
         // highlight all the possible station locations along the track where a station does not already exist.
         // get the track
         const track = train.track
@@ -638,29 +653,36 @@ window.removetrain = (trainnumber) => {
 window.newtrain = () => {
 
   if (positions.length < 2) {
+    startTrack = false
     if (positions.length === 1) {
       new swal(`You have specified a starting point and no ending point. To create a track, you need to specify at least two points.`)
     } else {
       new swal(`You have not specified any points for the track. To create a track, you need to specify at least two points.`)
     }
+    ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
     return
   }
-
+  if(positions[0].x === positions[positions.length - 1].x && 
+    positions[0].y === positions[positions.length - 1].y) {
+    startTrack = false
+    new swal(`The starting point and ending point of the track cannot be the same. Please specify different points for the track.`)
+    ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+    return
+  }
   ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
   const speedEl = document.querySelector('#speed')
   const numCoachesEl = document.querySelector('#numcoaches')
-  const trainNameEl = document.querySelector('#trainname')
   const parsedSpeed = Number.parseInt(speedEl?.value ?? '', 10)
-  const speed = Number.isInteger(parsedSpeed) && parsedSpeed >= 1 && parsedSpeed <= 19
+  const speed = Number.isInteger(parsedSpeed) && parsedSpeed >= 1 && parsedSpeed <= 20
     ? parsedSpeed
-    : Math.ceil(Math.random() * 19)
+    : Math.ceil(Math.random() * 20)
 
   const parsedNumCoaches = Number.parseInt(numCoachesEl?.value ?? '', 10)
   const numCoaches = Number.isInteger(parsedNumCoaches) && parsedNumCoaches >= 0
     ? parsedNumCoaches
     : 5
 
-  game.addTrain(positions, speed, numCoaches, 0, intersections)
+  game.addTrain(positions, speed, numCoaches, 0, intersections,{trainType: 'passenger', visualLengthScale: 1, maxVisualCoaches: numCoaches})
   game.setPossibleFlyoverLocations()
 
   //set the icon to play

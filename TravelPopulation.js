@@ -1,5 +1,5 @@
 class TravelPopulation {
-  static TRAVEL_PER_TIME_UNIT = 0.01 // 0.1% of the population travels each time unit, adjust as needed
+  static TRAVEL_PER_TIME_UNIT = 0.1 // 0.1% of the population travels each time unit, adjust as needed
   constructor(population,canvasWidth,canvasHeight, gridSize) {
     // key: x,y string; value: number of travelers if a station is built there
     // we include the population at the grid point as well as the population one gridSize to the north, south east and west, to account for travelers who would use a station at this grid point but live just outside the grid point

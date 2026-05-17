@@ -26,6 +26,7 @@ class Rawmaterials {
   static UPPER_BOUND = 1000000
   static NE_ADJUST = 5.0  // increase raw material availablity in northeast quadrant.
   static VERYSMALL_ADJUST = 0.01  // reduce rawmaterial in very big cities to make them more distinct
+  static PRUNE_BELOW = 20000 // prune raw material below this value to create more empty space on the map and make the hotspots more distinct
   
   constructor(canvasWidth, canvasHeight, gridSize, seed = 987654321, skewExponent = 5) {
     this.canvasWidth = canvasWidth
@@ -37,6 +38,7 @@ class Rawmaterials {
     this.skewExponent = skewExponent  // >1 skews toward 0 (sparse); <1 skews toward max (dense)
     this.generate()
     this.displayStatistics()
+    console.log(this.values)
   }
 
   displayStatistics() {
@@ -80,6 +82,7 @@ class Rawmaterials {
   }
 
   // Coordinate-based hash gives deterministic pseudo-random values for each grid point.
+  // do not use this directly. Use the getRawmaterialAt method which has modified vaues for certain grid points to create interesting hotspots.
   valueFromCoordinate(x, y) {
     let h = this.seed
     h ^= (x + 0x9e3779b9 + (h << 6) + (h >> 2)) >>> 0
@@ -97,14 +100,17 @@ class Rawmaterials {
     for (let x = 0; x <= this.canvasWidth; x += this.gridSize) {
       for (let y = 0; y <= this.canvasHeight; y += this.gridSize) {
         if (x > this.canvasWidth / 2 && y < this.canvasHeight / 2) {
-          // apply northeast adjustment factor to create a more interesting map with one dense city and one sparse city
+          // apply northeast adjustment factor to create a lopsided availability of raw material so that most of it is in the northeast quadrant
           this.values.set(this.getKey(x, y), Math.round(this.valueFromCoordinate(x, y) * Rawmaterials.NE_ADJUST))
         } else {
           this.values.set(this.getKey(x, y), this.valueFromCoordinate(x, y))
         }
+        if (this.values.get(this.getKey(x, y)) < Rawmaterials.PRUNE_BELOW) {
+          this.values.set(this.getKey(x, y), 0)
+        }
       }
     }
-    this.values.set('1200,500',this.valueFromCoordinate(1200,500) * Rawmaterials.VERYSMALL_ADJUST) // make this city very big to create a distinct high-rawmaterial hotspot
+    this.values.set('1200,500',0) // prune raw material at this grid point since this is a very big city
   }
 
   getRawmaterialAt(x, y) {

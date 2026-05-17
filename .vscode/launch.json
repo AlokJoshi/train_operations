@@ -8,7 +8,7 @@
       "name": "Launch Train App",
       "request": "launch",
       "type": "chrome",
-      "url": "http://127.0.0.1:57953/index.html",
+      "url": "http://127.0.0.1:49863/index.html",
       "webRoot": "${workspaceFolder}"
     },
     {

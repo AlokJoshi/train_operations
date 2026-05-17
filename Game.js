@@ -10,6 +10,7 @@ import { Population } from './Population.js'
 import { TravelPopulation} from './TravelPopulation.js'
 import { Rawmaterials } from './Rawmaterials.js'
 import { RawmaterialDemand } from './RawmaterialDemand.js'
+import { RawMaterialSupply } from './RawMaterialSupply.js'
 
 class Game {
 
@@ -40,6 +41,7 @@ class Game {
     this.travelPopulation = new TravelPopulation(this.population, ctx.canvas.width, ctx.canvas.height, gridSize)
     this.rawmaterials = new Rawmaterials(ctx.canvas.width, ctx.canvas.height, gridSize)
     this.rawmaterialDemand = new RawmaterialDemand(ctx.canvas.width, ctx.canvas.height, gridSize)
+    this.rawmaterialSupply = new RawMaterialSupply(ctx.canvas.width, ctx.canvas.height, gridSize)
     //log population to check the values
     console.log(this.population)
     console.log(this.travelPopulation)
@@ -113,7 +115,7 @@ class Game {
     }
   }
 
-  addTrain( positions, engineSpeed,  numCoaches, delayBeforeStart, intersections) {
+  addTrain( positions, engineSpeed,  numCoaches, delayBeforeStart, intersections, options = {}) {
 
     // if there is a train that is removed and has null value in the trains array, we can reuse that train slot for the new train. This way we can keep the train number consistent and avoid issues with train numbers changing after a train is removed.
     const nullIndex = this.trains.findIndex(train => train === null)
@@ -148,9 +150,28 @@ class Game {
     this.validateUniqueStationDistances(track.stations.getAllStations(), trainNumber)
     this.addTrack(track)
     const colorConfig = this.TRAINCONFIG[(trainNumber - 1) % this.TRAINCONFIG.length]
-    const color = colorConfig.Color
-    const trainName = colorConfig.defaultName
-    const train = new Train(this.ctx, this.ctxTemp, engineSpeed, track, color, numCoaches, trainName, delayBeforeStart, trainNumber, intersections, this.financials, this.travelPopulation, () => this.getCurrentTimeIndex())
+    const color = options.color ?? colorConfig.Color
+    const trainName = options.trainName ?? colorConfig.defaultName
+    const train = new Train({
+      ctx: this.ctx,
+      ctxTemp: this.ctxTemp,
+      speed: engineSpeed,
+      track,
+      color,
+      numCoaches,
+      trainName,
+      delayBeforeStart,
+      trainNumber,
+      intersections,
+      financials: this.financials,
+      travelPopulation: this.travelPopulation,
+      rawMaterialDemand: this.rawmaterialDemand,
+      rawMaterialSupply: this.rawmaterialSupply,
+      getCurrentTimeIndex: () => this.getCurrentTimeIndex(),
+      trainType: options.trainType,
+      visualLengthScale: options.visualLengthScale,
+      maxVisualCoaches: options.maxVisualCoaches
+    })
     const length = track.getTotalLength()
     const currentTimeIndex = this.getCurrentTimeIndex()
     this.financials.incrementTrackCost(currentTimeIndex, trainNumber, length)
@@ -168,6 +189,17 @@ class Game {
     }
     return trainNumber
   }
+
+  addFreightTrain(positions, engineSpeed, numCoaches, delayBeforeStart, intersections, options = {}) {
+    return this.addTrain(positions, engineSpeed, numCoaches, delayBeforeStart, intersections, {
+      trainType: 'freight',
+      visualLengthScale: 0.35,
+      maxVisualCoaches: 18,
+      color: 'rgba(80,80,80,0.75)',
+      ...options
+    })
+  }
+
   startStopTrain(trainNumber) {
     if (trainNumber <= this.trains.length) {
       const el= document.querySelector(`#pauseTrain${trainNumber}`)
@@ -225,6 +257,11 @@ class Game {
       train.addStation(station)
       this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
     }
+  }
+  incrementTimeUnit() {
+    this.rawmaterialSupply.incrementTimeUnit()
+    this.rawmaterialDemand.incrementTimeUnit()
+    // this.travelPopulation.incrementTimeUnit()
   }
 }
 export {
