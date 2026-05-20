@@ -13,6 +13,9 @@ class Financials {
     this.trackCostPerUnit = 1000
     this.depreciationOnEngineAndCoaches = 0.80
     this.revenuePerUnitDistancePerCoach = 5
+    this.cumRevenueByTrain = new Array(9).fill(0)
+    this.cumCostByTrain = new Array(9).fill(0)
+    this.cumProfitByTrain = new Array(9).fill(0)
   }
   incrementRevenue(timeIndex, trainIndex, amount) {
     this.totalRevenue[timeIndex][trainIndex] += amount
@@ -24,6 +27,27 @@ class Financials {
   }
   updateProfit(timeIndex, trainIndex) {
     this.profit[timeIndex][trainIndex] = this.totalRevenue[timeIndex][trainIndex] - this.totalExpenses[timeIndex][trainIndex]
+    this.cumRevenueByTrain[trainIndex] += this.totalRevenue[timeIndex][trainIndex]
+    this.cumCostByTrain[trainIndex] += this.totalExpenses[timeIndex][trainIndex]
+    this.cumProfitByTrain[trainIndex] += this.profit[timeIndex][trainIndex]
+  }
+
+  incrementTimeUnit() {
+    // const lastTimeIndex = this.totalRevenue.length - 1
+    // const newRevenue = new Array(9).fill(0)
+    // const newExpenses = new Array(9).fill(0)
+    // const newProfit = new Array(9).fill(0)
+    // this.totalRevenue.push(newRevenue)
+    // this.totalExpenses.push(newExpenses)
+    // this.profit.push(newProfit)
+  }
+
+  getCumFinancialSummaryByTrain() {
+    return {
+      totalRevenue:this.cumRevenueByTrain,
+      totalExpenses:this.cumCostByTrain,
+      profit:this.cumProfitByTrain
+    }
   }
 
   //this is called externally and hence we use ticks to call it

@@ -20,6 +20,10 @@
     <canvas id="canvas_temp"></canvas>
     <div id="controls">
       <div id="buttonGroup1" class= "modal" style="width:200px; display:none; position:fixed; top:10px; left:10px; flex-direction:column; gap:10px">
+        <!-- Close button for the modal -->
+        <span style="align-self:flex-end; cursor:pointer;" onclick="document.getElementById('buttonGroup1').style.display='none';">
+          <i class="fas fa-times" title="Close"></i>
+        </span>
         <div>
           <label for="startPauseBtn">Start/Pause All:</label>
           <i class="fas fa-play" id="startPauseBtn" title="Start/Pause All Trains" style="cursor:pointer"></i>
@@ -211,6 +215,13 @@
           <input type="number" title="Speed" id="speed" value="5" placeholder="1-20" min="1" max="20">
         </div>
         <div>
+          <label for="typeoftrain">Type of Train:</label>
+          <select title="Type of Train" id="typeoftrain">
+            <option value="passenger">Passenger</option>
+            <option value="freight">Freight</option>
+          </select>
+        </div>
+        <div>
           <label for="starttrain">Flag off the new Train:</label>
           <i class="fas fa-flag-checkered" style="cursor:pointer;" title="Start Train" id="starttrain" onclick="newtrain()"></i>
         </div>
@@ -221,15 +232,23 @@
       </div>
 
       <div id="buttonGroup2" class= "modal" style="width:200px; display:none; position:fixed; top:10px;left:100px; flex-direction:column; gap:10px">
-        <label for="startFlyover">Start Flyover Specification. Please note that the game will display the locations where you will gain
-          by building a flyover to avoid collisions.
+        <!-- Close button for the modal -->
+        <span style="align-self:flex-end; cursor:pointer;" onclick="document.getElementById('buttonGroup2').style.display='none';">
+          <i class="fas fa-times" title="Close"></i>
+        </span>
+        <label for="startFlyover">Start Flyover Specification. Please click where you will gain
+          by building a flyover to avoid collisions. Each flyover costs 20000000.
         </label>
-        <i class="fas fa-play" id="startFlyover" title="Add Flyover" onclick="startFlyover()"></i>
-        <label for="cancelFlyover">If you change your mind you can Cancel the flyover specification.</label>
-        <i class="fas fa-times" id="cancelFlyover" title="Cancel Flyover" onclick="cancelFlyover()"></i>
+        <i class="fas fa-play" id="startFlyover" title="Add Flyover" style="cursor:pointer;" onclick="startFlyover()"></i>
+        <!-- <label for="cancelFlyover">If you change your mind you can Cancel the flyover specification.</label>
+        <i class="fas fa-times" id="cancelFlyover" title="Cancel Flyover" onclick="cancelFlyover()"></i> -->
       </div>
 
       <div id="buttonGroup3" class= "modal" style="width:200px; display:none; position:fixed; top:10px;left:100px; flex-direction:column; gap:10px">
+        <!-- Close button for the modal -->
+        <span style="align-self:flex-end; cursor:pointer;" onclick="document.getElementById('buttonGroup3').style.display='none';">
+          <i class="fas fa-times" title="Close"></i>
+        </span>
         <!-- <label for="startStation">Start Station Specification. Please note that the you will select a train. The game will display the locations where you will gain
           by building a Station.
         </label>
@@ -241,8 +260,8 @@
             <label for="flagoffStation">Flag off the Station specification. Please note that you will click to build a Station for the selected train.</label>
             <i class="fas fa-flag-checkered" style="cursor:pointer;" id="flagoffStation" title="Start Station" onclick="flagoffStation()"></i>
         </div>
-        <label for="cancelStation">If you change your mind you can Cancel the Station specification.</label>
-        <i class="fas fa-times" style="cursor:pointer;" id="cancelStation" title="Cancel Station" onclick="cancelStation()"></i>
+        <!-- <label for="cancelStation">If you change your mind you can Cancel the Station specification.</label>
+        <i class="fas fa-times" style="cursor:pointer;" id="cancelStation" title="Cancel Station" onclick="cancelStation()"></i> -->
       </div>
 
     </div>

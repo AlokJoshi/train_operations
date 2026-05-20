@@ -91,8 +91,8 @@ class Game {
     this.Flyovers.setPossibleFlyoverLocations(locations)
   }
 
-  addFlyover(name, row, col) {
-    const flyover = new Flyover(name, row, col)
+  addFlyover(row, col) {
+    const flyover = new Flyover( row, col)
     this.Flyovers.addFlyover(flyover)
   }
 
@@ -258,9 +258,14 @@ class Game {
       this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
     }
   }
+  getCumFinancialSummaryByTrain() {
+    return this.financials.getCumFinancialSummaryByTrain()
+  }
+
   incrementTimeUnit() {
     this.rawmaterialSupply.incrementTimeUnit()
     this.rawmaterialDemand.incrementTimeUnit()
+    this.financials.incrementTimeUnit()
     // this.travelPopulation.incrementTimeUnit()
   }
 }

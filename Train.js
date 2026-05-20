@@ -10,9 +10,9 @@ class Train {
   static intersectionDist = 10
   static maxNumCoaches = 15
   static minNumCoaches = 2
-  static coachPassengerCapacity = 50
+  static coachPassengerCapacity = 150
   static ticketPrice = 10000 // fixed ticket price irrespective of the distance traveled to keep it simple. Revenue is calculated based on the number of passengers on board and the distance traveled.
-  static rawMaterialCapacityPerFreightCoach = 10000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
+  static rawMaterialCapacityPerFreightCoach = 100000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
   static rawMaterialChargePerUnit = 100 // fixed charge per unit of raw material to keep it simple. Revenue is calculated based on the amount of raw material unloaded at the station.
 
   constructor({
@@ -41,7 +41,7 @@ class Train {
     this.color = color
     this.trainType = trainType
     // speed parameter: 1=slowest, 20=fastest. Internally inverted to a frame-step divisor (lower=faster).
-    this.speed = this.trainType == 'passenger' ? Math.max(1, 21 - speed) : Math.min(3, 21 - speed)
+    this.speed = this.trainType == 'passenger' ? Math.max(1, 21 - speed) : 5
     this.numCoaches = numCoaches ? Math.min(Math.max(numCoaches, Train.minNumCoaches), Train.maxNumCoaches) : Math.floor((Train.minNumCoaches + Train.maxNumCoaches) / 2)
     this.ticks = 0
     this.count = 0
@@ -85,7 +85,6 @@ class Train {
     this.totalTravelPopulation = Array.from(this.travelPopulation.travelPopulation.values()).reduce((a, b) => a + b.population, 0)
     this.passengersOnBoard = 0
     this.lastProcessedStationNumber = null  // prevents boarding/deboarding from firing on every frame while at a station
-    // this.infodiv = document.querySelector(`#info${this.trainNumber}`)
     this.remainingDwellTime = 0
     this.infoText = ''
     this.infoTextTicks = 0
@@ -125,11 +124,16 @@ class Train {
       this.count = 0
       this.isReturning = false
       this.paused = false
+      this.userPaused = false
     }
   }
 
   startStop() {
     this.userPaused = !this.userPaused
+  }
+
+  setUserPaused(state) {
+    this.userPaused = !!state
   }
 
   speedUp() {
@@ -179,10 +183,12 @@ class Train {
 
     //draw is called on each frame from the game loop
     const d = 2 //distance between one coach and the next
-    this.ticks++
-
-    //if the train is at a station, then we want to stop the train for a certain amount of time which is the dwell time of the station. We can use the ticks variable to control the dwell time at the station. The train will stop at the station for a certain number of ticks which is determined by the dwell time of the station. This way we can create a realistic effect of the train stopping at the station for passengers to board and alight. 
-    this.remainingDwellTime--
+    
+    // Only increment ticks and dwell time when game is not paused
+    if (!this.userPaused) {
+      this.ticks++
+      this.remainingDwellTime--
+    }
 
     //train is not drawn till this.ticks reach a certain level
     if (this.ticks < this.delayBeforeStart * 100) return
@@ -288,10 +294,10 @@ class Train {
           if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
             infoText = `T${this.trainNumber} Psgrs: ${prevPassengersOnBoard} - ${totalDeboarding} + ${totalBoarding} = ${this.passengersOnBoard}`
           } else {
-            infoText = `T${this.trainNumber} Psgrs: + ${totalBoarding} = ${this.passengersOnBoard}`
+            infoText = `T${this.trainNumber} Psgrs: ${this.passengersOnBoard}`
           }
           this.infoText = infoText
-          this.infoTextTicks = 120
+          this.infoTextTicks = 400
         }
         if (this.trainType == 'freight') {
           // For freight trains, we can assume that they take a fixed amount of time at each station for loading and unloading. 
@@ -345,49 +351,16 @@ class Train {
           }
           console.log(`Train ${this.trainNumber} at station ${station.stationNumber} raw material available: ${rawMaterialAvailable}, total raw material demand ahead: ${totalRawMaterialDemand}, capacity: ${capacity}, available capacity: ${availableCapacity}, raw material loaded: ${rawMaterialLoaded}`)
           console.log(`Train ${this.trainNumber} at station ${station.stationNumber} total raw material demand ahead: ${totalRawMaterialDemand}`)
+          let infoText = ''
+          if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
+            infoText = `T${this.trainNumber} Freight: Avlb: ${rawMaterialAvailable}, Dem: ${totalRawMaterialDemand}, Lded: ${rawMaterialLoaded}`
+          } else {
+            infoText = `T${this.trainNumber} Freight: Lded: ${rawMaterialLoaded}`
+          }
+          this.infoText = infoText
+          this.infoTextTicks = 400
         }
       }
-      // } else if (this.trainType == 'freight') {
-      //   for (const station of this.stations) {
-      //     if ((Math.abs(x - station.x) < 5) && (Math.abs(y - station.y) < 5)) {
-      //       //reached a station. Set the dwell time
-      //       const thisStationKey = `${station.stationNumber}`
-      //       atAStation = true
-      //       if (this.lastProcessedStationNumber === station.stationNumber) continue  // already processed this visit, skip
-      //       this.lastProcessedStationNumber = station.stationNumber
-      //       this.remainingDwellTime = station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber ? station.dwellTime : 0
-      //       // we can assume that the freight train can carry a certain amount of raw materials based on number of coaches
-      //       console.log(`Train ${this.trainNumber} at station ${thisStationKey} raw material available: ${rawMaterialAvailable}, total raw material demand ahead: ${totalRawMaterialDemand}, capacity: ${capacity}, raw material loaded: ${rawMaterialLoaded}`)
-      //       // we can assume that the freight train takes as much raw material as it can based on the demand, availability and capacity. This is a simplification but it should work for our purposes.
-      //       // update the raw material availability at the station after loading the raw material onto the train
-      //       this.rawMaterialSupply.decreaseRawMaterial(station.x, station.y, rawMaterialLoaded) 
-      //     }
-      //   }
-
-      //   //here we unload the raw material based on the demand at the 
-      //   //station
-      //   for (const station of this.stations) {
-      //     if ((Math.abs(x - station.x) < 5) && (Math.abs(y - station.y) < 5)) {
-      //       let totalUnloading = 0
-      //       const thisStationKey = `${station.stationNumber}`
-      //       atAStation = true
-      //       if (this.lastProcessedStationNumber === station.stationNumber) continue  // already processed this visit, skip
-      //       this.lastProcessedStationNumber = station.stationNumber
-      //       this.remainingDwellTime = station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber ? this.freightTrainDwellTime : 0
-
-      //       // unloading loop. Unload the demand corrected for capacity on a pro-rated basis
-      //       const demand = this.rawMaterialDemand.demand.get(`${x},${y}`)?.demand ?? 0
-      //       if (demand > 0) {
-      //         totalUnloading = Math.min(demand, rawMaterialLoaded)
-      //         //earn revenue based on the amount of raw material unloaded and a fixed price per unit of raw material to keep it simple. 
-      //         // We can also add a multiplier based on the distance between the from station and to station to make it more realistic 
-      //         // but for now we will keep it simple with a fixed price per unit of raw material.
-      //         this.financials.ArrayincrementRevenueFromRawMaterial(currentTimeIndex, this.trainNumber, totalUnloading * Train.rawMaterialChargePerUnit)
-      //       }
-      //       this.infoText = `Freight T${this.trainNumber} at station ${thisStationKey} Earned: ${totalUnloading * Train.rawMaterialChargePerUnit}`
-      //       this.infoTextTicks = 120
-      //     }
-      //   }
     }
 
 
@@ -399,8 +372,8 @@ class Train {
       this.ctx.font = '12px Arial'
       // this.ctx.globalAlpha = this.infoTextTicks / 120
 
-      const textX = this.x - 10
-      const textY = this.y - 10
+      const textX = this.x<10 ? this.x+10: this.x - 10
+      const textY = this.y<10 ? this.y+20: this.y - 10
       const metrics = this.ctx.measureText(this.infoText)
       const textHeight = 14
       const paddingX = 4
@@ -572,7 +545,6 @@ class Train {
   clearIntersection(row, col) {
     const { x, y } = this.intersections.getCanvasPoint(row, col)
     this.ctxTemp.clearRect(x - 5, y - 5, 10, 10)
-    // this.ctxTemp.clearRect(0,0,1200,800)
   }
 
   addStation(station) {
