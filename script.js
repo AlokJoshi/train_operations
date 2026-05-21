@@ -28,6 +28,7 @@ let paused = true
 let startTrack = false
 let startFlyover = false
 let startStation = false
+let showingResults = false
 let click_error = 20
 let validTrackPoints = new Set()
 const collisionAnimations = new Map()
@@ -90,32 +91,22 @@ const drawScene = () => {
       //display the current time unit for one second on ctxResults
       console.log(`Time: ${globalThis.globalTicks / game.ticksPerTimeUnit}`)
       window.setTimeout(() => {
-        const currentTimeUnit = globalThis.globalTicks / game.ticksPerTimeUnit
+        const currentTimeUnit = Math.floor(globalThis.globalTicks / game.ticksPerTimeUnit)
         ctxResults.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
         ctxResults.save()
-        ctxResults.font = '100px Arial'
+        ctxResults.font = '600px Arial'
         ctxResults.fillStyle = 'black'
-        ctxResults.fillText(`${currentTimeUnit}`, CANVASWIDTH/2-100, CANVASHEIGHT/2-100)
+        ctxResults.globalAlpha = 0.2
+        const textMetrics = ctxResults.measureText(`${currentTimeUnit}`)
+        ctxResults.fillText(`${currentTimeUnit}`, CANVASWIDTH/2-textMetrics.width/2, CANVASHEIGHT/2-textMetrics.actualBoundingBoxDescent/2)
         ctxResults.restore()
-      }, 1000)
+      }, 5000)
       game.incrementTimeUnit()
     }
     if (globalThis.globalTicks % 100 === 0) {
-      // console.log(`Time: ${globalThis.globalTicks}`)
-      //display Financials for one second
-      ctxResults.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
-      ctxResults.font = '20px Arial'
-      ctxResults.fillStyle = 'black'
-      const financialSummary = game.getCumFinancialSummaryByTrain()
-      const financialsText = `Revenue: $${Math.round(financialSummary.totalRevenue.reduce((a, b) => a + b, 0) / 1000000)}M | Cost: $${Math.round(financialSummary.totalExpenses.reduce((a, b) => a + b, 0) / 1000000)}M | Profit: $${Math.round(financialSummary.profit.reduce((a, b) => a + b, 0) / 1000000)}M`
-      ctxResults.fillText(financialsText, 10, 30)
-      // const finacialSummaryByTrain = game.getFinancialSummaryByTrain(globalThis.globalTicks)
-      financialSummary.totalRevenue.forEach((revenue, index) => {
-        if (revenue > 0 || financialSummary.totalExpenses[index] > 0) {
-          const trainFinancialsText = `Train ${index + 1} - Revenue: $${Math.round(revenue / 1000000)}M | Cost: $${Math.round(financialSummary.totalExpenses[index] / 1000000)}M | Profit: $${Math.round(financialSummary.profit[index] / 1000000)}M`
-          ctxResults.fillText(trainFinancialsText, 10, 60 + index * 30)
-        }
-      })
+      if (showingResults) {
+        displayFinancialResults()
+      }
     }
     ctx.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
     game.draw()
@@ -231,6 +222,17 @@ window.addEventListener('load', () => {
         ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       }
       showingRawmaterialDemandMap = !showingRawmaterialDemandMap
+    } else if (event.code === 'KeyR') {
+      //if the code is R then show the results 
+      const modal= document.querySelector('#buttonGroup4')
+      if (!showingResults) {
+        modal.style.display = 'flex'
+        displayFinancialResults()
+        
+      } else {
+        modal.style.display = 'none'
+      }
+      showingResults = !showingResults
     } else if (event.code === 'KeyP') {
       //if the code is P then Start/Pause the game
       startPauseGame()
@@ -591,10 +593,12 @@ window.addEventListener('load', () => {
     const collisionAnimationStartedAt = displayCollision(event.col, event.row)
     game.incrementCollisionCost(globalThis.globalTicks, event.train1, event.train2)
     pauseBothTrains(event.train1, event.train2)
-    showCustomAlert(`Collision detected between train ${event.train1} and train ${event.train2} at intersection (${event.col + 1},${event.row + 1}). Total collisions: ${collisionCount}`)
     setTimeout(() => {
       clearCollision(event.col, event.row, collisionAnimationStartedAt)
-    }, 3000)
+      showCustomAlert(`Collision detected between train ${event.train1} and train 
+        ${event.train2} at intersection (${event.col + 1},${event.row + 1}).
+        Trains will be out of service temporarily for repairs.`)
+    }, 5000)
     //we want to inform the train about the collision and set its state to 
     //dysfunctional so that it does not move any further till the dysfunctional state is cleared. This will prevent multiple collision events for the same intersection as the train will not move further till the collision is cleared.
     game.trains[event.train1 - 1].setDysfunctional(true)
@@ -689,17 +693,23 @@ window.addEventListener('load', () => {
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
     const speedEl = document.querySelector('#speed')
     const numCoachesEl = document.querySelector('#numcoaches')
+    const numFreightWagonsEl = document.querySelector('#numfreightwagons')
+    const selectTrainTypeEl = document.querySelector('#typeoftrain')
+    const trainType = selectTrainTypeEl?.value === 'freight' ? 'freight' : 'passenger'
     const parsedSpeed = Number.parseInt(speedEl?.value ?? '', 10)
     const speed = Number.isInteger(parsedSpeed) && parsedSpeed >= 1 && parsedSpeed <= 20
       ? parsedSpeed
       : Math.ceil(Math.random() * 20)
 
     const parsedNumCoaches = Number.parseInt(numCoachesEl?.value ?? '', 10)
-    const numCoaches = Number.isInteger(parsedNumCoaches) && parsedNumCoaches >= 0
+    const parsedNumFreightWagons = Number.parseInt(numFreightWagonsEl?.value ?? '', 10)
+    const passengerCoachCount = Number.isInteger(parsedNumCoaches) && parsedNumCoaches >= 0
       ? parsedNumCoaches
       : 5
-    const selectTrainTypeEl = document.querySelector('#typeoftrain')
-    const trainType = selectTrainTypeEl?.value === 'freight' ? 'freight' : 'passenger'
+    const freightWagonCount = Number.isInteger(parsedNumFreightWagons) && parsedNumFreightWagons >= 0
+      ? parsedNumFreightWagons
+      : 30
+    const numCoaches = trainType === 'freight' ? freightWagonCount : passengerCoachCount
     game.addTrain(positions, speed, numCoaches, 0, intersections, { trainType })
     game.setPossibleFlyoverLocations()
 
@@ -715,6 +725,25 @@ window.addEventListener('load', () => {
 
     startTrack = false
   }
+
+  const trainTypeSelect = document.querySelector('#typeoftrain')
+  const passengerCoachSection = document.querySelector('#numcoaches')?.closest('div')
+  const freightWagonSection = document.querySelector('#numfreightwagons')?.closest('div')
+
+  const syncTrainTypeInputs = () => {
+    const isFreight = trainTypeSelect?.value === 'freight'
+    if (passengerCoachSection) {
+      passengerCoachSection.hidden = isFreight
+    }
+    if (freightWagonSection) {
+      freightWagonSection.hidden = !isFreight
+    }
+  }
+
+  if (trainTypeSelect) {
+    trainTypeSelect.addEventListener('change', syncTrainTypeInputs)
+  }
+  syncTrainTypeInputs()
 
   function makeDraggable(element) {
     let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
@@ -772,7 +801,9 @@ window.addEventListener('load', () => {
 
   const buttonGroup3 = document.querySelector('#buttonGroup3');
   makeDraggable(buttonGroup3);
-
+  
+  const buttonGroup4 = document.querySelector('#buttonGroup4');
+  makeDraggable(buttonGroup4);
 
 })
 
@@ -946,3 +977,23 @@ function pauseBothTrains(train1Number, train2Number) {
   train2.setUserPaused(true)
 }
 
+function displayFinancialResults(){
+  //get cummulative values for each train
+  const financialSummary = game.getCumFinancialSummaryByTrain()
+  const tableBody = document.querySelector('#resultsBody')
+  tableBody.replaceChildren()
+  financialSummary.totalRevenue.forEach((revenue, index) => {
+    if (revenue > 0 || financialSummary.totalExpenses[index] > 0) {
+      const row = document.createElement('tr')
+      const expenses = financialSummary.totalExpenses[index]
+      const profit = revenue - expenses
+      row.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${Math.floor(revenue/1000000)}</td>
+        <td>${Math.floor(expenses/1000000)}</td>
+        <td>${Math.floor(profit/1000000)}</td>
+      `
+      tableBody.appendChild(row)
+    }
+  })
+}

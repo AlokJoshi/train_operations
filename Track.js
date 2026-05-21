@@ -425,6 +425,27 @@ class Track {
         }
       }
     }
+    //another loop to add locations that have been missed.
+    for (let i = 1; i <= this.positions.length - 1; i++) {
+      const prev = this.positions[i - 1]
+      const current = this.positions[i]
+      if (prev.x === current.x && Math.abs((prev.y - current.y)/this.gridSize)==2) {
+        //that means that there is a curved segment being added between two straight segments.
+        const pos = {x:prev.x,y:prev.y - this.gridSize * Math.sign(prev.y - current.y)}
+        const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
+        if (!hasStation) {
+          locations.push(pos)
+        }
+      } else if (prev.y === current.y && Math.abs((prev.x - current.x)/this.gridSize)==2) {
+        //that means that there is a curved segment being added between two straight segments.
+        const pos = {x:prev.x - this.gridSize * Math.sign(prev.x - current.x),y:prev.y}
+        const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
+        if (!hasStation) {
+          locations.push(pos)
+        }
+      }
+    }
+
     return locations
   }
 }

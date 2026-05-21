@@ -3,9 +3,10 @@ class Financials {
     this.totalRevenue = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0))
     this.totalExpenses = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0))
     this.profit = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0))
-    this.STATION_COST_SMALL = 100000
-    this.STATION_COST_MEDIUM = 400000
-    this.STATION_COST_LARGE = 1000000
+    // this.STATION_COST_SMALL = 100000
+    // this.STATION_COST_MEDIUM = 400000
+    // this.STATION_COST_LARGE = 1000000
+    this.stationCost = 1000000
     this.FlyoverCost = 20000000
     this.engineCost = 3000000
     this.coachCost = 500000
@@ -123,8 +124,8 @@ class Financials {
     return this.FlyoverCost
   }
 
-  getStationCost(type){
-    return type === 'small' ? this.STATION_COST_SMALL : type === 'medium' ? this.STATION_COST_MEDIUM : this.STATION_COST_LARGE
+  getStationCost(){
+    return this.stationCost
   }
 
   addStation(timeIndex, trainNumber, type) {

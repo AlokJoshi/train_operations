@@ -9,11 +9,12 @@ class Train {
   static coachColor = `#00ff00`
   static intersectionDist = 10
   static maxNumCoaches = 15
+  static maxNumFreightWagons = 100
   static minNumCoaches = 2
-  static coachPassengerCapacity = 150
+  static coachPassengerCapacity = 200
   static ticketPrice = 10000 // fixed ticket price irrespective of the distance traveled to keep it simple. Revenue is calculated based on the number of passengers on board and the distance traveled.
   static rawMaterialCapacityPerFreightCoach = 100000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
-  static rawMaterialChargePerUnit = 100 // fixed charge per unit of raw material to keep it simple. Revenue is calculated based on the amount of raw material unloaded at the station.
+  static rawMaterialChargePerUnit = 500 // fixed charge per unit of raw material to keep it simple. Revenue is calculated based on the amount of raw material unloaded at the station.
 
   constructor({
     ctx,
@@ -41,7 +42,8 @@ class Train {
     this.color = color
     this.trainType = trainType
     // speed parameter: 1=slowest, 20=fastest. Internally inverted to a frame-step divisor (lower=faster).
-    this.speed = this.trainType == 'passenger' ? Math.max(1, 21 - speed) : 5
+    // Freight trains run at a fixed half-of-maximum speed (divisor 11 = parameter 10 out of 20).
+    this.speed = this.trainType == 'passenger' ? Math.max(1, 21 - speed) : 11
     this.numCoaches = numCoaches ? Math.min(Math.max(numCoaches, Train.minNumCoaches), Train.maxNumCoaches) : Math.floor((Train.minNumCoaches + Train.maxNumCoaches) / 2)
     this.ticks = 0
     this.count = 0
@@ -155,7 +157,7 @@ class Train {
     const step5 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 5 / 6) : 20
 
     const currSpeed = this.ticks < 50 ? step1 : this.ticks < 150 ? step2 : this.ticks < 250 ? step3 : this.ticks < 350 ?
-      step4 : this.ticks < 450 ? step5 : this.trainType == "passenger" ? this.speed : 18
+      step4 : this.ticks < 450 ? step5 : this.speed
 
     if (this.dysfunctional) {
       // If the train is dysfunctional, we don't update its position or draw it.

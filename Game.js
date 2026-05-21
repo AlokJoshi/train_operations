@@ -117,6 +117,16 @@ class Game {
 
   addTrain( positions, engineSpeed,  numCoaches, delayBeforeStart, intersections, options = {}) {
 
+    // Apply freight train defaults automatically when trainType is 'freight'
+    if (options.trainType === 'freight') {
+      options = {
+        visualLengthScale: 0.35,
+        maxVisualCoaches: 18,
+        color: 'rgba(80,80,80,0.75)',
+        ...options
+      }
+    }
+
     // if there is a train that is removed and has null value in the trains array, we can reuse that train slot for the new train. This way we can keep the train number consistent and avoid issues with train numbers changing after a train is removed.
     const nullIndex = this.trains.findIndex(train => train === null)
     let trainNumber;
@@ -255,6 +265,7 @@ class Game {
       const train = this.trains[trainNumber - 1]
       const station = createStation(this.ctxTracks, x, y, this.gridSize, 0, name, stopDuration, stationType)
       train.addStation(station)
+      train.intersections.updateIntersectionsWithStationLocation(y / this.gridSize, x / this.gridSize, 'Station')
       this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
     }
   }
