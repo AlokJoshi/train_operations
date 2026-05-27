@@ -89,6 +89,9 @@ class Game {
   getTrackCost(positions) {
     return Track.getTrackLength(positions)* this.getTrackCostPerUnit()
   }
+  getCumProfit() {
+    return this.financials.cumProfitByTrain.reduce((acc, profit) => acc + profit, 0)
+  }
   getRank() {
     //change this after we start saving the games to the database
     

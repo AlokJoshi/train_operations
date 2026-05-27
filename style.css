@@ -91,6 +91,8 @@ button:hover{
   color: #eee;
   padding: 5px;
   border-radius: 5px;
+  top: 10000px;
+  left: 10000px;
 }
 
 .key {
@@ -98,4 +100,10 @@ button:hover{
   font-weight: bold;
   color: #fff;
 }
+.trainControl {
+  display:none;
+  flex-direction:row; 
+  justify-content:space-between;
+}
+
 

@@ -153,7 +153,7 @@ const drawScene = () => {
         swal.fire({
           title: 'Game Ended',
           text: `The game has ended after ${game.totalTimeUnits} periods. 
-           Your rank in the game is ${game.getRank()} based on the cumulative profit of your trains $${Math.floor(game.cumProfit()/1000000)} Million. 
+           Your rank in the game is ${game.getRank()} based on the cumulative profit of your trains $${Math.floor(game.getCumProfit()/1000000)} Million. 
            You can view the financial summary of your trains by pressing the R key for results.`,
           icon: 'info',
           confirmButtonText: 'OK'

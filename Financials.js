@@ -12,7 +12,7 @@ class Financials {
     this.FlyoverCost = 20000000
     this.engineCost = 3000000
     this.coachCost = 100000
-    this.collisionCost = 20000000
+    this.collisionCost = 10000000
     this.trackCostPerUnit = 1000
     this.depreciationOnEngineAndCoaches = 0.80
     this.revenuePerUnitDistancePerCoach = 5
@@ -119,14 +119,6 @@ class Financials {
     const cost = this.trackCostPerUnit * distance
     this.incrementExpenses(timeIndex, trainIndex, cost)
     return cost
-  }
-
-  //this is called externally and hence we use ticks, trainNumber to call it
-  incrementRevenueFromOperations(timeIndex, trainNumber, distance, numCoaches) {
-    const trainIndex = trainNumber - 1
-    const revenue = this.revenuePerUnitDistancePerCoach * distance * numCoaches
-    this.incrementRevenue(timeIndex, trainIndex, revenue)
-    return revenue
   }
 
   //this is called externally and hence we use ticks, trainNumber to call it
