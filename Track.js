@@ -1,6 +1,15 @@
 import { Stations } from './Stations.js'
 
 class Track {
+  static getTrackLength(positions) {
+    let length = 0
+    for (let i = 1; i < positions.length; i++) {
+      const dx = positions[i].x - positions[i - 1].x
+      const dy = positions[i].y - positions[i - 1].y
+      length += Math.sqrt(dx * dx + dy * dy)
+    }
+    return length
+  }
   constructor(ctxTracks, positions, trainName, gridSize = 100) {
     //positions is an array of position objects
     //each position object is {x:?,y:?}
@@ -10,7 +19,7 @@ class Track {
     this.returnSegments = []
     this.totalLength = 0
     this.ctxTracks = ctxTracks
-    this.trainName=trainName 
+    this.trainName = trainName
     this.gridSize = gridSize
     this.stations = new Stations()
     this.possibleFlyoverLocations = []
@@ -389,7 +398,7 @@ class Track {
     this.ctxTracks.closePath()
     this.ctxTracks.stroke()
   }
-   getTotalLength() {
+  getTotalLength() {
     let length = 0
     const positions = this.positions;
     for (let i = 1; i < positions.length; i++) {

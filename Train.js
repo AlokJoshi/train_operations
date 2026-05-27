@@ -12,7 +12,7 @@ class Train {
   static maxNumFreightWagons = 100
   static minNumCoaches = 2
   static coachPassengerCapacity = 200
-  static ticketPrice = 10000 // fixed ticket price irrespective of the distance traveled to keep it simple. Revenue is calculated based on the number of passengers on board and the distance traveled.
+  static ticketPrice = 100 // fixed ticket price irrespective of the distance traveled to keep it simple. Revenue is calculated based on the number of passengers on board and the distance traveled.
   static rawMaterialCapacityPerFreightCoach = 100000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
   static rawMaterialChargePerUnit = 500 // fixed charge per unit of raw material to keep it simple. Revenue is calculated based on the amount of raw material unloaded at the station.
 
@@ -554,6 +554,10 @@ class Train {
     this.stations = this.track.getStations() // update the stations reference after adding a new station to the track
   }
 
+  getNumStations() {
+    //used for calculating the station maintenance/operating cost for this train.
+    return this.stations.length
+  }
 }
 
 

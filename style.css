@@ -66,7 +66,7 @@ button:hover{
 }
 
 .modal{
-  background-color:rgba(0,0,0,0.1);
+  background-color:rgba(0,0,0,0.4);
   padding:20px;
   border-radius:10px;
   color:#eee;
@@ -91,5 +91,11 @@ button:hover{
   color: #eee;
   padding: 5px;
   border-radius: 5px;
+}
+
+.key {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #fff;
 }
 

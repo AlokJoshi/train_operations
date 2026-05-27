@@ -49,6 +49,52 @@ class Game {
     this.rawmaterialDemand.displayStatistics()
   }
   
+  getCashInHand() {
+    return this.financials.cashInHand
+  }
+  getCoachCost() {
+    return this.financials.coachCost
+  }
+  getEngineCost() {
+    return this.financials.engineCost
+  }
+  getStationCost() {
+    return this.financials.stationCost
+  }
+  getFlyoverCost() {
+    return this.financials.FlyoverCost
+  }
+  getCollisionCost() {
+    return this.financials.collisionCost
+  }
+  getTrackCostPerUnit() {
+    return this.financials.trackCostPerUnit
+  }
+  getCoachCapacity() {
+    return Train.coachPassengerCapacity 
+  }
+  getTotalTimeUnits() {
+    return this.totalTimeUnits
+  }
+  getMaxNumCoaches() {
+    return Train.maxNumCoaches
+  }
+  getMaxNumFreightWagons() {
+    return Train.maxNumFreightWagons
+  }
+  getFreightWagonCost() {
+    //for the time being same cost as passenger coach
+    return this.financials.coachCost
+  }
+  getTrackCost(positions) {
+    return Track.getTrackLength(positions)* this.getTrackCostPerUnit()
+  }
+  getRank() {
+    //change this after we start saving the games to the database
+    
+    return 1
+  }
+
   getCurrentTimePeriod() {
     return Math.min(Math.floor(globalThis.globalTicks / this.ticksPerTimeUnit), this.totalTimeUnits - 1)
   }
@@ -151,8 +197,10 @@ class Game {
       track.addStation(createStation(this.ctxTracks, lastPosition.x, lastPosition.y, this.gridSize, 0,  `S${trainNumber}${String((lastPosition.x / this.gridSize) + 1).padStart(2, '0')}${String((lastPosition.y / this.gridSize) + 1).padStart(2, '0')}`, 30, false, stationType))
       intersections.updateIntersectionsWithStationLocation(firstPosition.y/this.gridSize, firstPosition.x/this.gridSize, 'Station')
       intersections.updateIntersectionsWithStationLocation(lastPosition.y/this.gridSize, lastPosition.x/this.gridSize, 'Station')
-      this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
-      this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
+      if(!options.partOfInitialSetup){
+        this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
+        this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
+      }
     }
     // if (stations.length > 1) {
     //   stations[1].distanceFromStart = track.totalLength
@@ -184,9 +232,11 @@ class Game {
     })
     const length = track.getTotalLength()
     const currentTimeIndex = this.getCurrentTimeIndex()
-    this.financials.incrementTrackCost(currentTimeIndex, trainNumber, length)
-    this.financials.buyEngine(currentTimeIndex, trainNumber)
-    this.financials.buyCoach(currentTimeIndex, trainNumber, numCoaches)
+    if(!options.partOfInitialSetup){
+      this.financials.incrementTrackCost(currentTimeIndex, trainNumber, length)
+      this.financials.buyEngine(currentTimeIndex, trainNumber)
+      this.financials.buyCoach(currentTimeIndex, trainNumber, numCoaches)
+    }
     this.trains[trainNumber - 1] = train
     const trainElement = document.querySelector(`#train${trainNumber}`)
     if (trainElement) {
@@ -260,13 +310,15 @@ class Game {
       this.Flyovers.draw()
     }
   }
-  addStation(trainNumber, x, y, name, stopDuration, stationType) {
+  addStation(trainNumber, x, y, name, stopDuration, stationType, options = {}) {
     if (trainNumber <= this.trains.length) {
       const train = this.trains[trainNumber - 1]
       const station = createStation(this.ctxTracks, x, y, this.gridSize, 0, name, stopDuration, stationType)
       train.addStation(station)
       train.intersections.updateIntersectionsWithStationLocation(y / this.gridSize, x / this.gridSize, 'Station')
-      this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
+      if(!options.partOfInitialSetup){
+        this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
+      }
     }
   }
   getCumFinancialSummaryByTrain() {
@@ -276,6 +328,7 @@ class Game {
   incrementTimeUnit() {
     this.rawmaterialSupply.incrementTimeUnit()
     this.rawmaterialDemand.incrementTimeUnit()
+
     this.financials.incrementTimeUnit()
     // this.travelPopulation.incrementTimeUnit()
   }

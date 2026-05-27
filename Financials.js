@@ -1,15 +1,17 @@
 class Financials {
+  // track maintenance cost is calculated based on the distance traveled by the train on the track. 
+  // We can have a fixed cost per unit distance traveled on the track. This way, the user will have 
+  // to invest in maintaining the track if they want their trains to run smoothly and avoid breakdowns. 
+  // This will add an additional layer of strategy for the user when they are building their tracks and stations.
   constructor(totalTimeUnits = 100) {
     this.totalRevenue = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0))
     this.totalExpenses = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0))
+    this.numStations = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0)) // to keep track of the number of stations for each train at each time unit for calculating station maintenance/operating cost.
     this.profit = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0))
-    // this.STATION_COST_SMALL = 100000
-    // this.STATION_COST_MEDIUM = 400000
-    // this.STATION_COST_LARGE = 1000000
     this.stationCost = 1000000
     this.FlyoverCost = 20000000
     this.engineCost = 3000000
-    this.coachCost = 500000
+    this.coachCost = 100000
     this.collisionCost = 20000000
     this.trackCostPerUnit = 1000
     this.depreciationOnEngineAndCoaches = 0.80
@@ -17,20 +19,41 @@ class Financials {
     this.cumRevenueByTrain = new Array(9).fill(0)
     this.cumCostByTrain = new Array(9).fill(0)
     this.cumProfitByTrain = new Array(9).fill(0)
+    this.trackMaintenanceCostPerUnitPerTimePeriod = 1000
+    this.stationMaintenanceCostPerStationPerTimePeriod = 5000
+    this.cashInHand = 5000000
+  }
+  incrementExpensesOfStationMaintenance(timeIndex,train, numStations) {
+    const trainIndex = train.trainNumber - 1
+    const cost = this.stationMaintenanceCostPerStationPerTimePeriod * numStations
+    this.incrementExpenses(timeIndex, trainIndex, cost)
+  } 
+  incrementExpensesOfTrackMaintenance(timeIndex,train, distanceTraveled) {
+    const trainIndex = train.trainNumber - 1
+    const cost = this.trackMaintenanceCostPerUnitPerTimePeriod * distanceTraveled
+    this.incrementExpenses(timeIndex, trainIndex, cost)
+  }
+  incrementNumStations(timeIndex, trainIndex) {
+    this.numStations[timeIndex][trainIndex] ++
   }
   incrementRevenue(timeIndex, trainIndex, amount) {
     this.totalRevenue[timeIndex][trainIndex] += amount
     this.updateProfit(timeIndex, trainIndex)
+    this.cashInHand += amount
+    console.log(`Revenue incremented by $${amount.toLocaleString('en-US')} | Cash in Hand: $${this.cashInHand.toLocaleString('en-US')}`)
   }
   incrementExpenses(timeIndex, trainIndex, amount) {
     this.totalExpenses[timeIndex][trainIndex] += amount
     this.updateProfit(timeIndex, trainIndex)
+    this.cashInHand -= amount
+    console.log(`Expenses incremented by $${amount.toLocaleString('en-US')} | Cash in Hand: $${this.cashInHand.toLocaleString('en-US')}`)
   }
   updateProfit(timeIndex, trainIndex) {
     this.profit[timeIndex][trainIndex] = this.totalRevenue[timeIndex][trainIndex] - this.totalExpenses[timeIndex][trainIndex]
     this.cumRevenueByTrain[trainIndex] += this.totalRevenue[timeIndex][trainIndex]
     this.cumCostByTrain[trainIndex] += this.totalExpenses[timeIndex][trainIndex]
     this.cumProfitByTrain[trainIndex] += this.profit[timeIndex][trainIndex]
+    
   }
 
   incrementTimeUnit() {
@@ -132,6 +155,7 @@ class Financials {
     const cost = this.getStationCost(type)
     const trainIndex = trainNumber - 1
     this.incrementExpenses(timeIndex, trainIndex, cost)
+    this.incrementNumStations(timeIndex, trainIndex)
   }
 
   incrementRevenueFromTickets(timeIndex, trainNumber, amount) {
@@ -145,5 +169,8 @@ class Financials {
     this.incrementRevenue(timeIndex, trainIndex, amount)
     return amount
   }
+  cumProfit() {
+    return this.cumProfitByTrain.reduce((a, b) => a + b, 0)
+  } 
 }
 export { Financials }

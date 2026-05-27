@@ -29,6 +29,7 @@ let startTrack = false
 let startFlyover = false
 let startStation = false
 let showingResults = false
+let showingHowToPlay = false
 let click_error = 20
 let validTrackPoints = new Set()
 const collisionAnimations = new Map()
@@ -49,30 +50,76 @@ let intersections = new Intersections(CANVASWIDTH - OFFSET_X * 2, CANVASHEIGHT -
 
 const game = new Game(ctx, ctxTracks, ctxTemp, gridSize, OFFSET_X, OFFSET_Y)
 
+const collisionCostValueEl = document.querySelector('#collisionCostValue')
+if (collisionCostValueEl) {
+  collisionCostValueEl.textContent = `$${game.getCollisionCost().toLocaleString('en-US')}`
+}
+const flyoverCostValueEl = document.querySelector('#flyoverCost')
+if (flyoverCostValueEl) {
+  flyoverCostValueEl.textContent = `$${game.getFlyoverCost().toLocaleString('en-US')}`
+}
+const stationCostValueEl = document.querySelector('#stationCost')
+if (stationCostValueEl) {
+  stationCostValueEl.textContent = `$${game.getStationCost().toLocaleString('en-US')}`
+}
+const engineCostValueEl = document.querySelector('#engineCost')
+if (engineCostValueEl) {
+  engineCostValueEl.textContent = `$${game.getEngineCost().toLocaleString('en-US')}`
+}
+const trackCostValueEl = document.querySelector('#trackCost')
+if (trackCostValueEl) {
+  trackCostValueEl.textContent = `$${game.getTrackCostPerUnit().toLocaleString('en-US')}`
+}
+
+const coachCapacityValueEl = document.querySelector('#coachCapacity')
+if (coachCapacityValueEl) {
+  coachCapacityValueEl.textContent = `${game.getCoachCapacity().toLocaleString('en-US')}`
+}
+const totalTimeUnitsValueEl = document.querySelector('#totalTimeUnits')
+if (totalTimeUnitsValueEl) {
+  totalTimeUnitsValueEl.textContent = `${game.getTotalTimeUnits().toLocaleString('en-US')}`
+}
+const maxNumCoachesValueEl = document.querySelector('#maxNumCoaches')
+if (maxNumCoachesValueEl) {
+  maxNumCoachesValueEl.textContent = `${game.getMaxNumCoaches().toLocaleString('en-US')}`
+}
+const maxNumFreightWagonsValueEl = document.querySelector('#maxNumFreightWagons')
+if (maxNumFreightWagonsValueEl) {
+  maxNumFreightWagonsValueEl.textContent = `${game.getMaxNumFreightWagons().toLocaleString('en-US')}`
+}
+const coachCostValueEl = document.querySelector('#coachCost')
+if (coachCostValueEl) {
+  coachCostValueEl.textContent = `$${game.getCoachCost().toLocaleString('en-US')}`
+}
+const freightWagonCostValueEl = document.querySelector('#freightWagonCost')
+if (freightWagonCostValueEl) {
+  freightWagonCostValueEl.textContent = `$${game.getFreightWagonCost().toLocaleString('en-US')}`
+}
+
 
 let positions = [
-  { x: CANVASMARGIN + 0, y: CANVASMARGIN + 0 },
-  { x: CANVASMARGIN + 400, y: CANVASMARGIN + 0 },
-  { x: CANVASMARGIN + 400, y: CANVASMARGIN + 800 },
-  { x: CANVASMARGIN + 200, y: CANVASMARGIN + 800 }
+  { x: CANVASMARGIN + 100, y: CANVASMARGIN + 100 },
+  { x: CANVASMARGIN + 400, y: CANVASMARGIN + 100 },
+  { x: CANVASMARGIN + 400, y: CANVASMARGIN + 900 },
+  { x: CANVASMARGIN + 200, y: CANVASMARGIN + 900 }
 ]
 
 
-game.addTrain(positions, 20, 3, 0, intersections, { trainType: 'passenger' })
+game.addTrain(positions, 20, 3, 0, intersections, { trainType: 'passenger', partOfInitialSetup: true })
 
 
 positions = [
   { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 },
   { x: CANVASMARGIN + 500, y: CANVASMARGIN + 200 },
   { x: CANVASMARGIN + 500, y: CANVASMARGIN + 500 },
-  { x: CANVASMARGIN + 1100, y: CANVASMARGIN + 500 },
-  { x: CANVASMARGIN + 1100, y: CANVASMARGIN + 700 },
-  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 700 }
+  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
+  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 1000 },
+  { x: CANVASMARGIN + 700, y: CANVASMARGIN + 1000 }
 ]
 let trainNumber = game.addTrain(positions, 19, 2, 1, intersections,
-  { trainType: 'passenger' })
-game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, 'medium')
-game.addStation(trainNumber, 800, 500, `S${trainNumber}0906`, 30, 'medium')
+  { trainType: 'passenger', partOfInitialSetup: true })
+game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, 'medium',{partOfInitialSetup: true})
+game.addStation(trainNumber, 700, 1000, `S${trainNumber}0906`, 30, 'medium',{partOfInitialSetup: true})
 
 // check statically entered freight train
 positions = [
@@ -81,8 +128,8 @@ positions = [
   { x: CANVASMARGIN + 800, y: CANVASMARGIN + 600 }
 ]
 trainNumber = game.addFreightTrain(positions, 1, 30, 0, intersections,
-  { trainType: 'freight' })
-game.addStation(trainNumber, 1800, 600, `S${trainNumber}1907`, 30, 'large')
+  { trainType: 'freight', partOfInitialSetup: true })
+game.addStation(trainNumber, 1800, 600, `S${trainNumber}1907`, 30, 'large',{partOfInitialSetup: true})
 
 const drawScene = () => {
   if (!paused) {
@@ -90,8 +137,8 @@ const drawScene = () => {
     if (globalThis.globalTicks % game.ticksPerTimeUnit === 0) {
       //display the current time unit for one second on ctxResults
       console.log(`Time: ${globalThis.globalTicks / game.ticksPerTimeUnit}`)
+      const currentTimeUnit = Math.floor(globalThis.globalTicks / game.ticksPerTimeUnit)
       window.setTimeout(() => {
-        const currentTimeUnit = Math.floor(globalThis.globalTicks / game.ticksPerTimeUnit)
         ctxResults.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
         ctxResults.save()
         ctxResults.font = '600px Arial'
@@ -101,6 +148,21 @@ const drawScene = () => {
         ctxResults.fillText(`${currentTimeUnit}`, CANVASWIDTH/2-textMetrics.width/2, CANVASHEIGHT/2-textMetrics.actualBoundingBoxDescent/2)
         ctxResults.restore()
       }, 5000)
+      if (currentTimeUnit === 100) {
+        paused = true
+        swal.fire({
+          title: 'Game Ended',
+          text: `The game has ended after ${game.totalTimeUnits} periods. 
+           Your rank in the game is ${game.getRank()} based on the cumulative profit of your trains $${Math.floor(game.cumProfit()/1000000)} Million. 
+           You can view the financial summary of your trains by pressing the R key for results.`,
+          icon: 'info',
+          confirmButtonText: 'OK'
+        })
+      }
+      game.trains.forEach(train => {
+        game.financials.incrementExpensesOfStationMaintenance(currentTimeUnit, train, train.getNumStations())
+        game.financials.incrementExpensesOfTrackMaintenance(currentTimeUnit, train, train.track.getTotalLength()) // you can implement getDistanceTraveledInTimeUnit method in the Train class to return the distance traveled by the train in the current time unit. This will be used to calculate the track maintenance cost for the train for the current time unit.
+      })
       game.incrementTimeUnit()
     }
     if (globalThis.globalTicks % 100 === 0) {
@@ -233,6 +295,15 @@ window.addEventListener('load', () => {
         modal.style.display = 'none'
       }
       showingResults = !showingResults
+    } else if (event.key === '?') {
+      //if the code is ? then show the 'How to play' widget
+      const modal= document.querySelector('#buttonGroup5')
+      if (!showingHowToPlay) {
+        modal.style.display = 'flex'
+      } else {
+        modal.style.display = 'none'
+      }
+      showingHowToPlay = !showingHowToPlay
     } else if (event.code === 'KeyP') {
       //if the code is P then Start/Pause the game
       startPauseGame()
@@ -710,6 +781,15 @@ window.addEventListener('load', () => {
       ? parsedNumFreightWagons
       : 30
     const numCoaches = trainType === 'freight' ? freightWagonCount : passengerCoachCount
+
+    //check if we have enough funds to add the train
+    const trackCost = game.getTrackCost(positions)
+    const trainCost = trackCost +numCoaches * (trainType === 'freight' ? game.getFreightWagonCost() : game.getCoachCost()) + game.getEngineCost()
+      + 2*game.getStationCost() // adding 2 stations by default for each train
+    if (trainCost > game.getCashInHand()) {
+      new swal(`You do not have enough funds to add this train. You need $${trainCost.toLocaleString('en-US')} but you only have $${game.getCashInHand().toLocaleString('en-US')}.`)
+      return
+    }
     game.addTrain(positions, speed, numCoaches, 0, intersections, { trainType })
     game.setPossibleFlyoverLocations()
 
@@ -804,6 +884,9 @@ window.addEventListener('load', () => {
   
   const buttonGroup4 = document.querySelector('#buttonGroup4');
   makeDraggable(buttonGroup4);
+
+  const buttonGroup5 = document.querySelector('#buttonGroup5');
+  makeDraggable(buttonGroup5);
 
 })
 
@@ -979,6 +1062,8 @@ function pauseBothTrains(train1Number, train2Number) {
 
 function displayFinancialResults(){
   //get cummulative values for each train
+  const cashInHand = game.getCashInHand()
+  document.getElementById('cashInHand').textContent = Math.floor(cashInHand/1000000)
   const financialSummary = game.getCumFinancialSummaryByTrain()
   const tableBody = document.querySelector('#resultsBody')
   tableBody.replaceChildren()
