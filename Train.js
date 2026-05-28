@@ -12,7 +12,7 @@ class Train {
   static maxNumFreightWagons = 100
   static minNumCoaches = 2
   static coachPassengerCapacity = 200
-  static ticketPrice = 100 // fixed ticket price irrespective of the distance traveled to keep it simple. Revenue is calculated based on the number of passengers on board and the distance traveled.
+  static ticketPrice = 50 // fixed ticket price irrespective of the distance traveled to keep it simple. Revenue is calculated based on the number of passengers on board and the distance traveled.
   static rawMaterialCapacityPerFreightCoach = 100000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
   static rawMaterialChargePerUnit = 500 // fixed charge per unit of raw material to keep it simple. Revenue is calculated based on the amount of raw material unloaded at the station.
 
@@ -94,6 +94,7 @@ class Train {
     this.rawMaterialDemand = rawMaterialDemand
     this.rawMaterialSupply = rawMaterialSupply
     this.rawMaterialOnBoard = 0
+    this.distanceTraveledInTimeUnit = 0
   }
 
   addCoach() {
@@ -207,13 +208,18 @@ class Train {
 
     if ((this.ticks % currSpeed == 0) && !this.userPaused && !this.dwellPaused) {
       //this controls the overall speed of the train. The lower the engineSpeed, the faster the train moves. The train moves one step after every engineSpeed number of frames
-      this.count += 3
+      const previousCount = this.count
+      const distanceStep = 3
+      this.count += distanceStep
+      let distanceMoved = distanceStep
       if (this.track.totalLength > 0 && this.count >= this.track.totalLength) {
+        distanceMoved = Math.max(0, this.track.totalLength - previousCount)
         this.count = 0
         this.ticks = 0
         this.isReturning = !this.isReturning
         // console.log(`Train ${this.trainName} is now ${this.isReturning ? 'returning' : 'starting a new trip'}`)
       }
+      this.distanceTraveledInTimeUnit += distanceMoved
     }
 
     let { x, y, direction, segment } = this.getPosition(0)
@@ -330,8 +336,8 @@ class Train {
             this.financials.incrementRevenueFromRawMaterial(currentTimeIndex, this.trainNumber, totalUnloading * Train.rawMaterialChargePerUnit)
             this.rawMaterialOnBoard -= totalUnloading
             this.rawMaterialDemand.decreaseDemand(station.x, station.y, totalUnloading)
-            console.log(`Train ${this.trainNumber} at station ${station.stationNumber} unloaded ${totalUnloading} units of 
-              raw material, remaining on board: ${this.rawMaterialOnBoard} money earned: ${totalUnloading * Train.rawMaterialChargePerUnit}`)
+            // console.log(`Train ${this.trainNumber} at station ${station.stationNumber} unloaded ${totalUnloading} units of 
+            // raw material, remaining on board: ${this.rawMaterialOnBoard} money earned: ${totalUnloading * Train.rawMaterialChargePerUnit}`)
           }
 
           for (const nextStation of this.stations) {
@@ -351,8 +357,8 @@ class Train {
             this.rawMaterialOnBoard += rawMaterialLoaded
             this.rawMaterialSupply.decreaseRawMaterial(station.x, station.y, rawMaterialLoaded)
           }
-          console.log(`Train ${this.trainNumber} at station ${station.stationNumber} raw material available: ${rawMaterialAvailable}, total raw material demand ahead: ${totalRawMaterialDemand}, capacity: ${capacity}, available capacity: ${availableCapacity}, raw material loaded: ${rawMaterialLoaded}`)
-          console.log(`Train ${this.trainNumber} at station ${station.stationNumber} total raw material demand ahead: ${totalRawMaterialDemand}`)
+          // console.log(`Train ${this.trainNumber} at station ${station.stationNumber} raw material available: ${rawMaterialAvailable}, total raw material demand ahead: ${totalRawMaterialDemand}, capacity: ${capacity}, available capacity: ${availableCapacity}, raw material loaded: ${rawMaterialLoaded}`)
+          // console.log(`Train ${this.trainNumber} at station ${station.stationNumber} total raw material demand ahead: ${totalRawMaterialDemand}`)
           let infoText = ''
           if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
             infoText = `T${this.trainNumber} Freight: Avlb: ${rawMaterialAvailable}, Dem: ${totalRawMaterialDemand}, Lded: ${rawMaterialLoaded}`
@@ -551,6 +557,12 @@ class Train {
   getNumStations() {
     //used for calculating the station maintenance/operating cost for this train.
     return this.stations.length
+  }
+
+  consumeDistanceTraveledInTimeUnit() {
+    const distance = this.distanceTraveledInTimeUnit
+    this.distanceTraveledInTimeUnit = 0
+    return distance
   }
 }
 

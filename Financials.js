@@ -15,45 +15,45 @@ class Financials {
     this.collisionCost = 10000000
     this.trackCostPerUnit = 1000
     this.depreciationOnEngineAndCoaches = 0.80
-    this.revenuePerUnitDistancePerCoach = 5
     this.cumRevenueByTrain = new Array(9).fill(0)
     this.cumCostByTrain = new Array(9).fill(0)
     this.cumProfitByTrain = new Array(9).fill(0)
-    this.trackMaintenanceCostPerUnitPerTimePeriod = 1000
-    this.stationMaintenanceCostPerStationPerTimePeriod = 5000
+    this.trackMaintenanceCostPerUnitPerTimePeriod = 10
+    this.stationMaintenanceCostPerStationPerTimePeriod = 200
     this.cashInHand = 5000000
   }
   incrementExpensesOfStationMaintenance(timeIndex,train, numStations) {
     const trainIndex = train.trainNumber - 1
     const cost = this.stationMaintenanceCostPerStationPerTimePeriod * numStations
-    this.incrementExpenses(timeIndex, trainIndex, cost)
+    this.incrementExpenses(timeIndex, trainIndex, cost, 'Station Maintenance')
   } 
   incrementExpensesOfTrackMaintenance(timeIndex,train, distanceTraveled) {
     const trainIndex = train.trainNumber - 1
     const cost = this.trackMaintenanceCostPerUnitPerTimePeriod * distanceTraveled
-    this.incrementExpenses(timeIndex, trainIndex, cost)
+    this.incrementExpenses(timeIndex, trainIndex, cost, 'Track Maintenance')
   }
   incrementNumStations(timeIndex, trainIndex) {
     this.numStations[timeIndex][trainIndex] ++
   }
-  incrementRevenue(timeIndex, trainIndex, amount) {
+  incrementRevenue(timeIndex, trainIndex, amount, reason='') {
     this.totalRevenue[timeIndex][trainIndex] += amount
     this.updateProfit(timeIndex, trainIndex)
     this.cashInHand += amount
-    console.log(`Revenue incremented by $${amount.toLocaleString('en-US')} | Cash in Hand: $${this.cashInHand.toLocaleString('en-US')}`)
+    // console.log(`Revenue incremented by $${amount.toLocaleString('en-US')} Train ${trainIndex + 1} Reason: ${reason} | Cash in Hand: $${this.cashInHand.toLocaleString('en-US')}`)
   }
-  incrementExpenses(timeIndex, trainIndex, amount) {
+  incrementExpenses(timeIndex, trainIndex, amount, reason='') {
     this.totalExpenses[timeIndex][trainIndex] += amount
     this.updateProfit(timeIndex, trainIndex)
     this.cashInHand -= amount
-    console.log(`Expenses incremented by $${amount.toLocaleString('en-US')} | Cash in Hand: $${this.cashInHand.toLocaleString('en-US')}`)
+    if(trainIndex === 1){
+      console.log(`Expenses incremented by $${amount.toLocaleString('en-US')} Train ${trainIndex + 1} Reason: ${reason} | Cash in Hand: $${this.cashInHand.toLocaleString('en-US')}`)
+    }
   }
   updateProfit(timeIndex, trainIndex) {
     this.profit[timeIndex][trainIndex] = this.totalRevenue[timeIndex][trainIndex] - this.totalExpenses[timeIndex][trainIndex]
     this.cumRevenueByTrain[trainIndex] += this.totalRevenue[timeIndex][trainIndex]
     this.cumCostByTrain[trainIndex] += this.totalExpenses[timeIndex][trainIndex]
     this.cumProfitByTrain[trainIndex] += this.profit[timeIndex][trainIndex]
-    
   }
 
   incrementTimeUnit() {
@@ -102,14 +102,14 @@ class Financials {
   buyCoach(timeIndex, trainNumber, numCoaches) {
     const trainIndex = trainNumber - 1
     const cost = this.coachCost * numCoaches
-    this.incrementExpenses(timeIndex, trainIndex, cost)
+    this.incrementExpenses(timeIndex, trainIndex, cost, 'Buying Coaches')
     return cost
   }
 
   //this is called externally and hence we use ticks, trainNumber to call it
   buyEngine(timeIndex, trainNumber) {
     const trainIndex = trainNumber - 1
-    this.incrementExpenses(timeIndex, trainIndex, this.engineCost)
+    this.incrementExpenses(timeIndex, trainIndex, this.engineCost, 'Buying Engine')
     return this.engineCost
   }
 
@@ -117,7 +117,7 @@ class Financials {
   incrementTrackCost(timeIndex, trainNumber, distance) {
     const trainIndex = trainNumber - 1
     const cost = this.trackCostPerUnit * distance
-    this.incrementExpenses(timeIndex, trainIndex, cost)
+    this.incrementExpenses(timeIndex, trainIndex, cost, 'Track Cost')
     return cost
   }
 
@@ -125,8 +125,8 @@ class Financials {
   incrementCollisionCost(timeIndex, trainNumber1, trainNumber2) {
     const trainIndex1 = trainNumber1 - 1
     const trainIndex2 = trainNumber2 - 1
-    this.incrementExpenses(timeIndex, trainIndex1, this.collisionCost / 2)
-    this.incrementExpenses(timeIndex, trainIndex2, this.collisionCost / 2)
+    this.incrementExpenses(timeIndex, trainIndex1, this.collisionCost / 2, 'Collision Cost')
+    this.incrementExpenses(timeIndex, trainIndex2, this.collisionCost / 2, 'Collision Cost')
     return this.collisionCost
   }
 
@@ -134,8 +134,8 @@ class Financials {
   incrementFlyoverCost(timeIndex, trainNumber1, trainNumber2) {
     const trainIndex1 = trainNumber1 - 1
     const trainIndex2 = trainNumber2 - 1
-    this.incrementExpenses(timeIndex, trainIndex1, this.FlyoverCost / 2)
-    this.incrementExpenses(timeIndex, trainIndex2, this.FlyoverCost / 2)
+    this.incrementExpenses(timeIndex, trainIndex1, this.FlyoverCost / 2, 'Flyover Cost')
+    this.incrementExpenses(timeIndex, trainIndex2, this.FlyoverCost / 2, 'Flyover Cost')
     return this.FlyoverCost
   }
 
@@ -146,19 +146,19 @@ class Financials {
   addStation(timeIndex, trainNumber, type) {
     const cost = this.getStationCost(type)
     const trainIndex = trainNumber - 1
-    this.incrementExpenses(timeIndex, trainIndex, cost)
+    this.incrementExpenses(timeIndex, trainIndex, cost, 'Adding Station')
     this.incrementNumStations(timeIndex, trainIndex)
   }
 
   incrementRevenueFromTickets(timeIndex, trainNumber, amount) {
     const trainIndex = trainNumber - 1
-    this.incrementRevenue(timeIndex, trainIndex, amount)
+    this.incrementRevenue(timeIndex, trainIndex, amount, 'Ticket Revenue')
     return amount
   }
 
   incrementRevenueFromRawMaterial(timeIndex, trainNumber, amount) {
     const trainIndex = trainNumber - 1
-    this.incrementRevenue(timeIndex, trainIndex, amount)
+    this.incrementRevenue(timeIndex, trainIndex, amount, 'Freight Revenue')
     return amount
   }
   cumProfit() {

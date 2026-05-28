@@ -18,7 +18,7 @@ class RawMaterialSupply {
     this.canvasHeight = canvasHeight
     this.gridSize = gridSize
     this.generateRawmaterialAvailability()
-    console.log(this.rawmaterialAvailability)
+    // console.log(this.rawmaterialAvailability)
     
   }
   

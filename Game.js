@@ -43,9 +43,9 @@ class Game {
     this.rawmaterialDemand = new RawmaterialDemand(ctx.canvas.width, ctx.canvas.height, gridSize)
     this.rawmaterialSupply = new RawMaterialSupply(ctx.canvas.width, ctx.canvas.height, gridSize)
     //log population to check the values
-    console.log(this.population)
-    console.log(this.travelPopulation)
-    console.log(this.rawmaterialDemand)
+    // console.log(this.population)
+    // console.log(this.travelPopulation)
+    // console.log(this.rawmaterialDemand)
     this.rawmaterialDemand.displayStatistics()
   }
   

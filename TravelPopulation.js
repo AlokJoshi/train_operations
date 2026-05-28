@@ -1,5 +1,5 @@
 class TravelPopulation {
-  static TRAVEL_PER_TIME_UNIT = 0.1 // 0.1% of the population travels each time unit, adjust as needed
+  static TRAVEL_PER_TIME_UNIT = 0.05 // 0.05% of the population travels each time unit, adjust as needed
   constructor(population,canvasWidth,canvasHeight, gridSize) {
     // key: x,y string; value: number of travelers if a station is built there
     // we include the population at the grid point as well as the population one gridSize to the north, south east and west, to account for travelers who would use a station at this grid point but live just outside the grid point
@@ -45,7 +45,7 @@ class TravelPopulation {
 
     const travelPops = Array.from(this.travelPopulation.values())
     const totalPopulation = travelPops.reduce((a, b) => a + b.population, 0)
-    console.log(`Total Travel Population: ${totalPopulation}`)
+    // console.log(`Total Travel Population: ${totalPopulation}`)
     //north/south divide only
     let northPopulation = 0
     let southPopulation = 0
@@ -73,10 +73,10 @@ class TravelPopulation {
         }
       }
     }
-    console.log(`North Travel Population: ${northPopulation}`)
-    console.log(`South Travel Population: ${southPopulation}`)
-    console.log(`East Travel Population: ${eastPopulation}`)
-    console.log(`West Travel Population: ${westPopulation}`)
+    // console.log(`North Travel Population: ${northPopulation}`)
+    // console.log(`South Travel Population: ${southPopulation}`)
+    // console.log(`East Travel Population: ${eastPopulation}`)
+    // console.log(`West Travel Population: ${westPopulation}`)
   }
 
   getKey(x, y) {

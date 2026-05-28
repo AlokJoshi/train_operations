@@ -38,13 +38,13 @@ class Rawmaterials {
     this.skewExponent = skewExponent  // >1 skews toward 0 (sparse); <1 skews toward max (dense)
     this.generate()
     this.displayStatistics()
-    console.log(this.values)
+    // console.log(this.values)
   }
 
   displayStatistics() {
     const rawmaterials = Array.from(this.values.values())
     const totalRawmaterial = rawmaterials.reduce((a, b) => a + b, 0)
-    console.log(`Total Rawmaterial: ${totalRawmaterial}`)
+    // console.log(`Total Rawmaterial: ${totalRawmaterial}`)
     //north/south divide only
     let northRawmaterial = 0
     let southRawmaterial = 0
@@ -71,10 +71,10 @@ class Rawmaterials {
         }
       }
     }
-    console.log(`North Rawmaterial: ${northRawmaterial}`)
-    console.log(`South Rawmaterial: ${southRawmaterial}`)
-    console.log(`East Rawmaterial: ${eastRawmaterial}`)
-    console.log(`West Rawmaterial: ${westRawmaterial}`)
+    // console.log(`North Rawmaterial: ${northRawmaterial}`)
+    // console.log(`South Rawmaterial: ${southRawmaterial}`)
+    // console.log(`East Rawmaterial: ${eastRawmaterial}`)
+    // console.log(`West Rawmaterial: ${westRawmaterial}`)
   }
 
   getKey(x, y) {

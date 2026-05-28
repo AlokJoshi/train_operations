@@ -41,7 +41,7 @@ class Population {
   displayStatistics() {
     const populations = Array.from(this.values.values())
     const totalPopulation = populations.reduce((a, b) => a + b, 0)
-    console.log(`Total Population: ${totalPopulation}`)
+    // console.log(`Total Population: ${totalPopulation}`)
     //north/south divide only
     let northPopulation = 0
     let southPopulation = 0
@@ -68,10 +68,10 @@ class Population {
         }
       }
     }
-    console.log(`North Population: ${northPopulation}`)
-    console.log(`South Population: ${southPopulation}`)
-    console.log(`East Population: ${eastPopulation}`)
-    console.log(`West Population: ${westPopulation}`)
+    // console.log(`North Population: ${northPopulation}`)
+    // console.log(`South Population: ${southPopulation}`)
+    // console.log(`East Population: ${eastPopulation}`)
+    // console.log(`West Population: ${westPopulation}`)
   }
 
   getKey(x, y) {

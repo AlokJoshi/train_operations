@@ -118,8 +118,8 @@ positions = [
 ]
 let trainNumber = game.addTrain(positions, 19, 2, 1, intersections,
   { trainType: 'passenger', partOfInitialSetup: true })
-game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, 'medium',{partOfInitialSetup: true})
-game.addStation(trainNumber, 700, 1000, `S${trainNumber}0906`, 30, 'medium',{partOfInitialSetup: true})
+game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, 'medium', { partOfInitialSetup: true })
+game.addStation(trainNumber, 700, 1000, `S${trainNumber}0906`, 30, 'medium', { partOfInitialSetup: true })
 
 // check statically entered freight train
 positions = [
@@ -129,14 +129,14 @@ positions = [
 ]
 trainNumber = game.addFreightTrain(positions, 1, 30, 0, intersections,
   { trainType: 'freight', partOfInitialSetup: true })
-game.addStation(trainNumber, 1800, 600, `S${trainNumber}1907`, 30, 'large',{partOfInitialSetup: true})
+game.addStation(trainNumber, 1800, 600, `S${trainNumber}1907`, 30, 'large', { partOfInitialSetup: true })
 
 const drawScene = () => {
   if (!paused) {
     globalThis.globalTicks++
     if (globalThis.globalTicks % game.ticksPerTimeUnit === 0) {
       //display the current time unit for one second on ctxResults
-      console.log(`Time: ${globalThis.globalTicks / game.ticksPerTimeUnit}`)
+      // console.log(`Time: ${globalThis.globalTicks / game.ticksPerTimeUnit}`)
       const currentTimeUnit = Math.floor(globalThis.globalTicks / game.ticksPerTimeUnit)
       window.setTimeout(() => {
         ctxResults.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
@@ -145,7 +145,7 @@ const drawScene = () => {
         ctxResults.fillStyle = 'black'
         ctxResults.globalAlpha = 0.2
         const textMetrics = ctxResults.measureText(`${currentTimeUnit}`)
-        ctxResults.fillText(`${currentTimeUnit}`, CANVASWIDTH/2-textMetrics.width/2, CANVASHEIGHT/2-textMetrics.actualBoundingBoxDescent/2)
+        ctxResults.fillText(`${currentTimeUnit}`, CANVASWIDTH / 2 - textMetrics.width / 2, CANVASHEIGHT / 2 - textMetrics.actualBoundingBoxDescent / 2)
         ctxResults.restore()
       }, 5000)
       if (currentTimeUnit === 100) {
@@ -153,15 +153,17 @@ const drawScene = () => {
         swal.fire({
           title: 'Game Ended',
           text: `The game has ended after ${game.totalTimeUnits} periods. 
-           Your rank in the game is ${game.getRank()} based on the cumulative profit of your trains $${Math.floor(game.getCumProfit()/1000000)} Million. 
+           Your rank in the game is ${game.getRank()} based on the cumulative profit of your trains $${Math.floor(game.getCumProfit() / 1000000)} Million. 
            You can view the financial summary of your trains by pressing the R key for results.`,
           icon: 'info',
           confirmButtonText: 'OK'
         })
       }
       game.trains.forEach(train => {
+        if (!train) return
         game.financials.incrementExpensesOfStationMaintenance(currentTimeUnit, train, train.getNumStations())
-        game.financials.incrementExpensesOfTrackMaintenance(currentTimeUnit, train, train.track.getTotalLength()) // you can implement getDistanceTraveledInTimeUnit method in the Train class to return the distance traveled by the train in the current time unit. This will be used to calculate the track maintenance cost for the train for the current time unit.
+        const distanceTraveledInTimeUnit = train.consumeDistanceTraveledInTimeUnit()
+        game.financials.incrementExpensesOfTrackMaintenance(currentTimeUnit, train, distanceTraveledInTimeUnit)
       })
       game.incrementTimeUnit()
     }
@@ -286,18 +288,18 @@ window.addEventListener('load', () => {
       showingRawmaterialDemandMap = !showingRawmaterialDemandMap
     } else if (event.code === 'KeyR') {
       //if the code is R then show the results 
-      const modal= document.querySelector('#buttonGroup4')
+      const modal = document.querySelector('#buttonGroup4')
       if (!showingResults) {
         modal.style.display = 'flex'
         displayFinancialResults()
-        
+
       } else {
         modal.style.display = 'none'
       }
       showingResults = !showingResults
     } else if (event.key === '?') {
       //if the code is ? then show the 'How to play' widget
-      const modal= document.querySelector('#buttonGroup5')
+      const modal = document.querySelector('#buttonGroup5')
       if (!showingHowToPlay) {
         modal.style.display = 'flex'
       } else {
@@ -370,7 +372,7 @@ window.addEventListener('load', () => {
       const possibleStationLocations = train.track.getPossibleStationLocations()
       possibleStationLocations.forEach(location => {
         if ((Math.abs(location.x - point.x) < click_error) && (Math.abs(location.y - point.y) < click_error)) {
-          console.log(`Station added for Train ${selectedTrainNumber} at (${location.x},${location.y})`)
+          // console.log(`Station added for Train ${selectedTrainNumber} at (${location.x},${location.y})`)
           swal.fire({
             title: `Add Station for Train ${selectedTrainNumber}`,
             text: `Do you want to add a Station for Train ${selectedTrainNumber} at (Row ${(location.y / gridSize) + 1}, Col ${(location.x / gridSize) + 1})?`,
@@ -394,7 +396,7 @@ window.addEventListener('load', () => {
       const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
       if ((Math.abs(x - point.x) < click_error) && (Math.abs(y - point.y) < click_error)) {
         // console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y}`)
-        console.log(`Flyover added at (${(x / gridSize) + 1},${(y / gridSize) + 1})`)
+        // console.log(`Flyover added at (${(x / gridSize) + 1},${(y / gridSize) + 1})`)
         swal.fire({
           title: `Add Flyover`,
           text: `Do you want to add a Flyover at (Row ${(y / gridSize) + 1}, Col ${(x / gridSize) + 1})?`,
@@ -425,12 +427,12 @@ window.addEventListener('load', () => {
             //   }
             // }).then((result) => {
             //   if (result.isConfirmed) {
-                //as far as game is concerned the Flyover is added counting row and column from 0
-                game.addFlyover( y / gridSize, x / gridSize)
-                startFlyover = false
+            //as far as game is concerned the Flyover is added counting row and column from 0
+            game.addFlyover(y / gridSize, x / gridSize)
+            startFlyover = false
           }
-            
-          
+
+
         })
       }
     }
@@ -506,7 +508,7 @@ window.addEventListener('load', () => {
         event.target.classList.add('selected')
 
         const trainNumber = Number.parseInt(event.target.dataset.value, 10)
-        console.log(`Selected train number: ${trainNumber}`)
+        // console.log(`Selected train number: ${trainNumber}`)
         const train = game.trains[trainNumber - 1]
         if (train) {
           startStation = true
@@ -751,6 +753,7 @@ window.addEventListener('load', () => {
       } else {
         new swal(`You have not specified any points for the track. To create a track, you need to specify at least two points.`)
       }
+      document.querySelector('#startTrack').style.display = 'block'
       ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       return
     }
@@ -758,6 +761,7 @@ window.addEventListener('load', () => {
       positions[0].y === positions[positions.length - 1].y) {
       startTrack = false
       new swal(`The starting point and ending point of the track cannot be the same. Please specify different points for the track.`)
+      document.querySelector('#startTrack').style.display = 'block'
       ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       return
     }
@@ -784,8 +788,8 @@ window.addEventListener('load', () => {
 
     //check if we have enough funds to add the train
     const trackCost = game.getTrackCost(positions)
-    const trainCost = trackCost +numCoaches * (trainType === 'freight' ? game.getFreightWagonCost() : game.getCoachCost()) + game.getEngineCost()
-      + 2*game.getStationCost() // adding 2 stations by default for each train
+    const trainCost = trackCost + numCoaches * (trainType === 'freight' ? game.getFreightWagonCost() : game.getCoachCost()) + game.getEngineCost()
+      + 2 * game.getStationCost() // adding 2 stations by default for each train
     if (trainCost > game.getCashInHand()) {
       new swal(`You do not have enough funds to add this train. You need $${trainCost.toLocaleString('en-US')} but you only have $${game.getCashInHand().toLocaleString('en-US')}.`)
       return
@@ -881,7 +885,7 @@ window.addEventListener('load', () => {
 
   const buttonGroup3 = document.querySelector('#buttonGroup3');
   makeDraggable(buttonGroup3);
-  
+
   const buttonGroup4 = document.querySelector('#buttonGroup4');
   makeDraggable(buttonGroup4);
 
@@ -1060,10 +1064,10 @@ function pauseBothTrains(train1Number, train2Number) {
   train2.setUserPaused(true)
 }
 
-function displayFinancialResults(){
+function displayFinancialResults() {
   //get cummulative values for each train
   const cashInHand = game.getCashInHand()
-  document.getElementById('cashInHand').textContent = Math.floor(cashInHand/1000000)
+  document.getElementById('cashInHand').textContent = Math.floor(cashInHand / 1000000)
   const financialSummary = game.getCumFinancialSummaryByTrain()
   const tableBody = document.querySelector('#resultsBody')
   tableBody.replaceChildren()
@@ -1071,12 +1075,12 @@ function displayFinancialResults(){
     if (revenue > 0 || financialSummary.totalExpenses[index] > 0) {
       const row = document.createElement('tr')
       const expenses = financialSummary.totalExpenses[index]
-      const profit = revenue - expenses
+      const profit = financialSummary.profit[index]
       row.innerHTML = `
         <td>${index + 1}</td>
-        <td>${Math.floor(revenue/1000000)}</td>
-        <td>${Math.floor(expenses/1000000)}</td>
-        <td>${Math.floor(profit/1000000)}</td>
+        <td>${Math.floor(revenue / 1000000)}</td>
+        <td>${Math.floor(expenses / 1000000)}</td>
+        <td>${Math.floor(profit / 1000000)}</td>
       `
       tableBody.appendChild(row)
     }
