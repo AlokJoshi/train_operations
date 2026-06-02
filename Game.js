@@ -110,6 +110,7 @@ class Game {
     const train = this.trains[trainNumber - 1]
     if (train) {
       train.addCoach()
+      this.financials.buyCoach(this.getCurrentTimeIndex(), trainNumber, 1) 
     }
   }
 
@@ -117,6 +118,8 @@ class Game {
     const train = this.trains[trainNumber - 1]
     if (train) {
       train.removeCoach()
+      // we do not refund the cost of the coach when it is removed to keep it simple. 
+      // This is a design choice and we can change it later if needed.
     }
   }
 
@@ -246,9 +249,22 @@ class Game {
       if(nullIndex !== -1){
         trainElement.style.filter = "none"
       } else{
-      trainElement.style.display = 'flex'
+      trainElement.style.display = 'grid'
       }
       trainElement.style.backgroundColor = color
+      //if freight train them disable the speed control buttons for that train
+      if(options.trainType === 'freight'){
+        const speedUpButton = document.querySelector(`#speedUpTrain${trainNumber}`)
+        const slowDownButton = document.querySelector(`#slowDownTrain${trainNumber}`)
+        if (speedUpButton) {
+          speedUpButton.disabled = true
+          speedUpButton.style.cursor = 'not-allowed'
+        }
+        if (slowDownButton) {
+          slowDownButton.disabled = true
+          slowDownButton.style.cursor = 'not-allowed'
+        }
+      }
     }
     return trainNumber
   }
@@ -304,6 +320,10 @@ class Game {
       this.trains.forEach(train => {
           if(train){  
             train.track.drawUsingNewPositions()
+            const stations = train.track.stations.getAllStations()
+            stations.forEach(station => {
+              station.draw()
+            })
           }
       })
       const trainElement = document.querySelector(`#train${trainNumber}`)

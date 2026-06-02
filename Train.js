@@ -12,9 +12,12 @@ class Train {
   static maxNumFreightWagons = 100
   static minNumCoaches = 2
   static coachPassengerCapacity = 200
-  static ticketPrice = 50 // fixed ticket price irrespective of the distance traveled to keep it simple. Revenue is calculated based on the number of passengers on board and the distance traveled.
+  static baseTicketPrice = 100 
   static rawMaterialCapacityPerFreightCoach = 100000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
-  static rawMaterialChargePerUnit = 500 // fixed charge per unit of raw material to keep it simple. Revenue is calculated based on the amount of raw material unloaded at the station.
+  static rawMaterialChargePerUnit = 100 // fixed charge per unit of raw material to keep it simple. Revenue is calculated based on the amount of raw material unloaded at the station.
+  static ticketPriceMap=new Map() // key is from row,col to row,col and value is the ticket price for that route. 
+                                  // We populate this as we go unless the ticket price is already in the map. 
+  
 
   constructor({
     ctx,
@@ -261,8 +264,12 @@ class Train {
           }
           // }
           //boarding loop
-          // for (const station of this.stations) {
-          // Here we calculate the number of passengers boarding the train at this station for all the following stations on the route. We can get the travel population for this station and then calculate the number of passengers boarding for each of the following stations on the route based on the travel population for those stations and the total travel population. This is a simplification but it should work for our purposes.
+          // Here we calculate the number of passengers boarding the train at this station for all the following 
+          // stations on the route. We can get the travel population for this station and then calculate the number 
+          // of passengers boarding for each of the following stations on the route based on the travel population 
+          // for those stations and the total travel population. This is a simplification but it should work for our purposes.
+          
+          
           const travelPopFrom = this.travelPopulation.travelPopulation.get(`${station.x},${station.y}`)?.population ?? 0
           for (const nextStation of this.stations) {
             if (!trainIsReturning && (nextStation.stationNumber > station.stationNumber) || trainIsReturning && (nextStation.stationNumber < station.stationNumber)) {
@@ -276,27 +283,46 @@ class Train {
               this.passengerMap.set(routeKey, boarding)
             }
           }
-          // }
+
           const passengerCapacity = this.numCoaches * Train.coachPassengerCapacity
           //we fix the map only if the number of passengers trying to board the train exceeds the passenger capacity of the train. This is to avoid the situation where we have a large number of passengers trying to board the train and we end up with a negative number of passengers on board after deboarding.
+          let proportionBoarding = 1
           if (totalBoarding + this.passengersOnBoard - totalDeboarding > passengerCapacity) {
             // if the number of passengers on board after boarding and deboarding exceeds the passenger capacity of the train, then we can assume that only the passengers that can fit in the train will board the train and the rest will not board the train. This is a simplification but it should work for our purposes.
-            const proportionBoarding = (passengerCapacity - this.passengersOnBoard + totalDeboarding) / totalBoarding
-            totalBoarding = Math.floor(totalBoarding * proportionBoarding)
-            for (const fromToKey of this.passengerMap.keys()) {
-              const [fromKey, toKeyInMap] = fromToKey.split('-')
-              if (fromKey === thisStationKey) {
-                const currentBoarding = this.passengerMap.get(fromToKey)
-                this.passengerMap.set(fromToKey, Math.floor(currentBoarding * proportionBoarding))
+            proportionBoarding = (passengerCapacity - this.passengersOnBoard + totalDeboarding) / totalBoarding
+          }
+          totalBoarding = Math.floor(totalBoarding * proportionBoarding)
+          for (const fromToKey of this.passengerMap.keys()) {
+            const [fromKey, toKeyInMap] = fromToKey.split('-')
+            if (fromKey === thisStationKey) {
+              const currentBoarding = this.passengerMap.get(fromToKey)
+              const adjustedBoarding = Math.floor(currentBoarding * proportionBoarding)
+              const toStationObj = this.stations.find(st => st.stationNumber === parseInt(toKeyInMap))
+              const ticketPriceKey1 = `${Math.floor(station.x/100) + 1},${Math.floor(station.y/100) +1}-${Math.floor(toStationObj.x/100) + 1},${Math.floor(toStationObj.y/100) + 1}`
+              const ticketPriceKey2 = `${Math.floor(toStationObj.x/100) + 1},${Math.floor(toStationObj.y/100) + 1}-${Math.floor(station.x/100) + 1},${Math.floor(station.y/100) +1}`
+              // following to save ticket price caclulation time on subsequent lookups for the same route. 
+              let ticketPrice 
+              if(Train.ticketPriceMap.has(ticketPriceKey1)) {
+                ticketPrice = Train.ticketPriceMap.get(ticketPriceKey1)
+              } else if(Train.ticketPriceMap.has(ticketPriceKey2)) {
+                ticketPrice = Train.ticketPriceMap.get(ticketPriceKey2)
+              } else {  
+                ticketPrice = Train.baseTicketPrice * this.adjustmentForDistance(fromToKey)
+                Train.ticketPriceMap.set(ticketPriceKey1, ticketPrice)
               }
+              // above to save ticket price caclulation time on subsequent lookups for the same route.
+              this.financials.incrementRevenueFromTickets(this.getCurrentTimeIndex(), this.trainNumber, ticketPrice * adjustedBoarding)
+              if(this.trainNumber === 2) {
+                console.log(`Train ${this.trainNumber} boarding from station ${fromKey} to station ${toKeyInMap}: ${currentBoarding} passengers, adjusted boarding: ${adjustedBoarding} passengers, ticket sale per passenger: ${ticketPrice}, total ticket sale: ${ticketPrice * adjustedBoarding}`)
+              }
+              this.passengerMap.set(fromToKey, adjustedBoarding)
             }
           }
 
           const prevPassengersOnBoard = this.passengersOnBoard
           this.passengersOnBoard = this.passengersOnBoard + totalBoarding - totalDeboarding
           // ticket sales is based on total boarding passengers and a fixed ticket price to keep it simple. We can also add a multiplier based on the distance between the from station and to station to make it more realistic but for now we will keep it simple with a fixed ticket price.
-          const currentTimeIndex = this.getCurrentTimeIndex()
-          this.financials.incrementRevenueFromTickets(currentTimeIndex, this.trainNumber, totalBoarding * Train.ticketPrice)
+          // const currentTimeIndex = this.getCurrentTimeIndex()
           // console.log(`Train ${this.trainNumber} at station ${thisStationKey} deboarded ${totalDeboarding} passengers, boarded ${totalBoarding} passengers, total passengers on board: ${this.passengersOnBoard}`)
           let infoText = ''
           if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
@@ -332,8 +358,7 @@ class Train {
             //earn revenue based on the amount of raw material unloaded and a fixed price per unit of raw material to keep it simple. 
             // We can also add a multiplier based on the distance between the from station and to station to make it more realistic 
             // but for now we will keep it simple with a fixed price per unit of raw material.
-            const currentTimeIndex = this.getCurrentTimeIndex()
-            this.financials.incrementRevenueFromRawMaterial(currentTimeIndex, this.trainNumber, totalUnloading * Train.rawMaterialChargePerUnit)
+            this.financials.incrementRevenueFromRawMaterial(this.getCurrentTimeIndex(), this.trainNumber, totalUnloading * Train.rawMaterialChargePerUnit)
             this.rawMaterialOnBoard -= totalUnloading
             this.rawMaterialDemand.decreaseDemand(station.x, station.y, totalUnloading)
             // console.log(`Train ${this.trainNumber} at station ${station.stationNumber} unloaded ${totalUnloading} units of 
@@ -343,7 +368,6 @@ class Train {
           for (const nextStation of this.stations) {
             if (!trainIsReturning && (nextStation.stationNumber > station.stationNumber) ||
               trainIsReturning && (nextStation.stationNumber < station.stationNumber)) {
-              const toKey = `${nextStation.stationNumber}`
               const demand = this.rawMaterialDemand.demandAt(nextStation.x, nextStation.y)
               totalRawMaterialDemand += demand
             }
@@ -563,6 +587,24 @@ class Train {
     const distance = this.distanceTraveledInTimeUnit
     this.distanceTraveledInTimeUnit = 0
     return distance
+  }
+
+  adjustmentForDistance(fromToKey) {
+    // we can have a simple adjustment factor based on the distance between the from station and to 
+    // station to make it more realistic. For example, we can assume that the ticket price increases 
+    // by 10% for every 100 units of distance traveled. This is a simplification but it should work for our purposes.
+    const [fromStation, toStation] = fromToKey.split('-').map(Number)
+    const fromStationObj = this.stations.find(st => st.stationNumber === fromStation)
+    const toStationObj = this.stations.find(st => st.stationNumber === toStation)
+    const fromCoords = [fromStationObj.x, fromStationObj.y]
+    const toCoords = [toStationObj.x, toStationObj.y]
+    const distance = Math.sqrt(Math.pow(toCoords[0] - fromCoords[0], 2) + Math.pow(toCoords[1] - fromCoords[1], 2))
+    const adjustmentFactor = 1 + (distance / 100) * 0.10
+    return adjustmentFactor
+  }
+
+  getNumCoachesOrFreightWagons() {
+    return this.numCoaches
   }
 }
 

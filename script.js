@@ -26,12 +26,15 @@ canvas.width = canvasTracks.width = canvasTemp.width = canvasResults.width = CAN
 
 let paused = true
 let startTrack = false
+let startExtendTrain = false
 let startFlyover = false
 let startStation = false
 let showingResults = false
 let showingHowToPlay = false
 let click_error = 20
 let validTrackPoints = new Set()
+let validStartingPoints = new Set()
+let positionsForExtendTrain = []
 const collisionAnimations = new Map()
 let collisionAnimationFrameId = null
 const collisionAnimationDurationMs = 3000
@@ -119,7 +122,7 @@ positions = [
 let trainNumber = game.addTrain(positions, 19, 2, 1, intersections,
   { trainType: 'passenger', partOfInitialSetup: true })
 game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, 'medium', { partOfInitialSetup: true })
-game.addStation(trainNumber, 700, 1000, `S${trainNumber}0906`, 30, 'medium', { partOfInitialSetup: true })
+game.addStation(trainNumber, 1000, 1000, `S${trainNumber}1111`, 30, 'medium', { partOfInitialSetup: true })
 
 // check statically entered freight train
 positions = [
@@ -164,6 +167,7 @@ const drawScene = () => {
         game.financials.incrementExpensesOfStationMaintenance(currentTimeUnit, train, train.getNumStations())
         const distanceTraveledInTimeUnit = train.consumeDistanceTraveledInTimeUnit()
         game.financials.incrementExpensesOfTrackMaintenance(currentTimeUnit, train, distanceTraveledInTimeUnit)
+        game.financials.incrementExpensesOfEngineAndCoachesDepreciation(currentTimeUnit, train.trainNumber, train.getNumCoachesOrFreightWagons())
       })
       game.incrementTimeUnit()
     }
@@ -188,6 +192,7 @@ window.addEventListener('load', () => {
   let showingPopulationMap = false
   let showingRawmaterialsMap = false
   let showingRawmaterialDemandMap = false
+  let positionsForExtendTrain = []
 
   const handleTrainHotkeys = (event) => {
 
@@ -275,12 +280,20 @@ window.addEventListener('load', () => {
 
         const rMaxSquare = (gridSize / 2) ** 3
         rawmaterialDemandMap.forEach(p => {
-          const radiusSquare = rMaxSquare * (p.rawmaterial / maxRawmaterialDemand)
-          const radius = Math.sqrt(radiusSquare)
-          ctxTemp.beginPath()
-          ctxTemp.arc(p.x, p.y, radius, 0, 2 * Math.PI)
-          ctxTemp.fillStyle = 'rgba(255,255,0,0.5)'
-          ctxTemp.fill()
+          if (p.rawmaterial !== 0) {
+
+            const radiusSquare = rMaxSquare * (p.rawmaterial / maxRawmaterialDemand)
+            const radius = Math.sqrt(radiusSquare)
+            ctxTemp.beginPath()
+            ctxTemp.arc(p.x, p.y, radius, 0, 2 * Math.PI)
+            ctxTemp.fillStyle = 'rgba(0,0,255,0.5)'
+            ctxTemp.fill()
+
+            ctxTemp.font = '20px Arial'
+            ctxTemp.fillStyle = 'black'
+            const textMetrics = ctxTemp.measureText(`${Math.floor(p.rawmaterial)}`)
+            ctxTemp.fillText(`${Math.floor(p.rawmaterial)}`, p.x - textMetrics.width / 2, p.y + 10)
+          }
         })
       } else {
         ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
@@ -331,6 +344,111 @@ window.addEventListener('load', () => {
 
   document.addEventListener('keydown', handleTrainHotkeys)
 
+  const hotkeyCodeMap = {
+    '?': 'Slash',
+    'P': 'KeyP',
+    'T': 'KeyT',
+    'S': 'KeyS',
+    'F': 'KeyF',
+    'R': 'KeyR',
+    'X': 'KeyX',
+    'Y': 'KeyY',
+    'Z': 'KeyZ'
+  }
+
+  document.querySelectorAll('#buttonGroup6 [data-hotkey]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const hotkey = (button.getAttribute('data-hotkey') || '').toUpperCase()
+      const normalizedHotkey = hotkey === '?' ? '?' : hotkey
+      const code = hotkeyCodeMap[normalizedHotkey]
+      if (!code) return
+      handleTrainHotkeys({
+        key: normalizedHotkey,
+        code,
+        repeat: false,
+        target: button
+      })
+    })
+  })
+
+  const pauseHotkeyButton = document.getElementById('P')
+  if (pauseHotkeyButton) {
+    pauseHotkeyButton.addEventListener('click', () => {
+      handleTrainHotkeys({
+        key: 'P',
+        code: 'KeyP',
+        repeat: false,
+        target: pauseHotkeyButton
+      })
+    })
+  }
+  const trainHotkeyButton = document.getElementById('T')
+  if (trainHotkeyButton) {
+    trainHotkeyButton.addEventListener('click', () => {
+      handleTrainHotkeys({
+        key: 'T',
+        code: 'KeyT',
+        repeat: false,
+        target: trainHotkeyButton
+      })
+    })
+  }
+  const stationHotkeyButton = document.getElementById('S')
+  if (stationHotkeyButton) {
+    stationHotkeyButton.addEventListener('click', () => {
+      handleTrainHotkeys({
+        key: 'S',
+        code: 'KeyS',
+        repeat: false,
+        target: stationHotkeyButton
+      })
+    })
+  }
+  const flyoverHotkeyButton = document.getElementById('F')
+  if (flyoverHotkeyButton) {
+    flyoverHotkeyButton.addEventListener('click', () => {
+      handleTrainHotkeys({
+        key: 'F',
+        code: 'KeyF',
+        repeat: false,
+        target: flyoverHotkeyButton
+      })
+    })
+  }
+  const xHotkeyButton = document.getElementById('X')
+  if (xHotkeyButton) {
+    xHotkeyButton.addEventListener('click', () => {
+      handleTrainHotkeys({
+        key: 'X',
+        code: 'KeyX',
+        repeat: false,
+        target: xHotkeyButton
+      })
+    })
+  }
+  const yHotkeyButton = document.getElementById('Y')
+  if (yHotkeyButton) {
+    yHotkeyButton.addEventListener('click', () => {
+      handleTrainHotkeys({
+        key: 'Y',
+        code: 'KeyY',
+        repeat: false,
+        target: yHotkeyButton
+      })
+    })
+  }
+  const zHotkeyButton = document.getElementById('Z')
+  if (zHotkeyButton) {
+    zHotkeyButton.addEventListener('click', () => {
+      handleTrainHotkeys({
+        key: 'Z',
+        code: 'KeyZ',
+        repeat: false,
+        target: zHotkeyButton
+      })
+    })
+  }
+
   const getCanvasPoint = (event) => {
     const rect = event.currentTarget.getBoundingClientRect()
     return {
@@ -341,6 +459,24 @@ window.addEventListener('load', () => {
 
   document.querySelector('#canvas_temp').addEventListener('click', (event) => {
     const point = getCanvasPoint(event)
+    if (startExtendTrain) {
+      //check which train is selected for extension
+      const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
+      const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
+      if ((Math.abs(x - point.x) < click_error) && (Math.abs(y - point.y) < click_error)) {
+        // console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y}`)
+        if ((positionsForExtendTrain.length===0) && (!validStartingPoints.has(`${x},${y}`))) {
+          console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y} but it's not a valid track point`)
+          return
+        }
+        console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y} and it's a valid starting point for track extension`)
+        positionsForExtendTrain.push({ x, y })
+        updateCanvasTempForExtendTrain()
+      }
+      
+      
+
+    }
     if (startTrack) {
       const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
       const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
@@ -384,9 +520,9 @@ window.addEventListener('load', () => {
             if (result.isConfirmed) {
               game.addStation(selectedTrainNumber, location.x, location.y, `S${selectedTrainNumber}${String((location.x / gridSize) + 1).padStart(2, '0')}${String((location.y / gridSize) + 1).padStart(2, '0')}`, 30, 'small')
               //clear the canvasTemp after adding the station
-              startStation = false
               ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
             }
+            startStation = false
           })
         }
       })
@@ -455,6 +591,19 @@ window.addEventListener('load', () => {
         event.target.style = "cursor:default"
       }
     }
+    if (startExtendTrain) {
+      const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
+      const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
+      if (Math.abs(x - point.x) < click_error && Math.abs(y - point.y) < click_error) {
+        if (!validTrackPoints.has(`${x},${y}`)) {
+          event.target.style = "cursor:default"
+          return
+        }
+        event.target.style = "cursor:pointer"
+      } else {
+        event.target.style = "cursor:default"
+      }
+    }
     if (startFlyover) {
       const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
       const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
@@ -479,21 +628,25 @@ window.addEventListener('load', () => {
     window.showPossibleFlyoverLocations()
   }
 
-  // window.canceltrack = function () {
-  //   ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-  //   if (startTrack) {
-  //     startTrack = false
-  //     document.querySelector('#canvas').style = 'cursor:default'
-  //     positions = []
-  //     setValidTrackPoints()
-  //   }
-  // }
-
   window.cancelStation = function () {
     startStation = false
     document.querySelector('#canvas_temp').style = 'cursor:default'
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
   }
+
+  window.completeTrainExtension = function () {
+    if (positionsForExtendTrain.length < 2) {
+      swal.fire({
+        title: 'Invalid Track Extension',
+        text: 'Please select at least two valid track points to extend the train. The first of these is the terminal station. If you do not want to extend the train then click on the Cross Icon in the Train Extension Controls to cancel the extension process.',
+        icon: 'warning',
+        confirmButtonText: 'OK'
+      })
+      return
+    }
+    //invoke the extendTrain function in the game object and pass it the positions for extend train and the 
+    //selected train number for extension. The selected train number for extension is stored in a variable called selectedTrainNumberForExtension which is set when the user clicks on one of the existing stations of a train to extend that train.
+
 
   window.startStation = function () {
     startFlyover = false
@@ -593,6 +746,77 @@ window.addEventListener('load', () => {
 
   //set up the grid
   drawGrid(ctxTracks)
+
+  function updateCanvasTempForExtendTrain() {
+    ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+    //for each of the positions for extend train draw a small circle on ctxTemp
+    positionsForExtendTrain.forEach(position => {
+      const { x, y } = position
+      ctxTemp.save()
+      ctxTemp.beginPath()
+      ctxTemp.moveTo(x, y)
+      ctxTemp.fillStyle = 'orange'
+      ctxTemp.arc(x, y, 7, 0, Math.PI * 2)
+      ctxTemp.closePath()
+      ctxTemp.fill()
+      ctxTemp.restore()
+    })
+
+    //clear the set and set it again with new valid points
+    validTrackPoints.clear()
+
+    if (positionsForExtendTrain.length === 0) {
+      return
+    }
+
+    const { x: last_x, y: last_y } = positionsForExtendTrain[positionsForExtendTrain.length - 1]
+    let x_before_last_x = null
+    let y_before_last_y = null
+    if (positionsForExtendTrain.length > 1) {
+      x_before_last_x = positionsForExtendTrain[positionsForExtendTrain.length - 2].x
+      y_before_last_y = positionsForExtendTrain[positionsForExtendTrain.length - 2].y
+    }
+
+    const lastRow = last_y / gridSize
+    const lastCol = last_x / gridSize
+    const increasingRow = y_before_last_y !== null && last_y > y_before_last_y
+    const decreasingRow = y_before_last_y !== null && last_y < y_before_last_y
+    const increasingCol = x_before_last_x !== null && last_x > x_before_last_x
+    const decreasingCol = x_before_last_x !== null && last_x < x_before_last_x
+    
+    for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
+      if (row == lastRow || row == lastRow - 1 || row == lastRow + 1 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
+        //go to next iteration since we want only gradual change in track direction and not sharp turns
+        continue
+      } else {
+        //drawCircle
+        ctxTemp.beginPath()
+        ctxTemp.moveTo(last_x + click_error, row * gridSize)
+        ctxTemp.arc(last_x, row * gridSize, click_error, 0, Math.PI * 2)
+        ctxTemp.strokeStyle = `rgba(0,255,0,0.3)`
+        ctxTemp.closePath()
+        ctxTemp.stroke()
+        validTrackPoints.add(`${last_x},${row * gridSize}`)
+      }
+    }
+
+    for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
+      if (col == lastCol || col == lastCol - 1 || col == lastCol + 1 || (x_before_last_x !== null && ((increasingCol && col < lastCol) || (decreasingCol && col > lastCol)))) {
+        //go to next iteration since we want only gradual change in track direction and not sharp turns
+        continue
+      } else {
+        //drawCircle
+        ctxTemp.beginPath()
+        ctxTemp.moveTo(col * gridSize + click_error, last_y)
+        ctxTemp.arc(col * gridSize, last_y, click_error, 0, Math.PI * 2)
+        ctxTemp.strokeStyle = `rgba(0,255,0,0.3)`
+        ctxTemp.closePath()
+        ctxTemp.stroke()
+        validTrackPoints.add(`${col * gridSize},${last_y}`)
+      }
+    }
+  }
+
   function updateCanvasTemp() {
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
     //for each of the positions draw a small circle on ctxTemp
@@ -611,7 +835,10 @@ window.addEventListener('load', () => {
     //clear the set and set it again with new valid points
     validTrackPoints.clear()
 
-    //mark all points in the same row and column as the last position with a light green
+    if (positions.length === 0) {
+      return
+    }
+
     const { x: last_x, y: last_y } = positions[positions.length - 1]
     let x_before_last_x = null
     let y_before_last_y = null
@@ -626,7 +853,7 @@ window.addEventListener('load', () => {
     const decreasingRow = y_before_last_y !== null && last_y < y_before_last_y
     const increasingCol = x_before_last_x !== null && last_x > x_before_last_x
     const decreasingCol = x_before_last_x !== null && last_x < x_before_last_x
-
+    
     for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
       if (row == lastRow || row == lastRow - 1 || row == lastRow + 1 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
         //go to next iteration since we want only gradual change in track direction and not sharp turns
@@ -690,6 +917,38 @@ window.addEventListener('load', () => {
     game.startStopTrain(trainnumber)
   }
 
+  //not using this function currently.
+  window.extendTrain = (trainnumber) => {
+    
+    const buttonGroup1 = document.querySelector('#buttonGroup1')
+    const extendTrainEls = buttonGroup1.querySelectorAll('.fa-expand-alt')
+    extendTrainEls.forEach((el, index) => {
+      el.dataset.selected = 'false'
+      el.dataset.trainnumber = 0
+    })
+    extendTrainEls[trainnumber - 1].dataset.selected = 'true'
+    extendTrainEls[trainnumber - 1].dataset.trainnumber = trainnumber
+    const trainExtensionControlEl = document.querySelector(`#trainExtensionControls${trainnumber}`)
+    if (trainExtensionControlEl) {
+      trainExtensionControlEl.style.display = 'flex'
+    }
+    const train = game.trains[trainnumber - 1]
+      const stations = train.stations
+      const startStation = stations[0]
+      const endStation = stations[stations.length - 1]
+    validStartingPoints = new Set()
+    validStartingPoints.add(`${startStation.x},${startStation.y}`)
+    validStartingPoints.add(`${endStation.x},${endStation.y}`)
+    swal.fire({
+        title: `Extend Train ${trainnumber}`,
+        text: `Click on one of the two terminal stations of Train ${trainnumber} - (${startStation.name} or ${endStation.name}). 
+        These are the only valid stations from which you can extend the train. After clicking on the station, you will be guided to select other points on the grid to extend the track from that station. When you are done click on the check icon in the train control. If you want to cancel then click on the cross icon in the train control.`
+      })
+    startExtendTrain = true
+  }
+
+
+
   window.starttrack = () => {
     startTrack = true
     const cancelTrackBtn = document.querySelector('#cancelTrack')
@@ -721,7 +980,15 @@ window.addEventListener('load', () => {
       ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
     }
   }
-
+  window.cancelTrainExtension = (trainnumber) => {
+    startExtendTrain = false
+    positionsForExtendTrain = []
+    validStartingPoints.clear()
+    const extendTrainEl = document.querySelector('#trainExtensionControls' + trainnumber)
+    if (extendTrainEl) {
+      extendTrainEl.style.display = 'none'
+    }
+  }
   window.removetrain = (trainnumber) => {
     const train = game.trains[trainnumber - 1]
     const trainName = train ? train.name : `Train ${trainnumber}`
@@ -792,6 +1059,8 @@ window.addEventListener('load', () => {
       + 2 * game.getStationCost() // adding 2 stations by default for each train
     if (trainCost > game.getCashInHand()) {
       new swal(`You do not have enough funds to add this train. You need $${trainCost.toLocaleString('en-US')} but you only have $${game.getCashInHand().toLocaleString('en-US')}.`)
+      startTrack = false
+      document.querySelector('#startTrack').style.display = 'block'
       return
     }
     game.addTrain(positions, speed, numCoaches, 0, intersections, { trainType })
@@ -891,6 +1160,9 @@ window.addEventListener('load', () => {
 
   const buttonGroup5 = document.querySelector('#buttonGroup5');
   makeDraggable(buttonGroup5);
+
+  const buttonGroup6 = document.querySelector('#buttonGroup6');
+  makeDraggable(buttonGroup6);
 
 })
 
@@ -1048,6 +1320,17 @@ function drawGrid(ctx) {
   }
   ctx.closePath()
   ctx.stroke()
+
+  // number the columns and rows (in the first row and first column with 1,2,3..)
+  ctx.fillStyle = 'black'
+  ctx.font = '12px Arial'
+  for (let i = 0; i < numCols; i++) {
+    ctx.fillText(i + 1, CANVASMARGIN + i * gridSize + 5, CANVASMARGIN + 10)
+  }
+  for (let j = 1; j < numRows; j++) {
+    ctx.fillText(j + 1, CANVASMARGIN + 5, CANVASMARGIN + j * gridSize + 10)
+  }
+
 }
 
 async function showCustomAlert(message) {
