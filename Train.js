@@ -1,4 +1,5 @@
 "use strict";
+import { makeDraggable } from './utility.js'
 class Train {
   static lengthEngine = 40
   static widthEngine = 14
@@ -11,13 +12,13 @@ class Train {
   static maxNumCoaches = 15
   static maxNumFreightWagons = 100
   static minNumCoaches = 2
-  static coachPassengerCapacity = 200
-  static baseTicketPrice = 100 
+  static coachPassengerCapacity = 100
+  static baseTicketPrice = 300
   static rawMaterialCapacityPerFreightCoach = 100000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
   static rawMaterialChargePerUnit = 100 // fixed charge per unit of raw material to keep it simple. Revenue is calculated based on the amount of raw material unloaded at the station.
-  static ticketPriceMap=new Map() // key is from row,col to row,col and value is the ticket price for that route. 
-                                  // We populate this as we go unless the ticket price is already in the map. 
-  
+  static ticketPriceMap = new Map() // key is from row,col to row,col and value is the ticket price for that route. 
+  // We populate this as we go unless the ticket price is already in the map. 
+
 
   constructor({
     ctx,
@@ -37,7 +38,8 @@ class Train {
     getCurrentTimeIndex,
     trainType = 'passenger',
     visualLengthScale = 1,
-    maxVisualCoaches
+    maxVisualCoaches,
+    popups
   } = {}) {
     this.ctx = ctx
     this.ctxTemp = ctxTemp
@@ -47,7 +49,8 @@ class Train {
     // speed parameter: 1=slowest, 20=fastest. Internally inverted to a frame-step divisor (lower=faster).
     // Freight trains run at a fixed half-of-maximum speed (divisor 11 = parameter 10 out of 20).
     this.speed = this.trainType == 'passenger' ? Math.max(1, 21 - speed) : 11
-    this.numCoaches = numCoaches ? Math.min(Math.max(numCoaches, Train.minNumCoaches), Train.maxNumCoaches) : Math.floor((Train.minNumCoaches + Train.maxNumCoaches) / 2)
+    const maxInitialCoaches = this.trainType === 'freight' ? Train.maxNumFreightWagons : Train.maxNumCoaches
+    this.numCoaches = numCoaches ? Math.min(Math.max(numCoaches, Train.minNumCoaches), maxInitialCoaches) : Math.floor((Train.minNumCoaches + Train.maxNumCoaches) / 2)
     this.ticks = 0
     this.count = 0
     this.isReturning = false
@@ -92,26 +95,32 @@ class Train {
     this.lastProcessedStationNumber = null  // prevents boarding/deboarding from firing on every frame while at a station
     this.remainingDwellTime = 0
     this.infoText = ''
-    this.infoTextTicks = 0
+    // this.infoTextTicks = 0
     this.freightTrainDwellTime = 200 // fixed dwell time for freight trains at each station for loading and unloading. This can be adjusted as needed.
     this.rawMaterialDemand = rawMaterialDemand
     this.rawMaterialSupply = rawMaterialSupply
     this.rawMaterialOnBoard = 0
     this.distanceTraveledInTimeUnit = 0
+    this.popups = popups
   }
 
   addCoach() {
-    if (this.numCoaches < Train.maxNumCoaches) {
-      this.numCoaches += 1
-      this.trainlength = Train.lengthEngine + (Train.lengthCoach + 2) * this.numCoaches
-      if (!this.hasExplicitVisualCoachCap) this.maxVisualCoaches = this.numCoaches
+    const maxAllowedCoaches = this.trainType === "freight" ? Train.maxNumFreightWagons : Train.maxNumCoaches
+    if (this.numCoaches >= maxAllowedCoaches) return
+
+    this.numCoaches += 1
+    if (!this.hasExplicitVisualCoachCap) {
+      this.maxVisualCoaches = this.numCoaches
     }
+    this.trainlength = Train.lengthEngine + (Train.lengthCoach + 2) * this.numCoaches
   }
   removeCoach() {
     if (this.numCoaches > Train.minNumCoaches) {
       this.numCoaches -= 1
+      if (!this.hasExplicitVisualCoachCap) {
+        this.maxVisualCoaches = this.numCoaches
+      }
       this.trainlength = Train.lengthEngine + (Train.lengthCoach + 2) * this.numCoaches
-      if (!this.hasExplicitVisualCoachCap) this.maxVisualCoaches = this.numCoaches
     }
   }
 
@@ -189,7 +198,7 @@ class Train {
 
     //draw is called on each frame from the game loop
     const d = 2 //distance between one coach and the next
-    
+
     // Only increment ticks and dwell time when game is not paused
     if (!this.userPaused) {
       this.ticks++
@@ -268,8 +277,8 @@ class Train {
           // stations on the route. We can get the travel population for this station and then calculate the number 
           // of passengers boarding for each of the following stations on the route based on the travel population 
           // for those stations and the total travel population. This is a simplification but it should work for our purposes.
-          
-          
+
+
           const travelPopFrom = this.travelPopulation.travelPopulation.get(`${station.x},${station.y}`)?.population ?? 0
           for (const nextStation of this.stations) {
             if (!trainIsReturning && (nextStation.stationNumber > station.stationNumber) || trainIsReturning && (nextStation.stationNumber < station.stationNumber)) {
@@ -287,9 +296,12 @@ class Train {
           const passengerCapacity = this.numCoaches * Train.coachPassengerCapacity
           //we fix the map only if the number of passengers trying to board the train exceeds the passenger capacity of the train. This is to avoid the situation where we have a large number of passengers trying to board the train and we end up with a negative number of passengers on board after deboarding.
           let proportionBoarding = 1
+          let unableToBoard = 0
           if (totalBoarding + this.passengersOnBoard - totalDeboarding > passengerCapacity) {
             // if the number of passengers on board after boarding and deboarding exceeds the passenger capacity of the train, then we can assume that only the passengers that can fit in the train will board the train and the rest will not board the train. This is a simplification but it should work for our purposes.
-            proportionBoarding = (passengerCapacity - this.passengersOnBoard + totalDeboarding) / totalBoarding
+            unableToBoard = totalBoarding + this.passengersOnBoard - totalDeboarding - passengerCapacity
+            // proportionBoarding = (passengerCapacity - this.passengersOnBoard + totalDeboarding) / totalBoarding
+            proportionBoarding = (totalBoarding-unableToBoard) / totalBoarding
           }
           totalBoarding = Math.floor(totalBoarding * proportionBoarding)
           for (const fromToKey of this.passengerMap.keys()) {
@@ -298,21 +310,21 @@ class Train {
               const currentBoarding = this.passengerMap.get(fromToKey)
               const adjustedBoarding = Math.floor(currentBoarding * proportionBoarding)
               const toStationObj = this.stations.find(st => st.stationNumber === parseInt(toKeyInMap))
-              const ticketPriceKey1 = `${Math.floor(station.x/100) + 1},${Math.floor(station.y/100) +1}-${Math.floor(toStationObj.x/100) + 1},${Math.floor(toStationObj.y/100) + 1}`
-              const ticketPriceKey2 = `${Math.floor(toStationObj.x/100) + 1},${Math.floor(toStationObj.y/100) + 1}-${Math.floor(station.x/100) + 1},${Math.floor(station.y/100) +1}`
+              const ticketPriceKey1 = `${Math.floor(station.x / 100) + 1},${Math.floor(station.y / 100) + 1}-${Math.floor(toStationObj.x / 100) + 1},${Math.floor(toStationObj.y / 100) + 1}`
+              const ticketPriceKey2 = `${Math.floor(toStationObj.x / 100) + 1},${Math.floor(toStationObj.y / 100) + 1}-${Math.floor(station.x / 100) + 1},${Math.floor(station.y / 100) + 1}`
               // following to save ticket price caclulation time on subsequent lookups for the same route. 
-              let ticketPrice 
-              if(Train.ticketPriceMap.has(ticketPriceKey1)) {
+              let ticketPrice
+              if (Train.ticketPriceMap.has(ticketPriceKey1)) {
                 ticketPrice = Train.ticketPriceMap.get(ticketPriceKey1)
-              } else if(Train.ticketPriceMap.has(ticketPriceKey2)) {
+              } else if (Train.ticketPriceMap.has(ticketPriceKey2)) {
                 ticketPrice = Train.ticketPriceMap.get(ticketPriceKey2)
-              } else {  
+              } else {
                 ticketPrice = Train.baseTicketPrice * this.adjustmentForDistance(fromToKey)
                 Train.ticketPriceMap.set(ticketPriceKey1, ticketPrice)
               }
               // above to save ticket price caclulation time on subsequent lookups for the same route.
               this.financials.incrementRevenueFromTickets(this.getCurrentTimeIndex(), this.trainNumber, ticketPrice * adjustedBoarding)
-              if(this.trainNumber === 2) {
+              if (this.trainNumber === 2) {
                 console.log(`Train ${this.trainNumber} boarding from station ${fromKey} to station ${toKeyInMap}: ${currentBoarding} passengers, adjusted boarding: ${adjustedBoarding} passengers, ticket sale per passenger: ${ticketPrice}, total ticket sale: ${ticketPrice * adjustedBoarding}`)
               }
               this.passengerMap.set(fromToKey, adjustedBoarding)
@@ -321,17 +333,25 @@ class Train {
 
           const prevPassengersOnBoard = this.passengersOnBoard
           this.passengersOnBoard = this.passengersOnBoard + totalBoarding - totalDeboarding
-          // ticket sales is based on total boarding passengers and a fixed ticket price to keep it simple. We can also add a multiplier based on the distance between the from station and to station to make it more realistic but for now we will keep it simple with a fixed ticket price.
-          // const currentTimeIndex = this.getCurrentTimeIndex()
+          // ticket sales is based on total boarding passengers and a distance-adjusted ticket price.
           // console.log(`Train ${this.trainNumber} at station ${thisStationKey} deboarded ${totalDeboarding} passengers, boarded ${totalBoarding} passengers, total passengers on board: ${this.passengersOnBoard}`)
           let infoText = ''
           if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
-            infoText = `T${this.trainNumber} Psgrs: ${prevPassengersOnBoard} - ${totalDeboarding} + ${totalBoarding} = ${this.passengersOnBoard}`
+            infoText = `T${this.trainNumber} P: - ${totalDeboarding} + ${totalBoarding} = ${this.passengersOnBoard} | (${unableToBoard}??)`
           } else {
-            infoText = `T${this.trainNumber} Psgrs: ${this.passengersOnBoard}`
+            infoText = `T${this.trainNumber} P: ${this.passengersOnBoard} | (${unableToBoard}??)`
           }
-          this.infoText = infoText
-          this.infoTextTicks = 400
+          // this.infoText = infoText
+          // this.infoTextTicks = 400
+          this.popups.addTrain({
+            x: station.x,
+            y: station.y,
+            stationName: station.name,
+            trainNumber: this.trainNumber,
+            trainInfo: infoText,
+          })
+          const existingPopupInfo = this.popups.getPopupInfo(station.x, station.y)
+          this.displayInfo(existingPopupInfo, station.x,station.y)
         }
         if (this.trainType == 'freight') {
           // For freight trains, we can assume that they take a fixed amount of time at each station for loading and unloading. 
@@ -376,21 +396,28 @@ class Train {
           let rawMaterialAvailable = this.rawMaterialSupply.availableAt(station.x, station.y)
           let capacity = this.numCoaches * Train.rawMaterialCapacityPerFreightCoach
           let availableCapacity = capacity - (this.rawMaterialOnBoard ?? 0)
-          let rawMaterialLoaded = Math.min(totalRawMaterialDemand-this.rawMaterialOnBoard, rawMaterialAvailable, availableCapacity)
+          let rawMaterialLoaded = Math.min(totalRawMaterialDemand - this.rawMaterialOnBoard, rawMaterialAvailable, availableCapacity)
           if (rawMaterialLoaded > 0) {
             this.rawMaterialOnBoard += rawMaterialLoaded
             this.rawMaterialSupply.decreaseRawMaterial(station.x, station.y, rawMaterialLoaded)
           }
-          // console.log(`Train ${this.trainNumber} at station ${station.stationNumber} raw material available: ${rawMaterialAvailable}, total raw material demand ahead: ${totalRawMaterialDemand}, capacity: ${capacity}, available capacity: ${availableCapacity}, raw material loaded: ${rawMaterialLoaded}`)
-          // console.log(`Train ${this.trainNumber} at station ${station.stationNumber} total raw material demand ahead: ${totalRawMaterialDemand}`)
           let infoText = ''
           if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
-            infoText = `T${this.trainNumber} Freight: Avlb: ${rawMaterialAvailable}, Dem: ${totalRawMaterialDemand}, Lded: ${rawMaterialLoaded}`
+            infoText = `T${this.trainNumber} F: - ${this.rawMaterialDemand.demandAt(station.x, station.y)} + ${rawMaterialLoaded} = ${this.rawMaterialOnBoard}`
           } else {
-            infoText = `T${this.trainNumber} Freight: Lded: ${rawMaterialLoaded}`
+            infoText = `T${this.trainNumber} F: ${this.rawMaterialOnBoard}`
           }
-          this.infoText = infoText
-          this.infoTextTicks = 400
+          // this.infoText = infoText
+          // this.infoTextTicks = 400
+          this.popups.addTrain({
+            x: station.x,
+            y: station.y,
+            stationName: station.name,
+            trainNumber: this.trainNumber,
+            trainInfo: infoText,
+          })
+          const existingPopupInfo = this.popups.getPopupInfo(station.x, station.y)
+          this.displayInfo(existingPopupInfo, station.x, station.y)
         }
       }
     }
@@ -399,31 +426,31 @@ class Train {
 
     if (!atAStation) this.lastProcessedStationNumber = null  // train has left the station, allow retriggering next visit
 
-    if (this.infoTextTicks > 0 && this.infoText) {
-      this.ctx.save()
-      this.ctx.font = '12px Arial'
-      // this.ctx.globalAlpha = this.infoTextTicks / 120
+    // if (this.infoTextTicks > 0 && this.infoText) {
+    //   this.ctx.save()
+    //   this.ctx.font = '12px Arial'
+    //   // this.ctx.globalAlpha = this.infoTextTicks / 120
 
-      const textX = this.x<10 ? this.x+10: this.x - 10
-      const textY = this.y<10 ? this.y+20: this.y - 10
-      const metrics = this.ctx.measureText(this.infoText)
-      const textHeight = 14
-      const paddingX = 4
-      const paddingY = 2
+    //   const textX = this.x < 10 ? this.x + 10 : this.x - 10
+    //   const textY = this.y < 10 ? this.y + 20 : this.y - 10
+    //   const metrics = this.ctx.measureText(this.infoText)
+    //   const textHeight = 14
+    //   const paddingX = 4
+    //   const paddingY = 2
 
-      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.75)'
-      this.ctx.fillRect(
-        textX - paddingX,
-        textY - textHeight + paddingY,
-        metrics.width + paddingX * 2,
-        textHeight + paddingY * 2
-      )
+    //   this.ctx.fillStyle = 'rgba(0, 0, 0, 0.75)'
+    //   this.ctx.fillRect(
+    //     textX - paddingX,
+    //     textY - textHeight + paddingY,
+    //     metrics.width + paddingX * 2,
+    //     textHeight + paddingY * 2
+    //   )
 
-      this.ctx.fillStyle = '#fff'
-      this.ctx.fillText(this.infoText, textX, textY)
-      this.ctx.restore()
-      this.infoTextTicks--
-    }
+    //   this.ctx.fillStyle = '#fff'
+    //   this.ctx.fillText(this.infoText, textX, textY)
+    //   this.ctx.restore()
+    //   this.infoTextTicks--
+    // }
 
     this.ctx.save()
     this.ctx.fillStyle = this.color
@@ -449,10 +476,13 @@ class Train {
     }
 
     const visibleCoachCount = Math.min(this.numCoaches, this.maxVisualCoaches)
+    const simulatedCoachRangeMax = this.hasExplicitVisualCoachCap
+      ? Math.max(0, Math.min(this.numCoaches, this.maxVisualCoaches) - 1)
+      : Math.max(0, this.numCoaches - 1)
     for (let visualIndex = 0; visualIndex < visibleCoachCount; visualIndex++) {
       const simulatedCoachIndex = visibleCoachCount === 1
         ? 0
-        : Math.round((visualIndex / (visibleCoachCount - 1)) * (this.numCoaches - 1))
+        : Math.round((visualIndex / (visibleCoachCount - 1)) * simulatedCoachRangeMax)
       const gap = getCoachGap(simulatedCoachIndex, this.visualLengthScale)
       const { x: x2, y: y2, direction: direction2 } = this.getPosition(-1 * gap)
 
@@ -462,6 +492,12 @@ class Train {
       this.ctx.rotate(direction2)
       this.ctx.translate(-10, -1 * Train.widthCoach * 0.5)
       this.drawCoach()
+      if (visualIndex === visibleCoachCount - 1) {
+        // draw the number of coaches on the last visible coach
+        this.ctx.fillStyle = '#000'
+        this.ctx.font = '10px Arial'
+        this.ctx.fillText(`${this.numCoaches}`, 2, Train.widthCoach * 0.5 + 4)
+      }
       this.ctx.restore()
     }
 
@@ -606,9 +642,69 @@ class Train {
   getNumCoachesOrFreightWagons() {
     return this.numCoaches
   }
+
+  extendTrain(positionsForExtendTrain) {
+    // We pass these positions to the track to extend it and get the new station location
+    const { track, stationLocation } = this.track.extendTrack(positionsForExtendTrain)
+    this.track = track
+    return stationLocation
+  }
+
+  displayInfo(popupInfo, x, y) {
+    const canvas = document.querySelector('#canvas')
+    const canvasRect = canvas?.getBoundingClientRect()
+    const popupLeft = (canvasRect?.left ?? 0) + window.scrollX + x
+    const popupTop = (canvasRect?.top ?? 0) + window.scrollY + y + 20
+
+    // check if dynamically created popup info element already exists.
+    // if it does not exist then create it.
+    let popupElement = document.querySelector(`#popupInfo${x}${y}`)
+    if (!popupElement) {
+      popupElement = document.createElement('div')
+      popupElement.id = `popupInfo${x}${y}`
+      popupElement.className = 'popupInfo'
+      //create an element to show the station name as the heading of the popup
+      const stationNameElement = document.createElement('div')
+      stationNameElement.id = `popupInfoStationName${x}${y}`
+      stationNameElement.className = 'stationName'
+      popupElement.appendChild(stationNameElement)
+      //create an element to hold the train info below the station name
+      const trainsInfoElement = document.createElement('div')
+      trainsInfoElement.id = `popupInfoTrainsInfo${x}${y}`
+      trainsInfoElement.className = 'trainsInfo'
+      popupElement.appendChild(trainsInfoElement)
+      document.body.appendChild(popupElement)
+      popupElement.style.top = `${popupTop}px`
+      popupElement.style.left = `${popupLeft}px`
+
+      makeDraggable(popupElement)
+    }
+    //convert the popupInfo object to a string
+    //concatenate the station names and that will be the heading of the popup
+    
+    const stationsNames = popupInfo.Stations.join(', ')
+    const stationNameElement = document.querySelector(`#popupInfoStationName${x}${y}`)
+    if (stationNameElement) {
+      stationNameElement.innerText = stationsNames
+    }
+    //show the train info below the station names
+
+    const trainsInfoElement = document.querySelector(`#popupInfoTrainsInfo${x}${y}`)
+    if (trainsInfoElement) {
+      trainsInfoElement.innerHTML   = '' // clear previous train info
+     }
+    popupInfo.Trains.forEach(train => {
+      //each train object has trainNumber and trainInfo
+      const trainInfo = train.TrainInfo
+      
+      const trainInfoElement = document.createElement('div')
+      trainInfoElement.className = 'trainInfo'
+      trainInfoElement.innerText = trainInfo
+      trainsInfoElement.appendChild(trainInfoElement)
+    })
+
+  }
 }
-
-
 export {
   Train
 }

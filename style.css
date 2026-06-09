@@ -11,7 +11,7 @@
   box-sizing: content-box;
 }
 
-#canvas,#canvas_tracks,#canvas_temp{
+#canvas,#canvas_tracks,#canvas_results,#canvas_temp{
   width:2400px;
   height:1600px;
   position:absolute;
@@ -31,15 +31,8 @@
   pointer-events: none;
 }
 #canvas_results{
-  width:2400px;
-  height:1600px;
   background-color:rgba(0,0,0,0);
   color:#eee;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  font-size:3em;
   pointer-events: none;
   z-index: 3;
 }
@@ -102,6 +95,17 @@ button:hover{
   left: 10000px;
 }
 
+.popupInfo {
+  position: absolute;
+  z-index: 1001;
+  pointer-events: auto;
+  background-color: rgba(0, 0, 0, 0.75);
+  color: #eee;
+  padding: 10px 12px;
+  border-radius: 8px;
+  max-width: 360px;
+}
+
 .key {
   font-size: 1.2em;
   font-weight: bold;
@@ -151,6 +155,23 @@ button:hover{
     top: 2vh !important;
     width: 96vw !important;
     max-height: 88vh;
+  }
+
+  .popupInfo {
+    position: fixed;
+    width: 90vw !important;
+    max-height: 80vh;
+    overflow-y: auto;
+    pointer-events: auto;
+    z-index: 1001;
+  }
+  .stationName {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-bottom: 10px;
+  } 
+  .trainsInfo {
+    font-size: 1.2em;
   }
 }
 

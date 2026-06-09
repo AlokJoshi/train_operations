@@ -18,8 +18,8 @@ class Financials {
     this.cumRevenueByTrain = new Array(9).fill(0)
     this.cumCostByTrain = new Array(9).fill(0)
     this.cumProfitByTrain = new Array(9).fill(0)
-    this.trackMaintenanceCostPerUnitPerTimePeriod = 10
-    this.stationMaintenanceCostPerStationPerTimePeriod = 200
+    this.trackMaintenanceCostPerUnitPerTimePeriod = 5
+    this.stationMaintenanceCostPerStationPerTimePeriod = 100
     this.cashInHand = 5000000
   }
   incrementExpensesOfStationMaintenance(timeIndex,train, numStations) {

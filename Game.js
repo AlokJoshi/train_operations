@@ -11,7 +11,7 @@ import { TravelPopulation} from './TravelPopulation.js'
 import { Rawmaterials } from './Rawmaterials.js'
 import { RawmaterialDemand } from './RawmaterialDemand.js'
 import { RawMaterialSupply } from './RawMaterialSupply.js'
-
+import { Popups} from "./Popups.js"
 class Game {
 
   TRAINCONFIG = [
@@ -42,6 +42,7 @@ class Game {
     this.rawmaterials = new Rawmaterials(ctx.canvas.width, ctx.canvas.height, gridSize)
     this.rawmaterialDemand = new RawmaterialDemand(ctx.canvas.width, ctx.canvas.height, gridSize)
     this.rawmaterialSupply = new RawMaterialSupply(ctx.canvas.width, ctx.canvas.height, gridSize)
+    this.popups = new Popups()
     //log population to check the values
     // console.log(this.population)
     // console.log(this.travelPopulation)
@@ -234,7 +235,8 @@ class Game {
       getCurrentTimeIndex: () => this.getCurrentTimeIndex(),
       trainType: options.trainType,
       visualLengthScale: options.visualLengthScale,
-      maxVisualCoaches: options.maxVisualCoaches
+      maxVisualCoaches: options.maxVisualCoaches,
+      popups: this.popups
     })
     const length = track.getTotalLength()
     const currentTimeIndex = this.getCurrentTimeIndex()
@@ -354,6 +356,17 @@ class Game {
 
     this.financials.incrementTimeUnit()
     // this.travelPopulation.incrementTimeUnit()
+  }
+
+  extendTrain(trainNumber, positionsForExtendTrain){
+    const train = this.trains[trainNumber - 1]
+    if(train){
+      const stationLocation  = train.extendTrain(positionsForExtendTrain)
+      const station = createStation(this.ctxTracks, stationLocation.x, stationLocation.y, this.gridSize, 0, `S${trainNumber}${String((stationLocation.x / this.gridSize) + 1).padStart(2, '0')}${String((stationLocation.y / this.gridSize) + 1).padStart(2, '0')}`, 30, 'small')
+      train.addStation(station)
+      train.intersections.updateIntersectionsWithStationLocation(stationLocation.y / this.gridSize, stationLocation.x / this.gridSize, 'Station')
+      this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, 'small')
+    }
   }
 }
 export {

@@ -33,14 +33,54 @@ class Track {
     //track in which case we will be adding only one station.) So we can directly add the two stations at the beginning and the end of the track. This way we can ensure that there are always two stations on the track for the train to stop at and generate revenue from operations.
   }
 
+  extendTrack(positionsForExtendTrain) {
+    // check if the track is extended from starting point or ending point and add the new positions accordingly.
+    const firstPosition = this.positions[0]
+    const lastPosition = this.positions[this.positions.length - 1]
+    const firstExtendPosition = positionsForExtendTrain[0].x==firstPosition.x && positionsForExtendTrain[0].y==firstPosition.y
+    const lastExtendPosition = positionsForExtendTrain[0].x==lastPosition.x && positionsForExtendTrain[0].y==lastPosition.y
+    
+    //the train does not have a station at this position currently but it will require a station at this position after extension. So we need to add a station at this position before extension.
+    const stationRequiredAt = positionsForExtendTrain[positionsForExtendTrain.length - 1] 
+
+
+    if (!firstExtendPosition && !lastExtendPosition) {
+      console.error('Invalid track extension: first position of extension does not match either end of the track.')
+      return this
+    }
+    if (firstExtendPosition) {
+      // this means that the points from positionsForExtendTrain should be added to the beginning of the track
+      // except the first point which is already same as the first point of the track.
+      // however the order of the points in positionsForExtendTrain should be reversed before 
+      // adding to the beginning of the track because the first point of positionsForExtendTrain is same as the first point of the track and we want to add the new points in the correct order.
+      positionsForExtendTrain.reverse()
+      console.log(this.positions)
+      this.positions = [...positionsForExtendTrain, ...this.positions.slice(1)]
+      console.log(this.positions)
+    } else if (lastExtendPosition) {
+      // this means that the points from positionsForExtendTrain should be added to the end of the track
+      // except the first point which is already same as the last point of the track.
+      console.log(this.positions)
+      this.positions = [...this.positions, ...positionsForExtendTrain.slice(1)]
+      console.log(this.positions)
+    }
+    this.newPositions = []
+    this.segments = []
+    this.returnSegments = []
+    this.updatePositions()
+    this.drawUsingNewPositions()
+    this.updateSegmentsFromNewPositions()
+    this.updatePossibleFlyoverLocations()
+    this.recalculateAllStationDistances()
+
+    return { track: this, stationLocation: stationRequiredAt }
+  }
+
   getStations() {
     return this.stations.getAllStations()
   }
 
-  addStation(station) {
-    // Project station point onto the nearest forward segment and use that projected
-    // distance along the route. This works even when station coordinates are not
-    // exactly equal to segment start/end points.
+  getProjectedDistanceForStation(station) {
     let nearestDistance = 0
     let nearestSquaredDistance = Number.POSITIVE_INFINITY
 
@@ -66,7 +106,19 @@ class Track {
       }
     }
 
-    station.distanceFromStart = nearestDistance
+    return nearestDistance
+  }
+
+  recalculateAllStationDistances() {
+    const stations = this.stations.getAllStations()
+    stations.forEach(station => {
+      station.distanceFromStart = this.getProjectedDistanceForStation(station)
+    })
+    this.stations.reindexByDistance()
+  }
+
+  addStation(station) {
+    station.distanceFromStart = this.getProjectedDistanceForStation(station)
     this.stations.addStation(station)
     station.draw()
   }
