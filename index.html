@@ -33,7 +33,7 @@
           <i class="fas fa-play" id="startPauseBtn" title="Start/Pause All Trains" style="cursor:pointer"></i>
         </div>
         <div id="train1" class="trainControl" style="display:grid">
-          <div style="display:flex; align-items:center; gap:5px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
             <span id="lblTrain1">T1</span>
             <i class="fas fa-pause" title="Pause Train" id="pauseTrain1" style="cursor:pointer"
             onclick="startStopTrain(1)"></i>
@@ -58,7 +58,7 @@
           </div>
         </div>
         <div id="train2" class="trainControl">
-          <div style="display:flex; align-items:center; gap:5px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
             
             <span id="lblTrain2">T2</span>
             <i class="fas fa-pause" title="Pause Train" id="pauseTrain2" style="cursor:pointer"
@@ -85,7 +85,7 @@
           </div>
         </div>
         <div id="train3" class="trainControl">
-          <div style="display:flex; align-items:center; gap:5px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
             
             <span id="lblTrain3">T3</span>
             <i class="fas fa-pause" title="Pause Train" id="pauseTrain3" style="cursor:pointer"
@@ -112,7 +112,7 @@
           </div>
         </div>
         <div id="train4" class="trainControl">
-          <div style="display:flex; align-items:center; gap:5px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
             
             <span id="lblTrain4">T4</span>
             <i class="fas fa-pause" title="Pause Train" id="pauseTrain4" style="cursor:pointer"
@@ -139,7 +139,7 @@
           </div>
         </div>
         <div id="train5" class="trainControl">
-          <div style="display:flex; align-items:center; gap:5px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
             
             <span id="lblTrain5">T5</span>
             <i class="fas fa-pause" title="Pause Train" id="pauseTrain5" style="cursor:pointer"
@@ -166,7 +166,7 @@
           </div>
         </div>
         <div id="train6" class="trainControl">
-          <div style="display:flex; align-items:center; gap:5px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
             
             <span id="lblTrain6">T6</span>
             <i class="fas fa-pause" title="Pause Train" id="pauseTrain6" style="cursor:pointer"
@@ -193,7 +193,7 @@
           </div>
         </div>
         <div id="train7" class="trainControl">
-          <div style="display:flex; align-items:center; gap:5px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
             
             <span id="lblTrain7">T7</span>
             <i class="fas fa-pause" title="Pause Train" id="pauseTrain7" style="cursor:pointer"
@@ -220,7 +220,7 @@
           </div>
         </div>
         <div id="train8" class="trainControl">
-          <div style="display:flex; align-items:center; gap:5px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
             
             <span id="lblTrain8">T8</span>
             <i class="fas fa-pause" title="Pause Train" id="pauseTrain8" style="cursor:pointer"
@@ -247,7 +247,7 @@
           </div>
         </div>
         <div id="train9" class="trainControl">
-          <div style="display:flex; align-items:center; gap:5px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
             
             <span id="lblTrain9">T9</span>
             <i class="fas fa-pause" title="Pause Train" id="pauseTrain9" style="cursor:pointer"
@@ -310,7 +310,7 @@
       </div>
 
       <div id="buttonGroup2" class="modal"
-        style="width:200px; display:none; position:fixed; top:10px;left:100px; flex-direction:column; gap:10px">
+        style="width:200px; display:none; position:fixed; top:300px;left:150px; flex-direction:column; gap:10px">
         <!-- Close button for the modal -->
         <span style="align-self:flex-end; cursor:pointer;"
           onclick="document.getElementById('buttonGroup2').style.display='none';">
@@ -326,7 +326,7 @@
       </div>
 
       <div id="buttonGroup3" class="modal"
-        style="width:200px; display:none; position:fixed; top:10px;left:100px; flex-direction:column; gap:10px">
+        style="width:200px; display:none; position:fixed; top:10px;left: 250px; flex-direction:column; gap:10px">
         <!-- Close button for the modal -->
         <span style="align-self:flex-end; cursor:pointer;"
           onclick="document.getElementById('buttonGroup3').style.display='none';">
@@ -391,7 +391,7 @@
       </table>
     </div>
     <div id="buttonGroup5" class="modal"
-      style="width:500px; height:900px; overflow-y:scroll; display:none; position:fixed; top:10px;left:400px; flex-direction:column; gap:10px">
+      style="width:500px; height:900px; overflow-y:scroll;  position:fixed; top:10px;left:400px; flex-direction:column; gap:10px">
       <!-- Close button for the modal -->
       <span style="align-self:flex-end; cursor:pointer;"
         onclick="document.getElementById('buttonGroup5').style.display='none';">
@@ -496,6 +496,9 @@
           can save money by not building a flyover.
         </li>
       </ul>
+      <div style="display:flex; align-items:center; justify-content:center;">
+        <button type="button" id="howToPlayStartBtn">Start/Pause</button>
+      </div>
     </div>
     <div id="buttonGroup6" class="modal"
       style="display:flex; position:fixed; top:10px;left:190px; flex-direction:row; gap:8px">

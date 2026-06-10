@@ -250,7 +250,7 @@ window.addEventListener('load', () => {
       } else {
         StationControls.style.display = 'none'
       }
-      window.startStation()
+      startStationSelection()
     } else if (event.code === 'KeyX') {
       //if the code is X then show the population Map
       if (!showingPopulationMap) {
@@ -560,26 +560,6 @@ window.addEventListener('load', () => {
           if (result.isConfirmed) {
             const n = game.getNumberOfFlyovers()
             intersections.updateIntersectionsWithFlyoverLocation(y / gridSize, x / gridSize, true)
-            //use swal to ask user for Flyover name and then add the Flyover to the game with the given name and the row and col corresponding to the x and y coordinates of the click event. The Flyover name should be in the format "Flyover n" where n is the number of Flyovers currently in the game + 1. After adding the Flyover, we should also update the intersections object to mark the intersection at the Flyover location as a Flyover intersection so that we do not register collisions at that intersection.
-            //convert flyover name to 04-08 format where 04 is the row and 08 is the column. This is to make it easier for the user to identify the location of the Flyover based on its name.
-            // const defaultFlyoverName = `Flyover ${String((y / gridSize) + 1).padStart(2, '0')}-${String((x / gridSize) + 1).padStart(2, '0')}`
-            // swal.fire({
-            //   title: 'Enter Flyover Name',
-            //   input: 'text',
-            //   inputLabel: 'Flyover Name',
-            //   inputValue: defaultFlyoverName,
-            //   showCancelButton: true,
-            //   confirmButtonText: 'Add Flyover',
-            //   cancelButtonText: 'Cancel',
-            //   inputValidator: (value) => {
-            //     if (!value) {
-            //       return 'Please enter a Flyover name'
-            //     }
-            //     return null
-            //   }
-            // }).then((result) => {
-            //   if (result.isConfirmed) {
-            //as far as game is concerned the Flyover is added counting row and column from 0
             game.addFlyover(y / gridSize, x / gridSize)
             startFlyover = false
           }
@@ -678,7 +658,7 @@ window.addEventListener('load', () => {
     //clear the canvas Temp
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
   }
-  window.startStation = function () {
+  const startStationSelection = function () {
     startFlyover = false
     startTrack = false
     // startStation = true
@@ -1175,6 +1155,11 @@ window.addEventListener('load', () => {
     }
 
     startTrack = false
+    // we close the Station popup if it is open
+    const stationModal = document.querySelector('#buttonGroup3')
+    if (stationModal) {
+      stationModal.style.display = 'none'
+    }
   }
 
   const trainTypeSelect = document.querySelector('#typeoftrain')
@@ -1224,6 +1209,18 @@ makeDraggable(buttonGroup5);
 
 const buttonGroup6 = document.querySelector('#buttonGroup6');
 makeDraggable(buttonGroup6);
+
+const howToPlayStartBtn = document.getElementById('howToPlayStartBtn')
+if (howToPlayStartBtn) {
+  howToPlayStartBtn.addEventListener('click', () => {
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'P',
+      code: 'KeyP',
+      bubbles: true,
+      cancelable: true
+    }))
+  })
+}
 
 })
 

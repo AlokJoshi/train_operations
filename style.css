@@ -80,6 +80,9 @@ button:hover{
 #buttonGroup2 input {
   pointer-events: auto;
 }
+#buttonGroup1,#buttonGroup2,#buttonGroup3,#buttonGroup4,#buttonGroup5 {
+  font-size: 1.2em;
+}
 
 .traininfo {
   font-size: 10px;
@@ -104,6 +107,52 @@ button:hover{
   padding: 10px 12px;
   border-radius: 8px;
   max-width: 360px;
+  cursor:pointer;
+}
+
+.popupInfo.is-minimized .trainsInfo {
+  display: none;
+}
+
+.popupHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.popupToggle {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  border: 1px solid rgba(255,255,255,0.35);
+  background-color: rgba(17,17,17,0.9);
+}
+
+.popupToggle i {
+  font-size: 11px;
+}
+
+.stationName {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  background-color: #333;
+  color: #fff;
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 0;
+}
+
+.trainsInfo {
+  font-size: 1.2em;
 }
 
 .key {
@@ -168,7 +217,7 @@ button:hover{
   .stationName {
     font-size: 1.5em;
     font-weight: bold;
-    margin-bottom: 10px;
+    margin-bottom: 0;
   } 
   .trainsInfo {
     font-size: 1.2em;

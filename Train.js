@@ -14,7 +14,7 @@ class Train {
   static minNumCoaches = 2
   static coachPassengerCapacity = 100
   static baseTicketPrice = 300
-  static rawMaterialCapacityPerFreightCoach = 100000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
+  static rawMaterialCapacityPerFreightCoach = 10000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
   static rawMaterialChargePerUnit = 100 // fixed charge per unit of raw material to keep it simple. Revenue is calculated based on the amount of raw material unloaded at the station.
   static ticketPriceMap = new Map() // key is from row,col to row,col and value is the ticket price for that route. 
   // We populate this as we go unless the ticket price is already in the map. 
@@ -214,8 +214,6 @@ class Train {
 
     // we have to set the position of the engine based on 
     // how far it has moved on the tracks
-    // console.log(this.tick)
-    // console.log(`Train ${this.trainName} ticks:${this.ticks} ,globalTicks: ${globalThis.globalTicks}, count:${this.count}`)
     this.dwellPaused = this.remainingDwellTime > 0 ? true : false
 
     if ((this.ticks % currSpeed == 0) && !this.userPaused && !this.dwellPaused) {
@@ -229,15 +227,11 @@ class Train {
         this.count = 0
         this.ticks = 0
         this.isReturning = !this.isReturning
-        // console.log(`Train ${this.trainName} is now ${this.isReturning ? 'returning' : 'starting a new trip'}`)
       }
       this.distanceTraveledInTimeUnit += distanceMoved
     }
 
     let { x, y, direction, segment } = this.getPosition(0)
-    // console.log(`Train ${this.trainName} position: x:${x}, y:${y}, direction:${direction}, segment:${segment ? `start(${segment.startx},${segment.starty}), end(${segment.endx},${segment.endy})` : 'null'}`)
-
-    // this.infodiv.style = `top: ${y}px; left: ${x}px;`
     //location is saved in the train object 
     this.x = x
     this.y = y
@@ -324,9 +318,9 @@ class Train {
               }
               // above to save ticket price caclulation time on subsequent lookups for the same route.
               this.financials.incrementRevenueFromTickets(this.getCurrentTimeIndex(), this.trainNumber, ticketPrice * adjustedBoarding)
-              if (this.trainNumber === 2) {
-                console.log(`Train ${this.trainNumber} boarding from station ${fromKey} to station ${toKeyInMap}: ${currentBoarding} passengers, adjusted boarding: ${adjustedBoarding} passengers, ticket sale per passenger: ${ticketPrice}, total ticket sale: ${ticketPrice * adjustedBoarding}`)
-              }
+              // if (this.trainNumber === 2) {
+              //   console.log(`Train ${this.trainNumber} boarding from station ${fromKey} to station ${toKeyInMap}: ${currentBoarding} passengers, adjusted boarding: ${adjustedBoarding} passengers, ticket sale per passenger: ${ticketPrice}, total ticket sale: ${ticketPrice * adjustedBoarding}`)
+              // }
               this.passengerMap.set(fromToKey, adjustedBoarding)
             }
           }
@@ -373,37 +367,45 @@ class Train {
           // and charge for it
 
           const demand = this.rawMaterialDemand.demandAt(station.x, station.y)
+          console.log(`Train ${this.trainNumber} at station ${station.stationNumber} has raw material demand of ${demand} units and raw material on board is ${this.rawMaterialOnBoard} units`)
+          let totalUnloading = 0
           if (demand > 0) {
-            const totalUnloading = Math.min(demand, this.rawMaterialOnBoard)
+            totalUnloading = Math.min(demand, this.rawMaterialOnBoard)
             //earn revenue based on the amount of raw material unloaded and a fixed price per unit of raw material to keep it simple. 
             // We can also add a multiplier based on the distance between the from station and to station to make it more realistic 
             // but for now we will keep it simple with a fixed price per unit of raw material.
             this.financials.incrementRevenueFromRawMaterial(this.getCurrentTimeIndex(), this.trainNumber, totalUnloading * Train.rawMaterialChargePerUnit)
             this.rawMaterialOnBoard -= totalUnloading
             this.rawMaterialDemand.decreaseDemand(station.x, station.y, totalUnloading)
-            // console.log(`Train ${this.trainNumber} at station ${station.stationNumber} unloaded ${totalUnloading} units of 
-            // raw material, remaining on board: ${this.rawMaterialOnBoard} money earned: ${totalUnloading * Train.rawMaterialChargePerUnit}`)
+            console.log(`Train ${this.trainNumber} at station ${station.stationNumber} unloaded ${totalUnloading} units of raw material, remaining on board: ${this.rawMaterialOnBoard} money earned: ${totalUnloading * Train.rawMaterialChargePerUnit}`)
           }
 
           for (const nextStation of this.stations) {
             if (!trainIsReturning && (nextStation.stationNumber > station.stationNumber) ||
               trainIsReturning && (nextStation.stationNumber < station.stationNumber)) {
               const demand = this.rawMaterialDemand.demandAt(nextStation.x, nextStation.y)
+              console.log(`Train ${this.trainNumber} looking ahead at station ${nextStation.stationNumber} with raw material demand of ${demand} units`)
               totalRawMaterialDemand += demand
             }
           }
+          console.log(`Train ${this.trainNumber} total raw material demand for upcoming stations is ${totalRawMaterialDemand} units and available capacity on train is ${(this.numCoaches * Train.rawMaterialCapacityPerFreightCoach) - this.rawMaterialOnBoard} units`)
+
           //let us load the train with this raw material if the suppy is available at the station
           let rawMaterialAvailable = this.rawMaterialSupply.availableAt(station.x, station.y)
+          console.log(`Train ${this.trainNumber} checking raw material supply at station ${station.stationNumber} with available raw material of ${rawMaterialAvailable} units`)
+
           let capacity = this.numCoaches * Train.rawMaterialCapacityPerFreightCoach
           let availableCapacity = capacity - (this.rawMaterialOnBoard ?? 0)
           let rawMaterialLoaded = Math.min(totalRawMaterialDemand - this.rawMaterialOnBoard, rawMaterialAvailable, availableCapacity)
+          
           if (rawMaterialLoaded > 0) {
             this.rawMaterialOnBoard += rawMaterialLoaded
             this.rawMaterialSupply.decreaseRawMaterial(station.x, station.y, rawMaterialLoaded)
+            console.log(`Train ${this.trainNumber} loaded ${rawMaterialLoaded} units of raw material at station ${station.stationNumber}, remaining capacity: ${availableCapacity - rawMaterialLoaded} units`)
           }
           let infoText = ''
           if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
-            infoText = `T${this.trainNumber} F: - ${this.rawMaterialDemand.demandAt(station.x, station.y)} + ${rawMaterialLoaded} = ${this.rawMaterialOnBoard}`
+            infoText = `T${this.trainNumber} F: - ${totalUnloading} + ${rawMaterialLoaded} = ${this.rawMaterialOnBoard}`
           } else {
             infoText = `T${this.trainNumber} F: ${this.rawMaterialOnBoard}`
           }
@@ -663,11 +665,28 @@ class Train {
       popupElement = document.createElement('div')
       popupElement.id = `popupInfo${x}${y}`
       popupElement.className = 'popupInfo'
+      const popupHeaderElement = document.createElement('div')
+      popupHeaderElement.className = 'popupHeader'
+      const popupToggleElement = document.createElement('button')
+      popupToggleElement.type = 'button'
+      popupToggleElement.className = 'popupToggle'
+      popupToggleElement.id = `popupInfoToggle${x}${y}`
+      popupToggleElement.setAttribute('aria-label', 'Minimize popup')
+      popupToggleElement.innerHTML = '<i class="fas fa-minus" aria-hidden="true"></i>'
+      popupToggleElement.addEventListener('click', () => {
+        const isMinimized = popupElement.classList.toggle('is-minimized')
+        popupToggleElement.setAttribute('aria-label', isMinimized ? 'Restore popup' : 'Minimize popup')
+        popupToggleElement.innerHTML = isMinimized
+          ? '<i class="fas fa-plus" aria-hidden="true"></i>'
+          : '<i class="fas fa-minus" aria-hidden="true"></i>'
+      })
+      popupHeaderElement.appendChild(popupToggleElement)
       //create an element to show the station name as the heading of the popup
       const stationNameElement = document.createElement('div')
       stationNameElement.id = `popupInfoStationName${x}${y}`
       stationNameElement.className = 'stationName'
-      popupElement.appendChild(stationNameElement)
+      popupHeaderElement.appendChild(stationNameElement)
+      popupElement.appendChild(popupHeaderElement)
       //create an element to hold the train info below the station name
       const trainsInfoElement = document.createElement('div')
       trainsInfoElement.id = `popupInfoTrainsInfo${x}${y}`
