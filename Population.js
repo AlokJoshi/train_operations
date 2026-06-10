@@ -103,6 +103,7 @@ class Population {
         }
       }
     }
+    //setting up 3 big cities
     this.values.set('1200,500',this.valueFromCoordinate(1200,500) * Population.VERYBIG_ADJUST) // make this city very big to create a distinct high-population hotspot
     this.values.set('1900,1000',this.valueFromCoordinate(1900,1000) * Population.VERYBIG_ADJUST) // make this city very big to create a distinct high-population hotspot
     this.values.set('500,1200',this.valueFromCoordinate(500,1200) * Population.VERYBIG_ADJUST) // make this city very big to create a distinct high-population hotspot
