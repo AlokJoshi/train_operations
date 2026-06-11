@@ -124,6 +124,13 @@ class Game {
     }
   }
 
+  upgradeEngine(trainNumber) {
+    const train = this.trains[trainNumber - 1]
+    if (train) {
+      train.upgradeEngine()
+    }
+  }
+
   incrementCollisionCost(ticks, train1, train2) {
     this.financials.incrementCollisionCost(this.getCurrentTimeIndex(), train1, train2)
   }

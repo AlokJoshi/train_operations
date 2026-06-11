@@ -11,6 +11,7 @@ class Financials {
     this.stationCost = 1000000
     this.FlyoverCost = 20000000
     this.engineCost = 3000000
+    this.engineUpgradeCost = 2000000
     this.coachCost = 100000
     this.collisionCost = 10000000
     this.trackCostPerUnit = 1000
@@ -21,13 +22,18 @@ class Financials {
     this.trackMaintenanceCostPerUnitPerTimePeriod = 4
     this.stationMaintenanceCostPerStationPerTimePeriod = 100
     this.cashInHand = 5000000
+    this.totalTimeUnits = totalTimeUnits
   }
-  incrementExpensesOfStationMaintenance(timeIndex,train, numStations) {
+  upgradeEngine(timeIndex, trainNumber) {
+    const trainIndex = trainNumber - 1
+    this.incrementExpenses(timeIndex, trainIndex, this.engineUpgradeCost, 'Upgrading Engine')
+  }
+  incrementExpensesOfStationMaintenance(timeIndex, train, numStations) {
     const trainIndex = train.trainNumber - 1
     const cost = this.stationMaintenanceCostPerStationPerTimePeriod * numStations
     this.incrementExpenses(timeIndex, trainIndex, cost, 'Station Maintenance')
-  } 
-  incrementExpensesOfTrackMaintenance(timeIndex,train, distanceTraveled) {
+  }
+  incrementExpensesOfTrackMaintenance(timeIndex, train, distanceTraveled) {
     const trainIndex = train.trainNumber - 1
     const cost = this.trackMaintenanceCostPerUnitPerTimePeriod * distanceTraveled
     this.incrementExpenses(timeIndex, trainIndex, cost, 'Track Maintenance')
@@ -38,28 +44,32 @@ class Financials {
     const coachesDepreciation = this.coachCost * numCoaches * this.depreciationOnEngineAndCoaches
     const totalDepreciation = engineDepreciation + coachesDepreciation
     this.incrementExpenses(timeIndex, trainIndex, totalDepreciation, 'Engine and Coaches Depreciation')
-  } 
+  }
   incrementNumStations(timeIndex, trainIndex) {
-    this.numStations[timeIndex][trainIndex] ++
+    this.numStations[timeIndex][trainIndex]++
   }
-  incrementRevenue(timeIndex, trainIndex, amount, reason='') {
-    this.totalRevenue[timeIndex][trainIndex] += amount
-    this.cumRevenueByTrain[trainIndex] += amount
-    this.cumProfitByTrain[trainIndex] += amount
-    // this.updateProfit(timeIndex, trainIndex)
-    this.profit[timeIndex][trainIndex] += amount
-    this.cashInHand += amount
-    // console.log(`Revenue incremented by $${amount.toLocaleString('en-US')} Train ${trainIndex + 1} Reason: ${reason} | Cash in Hand: $${this.cashInHand.toLocaleString('en-US')}`)
+  incrementRevenue(timeIndex, trainIndex, amount, reason = '') {
+    if (timeIndex < this.totalTimeUnits) {
+      this.totalRevenue[timeIndex][trainIndex] += amount
+      this.cumRevenueByTrain[trainIndex] += amount
+      this.cumProfitByTrain[trainIndex] += amount
+      // this.updateProfit(timeIndex, trainIndex)
+      this.profit[timeIndex][trainIndex] += amount
+      this.cashInHand += amount
+      // console.log(`Revenue incremented by $${amount.toLocaleString('en-US')} Train ${trainIndex + 1} Reason: ${reason} | Cash in Hand: $${this.cashInHand.toLocaleString('en-US')}`)
+    }
   }
-  incrementExpenses(timeIndex, trainIndex, amount, reason='') {
-    this.totalExpenses[timeIndex][trainIndex] += amount
-    this.cumCostByTrain[trainIndex] += amount
-    this.cumProfitByTrain[trainIndex] -= amount
-    // this.updateProfit(timeIndex, trainIndex)
-    this.profit[timeIndex][trainIndex] -= amount
-    this.cashInHand -= amount
-    if(trainIndex === 1){
-      console.log(`Expenses incremented by $${amount.toLocaleString('en-US')} Train ${trainIndex + 1} Reason: ${reason} | Cash in Hand: $${this.cashInHand.toLocaleString('en-US')}`)
+  incrementExpenses(timeIndex, trainIndex, amount, reason = '') {
+    if (timeIndex < this.totalTimeUnits) {
+      this.totalExpenses[timeIndex][trainIndex] += amount
+      this.cumCostByTrain[trainIndex] += amount
+      this.cumProfitByTrain[trainIndex] -= amount
+      // this.updateProfit(timeIndex, trainIndex)
+      this.profit[timeIndex][trainIndex] -= amount
+      this.cashInHand -= amount
+      // if(trainIndex === 1){
+      //   console.log(`Expenses incremented by $${amount.toLocaleString('en-US')} Train ${trainIndex + 1} Reason: ${reason} | Cash in Hand: $${this.cashInHand.toLocaleString('en-US')}`)
+      // }
     }
   }
   updateProfit(timeIndex, trainIndex) {
@@ -78,9 +88,9 @@ class Financials {
 
   getCumFinancialSummaryByTrain() {
     return {
-      totalRevenue:this.cumRevenueByTrain,
-      totalExpenses:this.cumCostByTrain,
-      profit:this.cumProfitByTrain
+      totalRevenue: this.cumRevenueByTrain,
+      totalExpenses: this.cumCostByTrain,
+      profit: this.cumProfitByTrain
     }
   }
 
@@ -149,7 +159,7 @@ class Financials {
     return this.FlyoverCost
   }
 
-  getStationCost(){
+  getStationCost() {
     return this.stationCost
   }
 
@@ -173,6 +183,6 @@ class Financials {
   }
   cumProfit() {
     return this.cumProfitByTrain.reduce((a, b) => a + b, 0)
-  } 
+  }
 }
 export { Financials }

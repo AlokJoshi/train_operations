@@ -375,96 +375,67 @@ window.addEventListener('load', () => {
     'Z': 'KeyZ'
   }
 
+  const sendHotkeyToDocument = (hotkey) => {
+    const normalizedHotkey = hotkey === '?' ? '?' : String(hotkey).toUpperCase()
+    const code = hotkeyCodeMap[normalizedHotkey]
+    if (!code) return
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      key: normalizedHotkey,
+      code,
+      repeat: false,
+      bubbles: true,
+      cancelable: true
+    }))
+  }
+
   document.querySelectorAll('#buttonGroup6 [data-hotkey]').forEach((button) => {
     button.addEventListener('click', () => {
       const hotkey = (button.getAttribute('data-hotkey') || '').toUpperCase()
       const normalizedHotkey = hotkey === '?' ? '?' : hotkey
-      const code = hotkeyCodeMap[normalizedHotkey]
-      if (!code) return
-      handleTrainHotkeys({
-        key: normalizedHotkey,
-        code,
-        repeat: false,
-        target: button
-      })
+      sendHotkeyToDocument(normalizedHotkey)
     })
   })
 
   const pauseHotkeyButton = document.getElementById('P')
   if (pauseHotkeyButton) {
     pauseHotkeyButton.addEventListener('click', () => {
-      handleTrainHotkeys({
-        key: 'P',
-        code: 'KeyP',
-        repeat: false,
-        target: pauseHotkeyButton
-      })
+      sendHotkeyToDocument('P')
     })
   }
   const trainHotkeyButton = document.getElementById('T')
   if (trainHotkeyButton) {
     trainHotkeyButton.addEventListener('click', () => {
-      handleTrainHotkeys({
-        key: 'T',
-        code: 'KeyT',
-        repeat: false,
-        target: trainHotkeyButton
-      })
+      sendHotkeyToDocument('T')
     })
   }
   const stationHotkeyButton = document.getElementById('S')
   if (stationHotkeyButton) {
     stationHotkeyButton.addEventListener('click', () => {
-      handleTrainHotkeys({
-        key: 'S',
-        code: 'KeyS',
-        repeat: false,
-        target: stationHotkeyButton
-      })
+      sendHotkeyToDocument('S')
     })
   }
   const flyoverHotkeyButton = document.getElementById('F')
   if (flyoverHotkeyButton) {
     flyoverHotkeyButton.addEventListener('click', () => {
-      handleTrainHotkeys({
-        key: 'F',
-        code: 'KeyF',
-        repeat: false,
-        target: flyoverHotkeyButton
-      })
+      sendHotkeyToDocument('F')
     })
   }
   const xHotkeyButton = document.getElementById('X')
   if (xHotkeyButton) {
     xHotkeyButton.addEventListener('click', () => {
-      handleTrainHotkeys({
-        key: 'X',
-        code: 'KeyX',
-        repeat: false,
-        target: xHotkeyButton
-      })
+      sendHotkeyToDocument('X')
     })
   }
   const yHotkeyButton = document.getElementById('Y')
   if (yHotkeyButton) {
     yHotkeyButton.addEventListener('click', () => {
-      handleTrainHotkeys({
-        key: 'Y',
-        code: 'KeyY',
-        repeat: false,
-        target: yHotkeyButton
-      })
+      sendHotkeyToDocument('Y')
     })
   }
   const zHotkeyButton = document.getElementById('Z')
   if (zHotkeyButton) {
     zHotkeyButton.addEventListener('click', () => {
-      handleTrainHotkeys({
-        key: 'Z',
-        code: 'KeyZ',
-        repeat: false,
-        target: zHotkeyButton
-      })
+      sendHotkeyToDocument('Z')
     })
   }
 
@@ -1160,6 +1131,12 @@ window.addEventListener('load', () => {
     if (stationModal) {
       stationModal.style.display = 'none'
     }
+
+    // update the UI with the right number of coaches or freight wagons based on the train type
+    const lblNumCoaches = document.querySelector(`#lblNumCoaches${trainNumber}`)
+    if (lblNumCoaches) {
+      lblNumCoaches.textContent = numCoaches
+    }
   }
 
   const trainTypeSelect = document.querySelector('#typeoftrain')
@@ -1191,6 +1168,10 @@ window.removeCoach = function (trainNumber) {
   game.removeCoach(trainNumber)
 }
 
+window.upgradeEngine = function (trainNumber) {
+  game.upgradeEngine(trainNumber)
+}
+
 // Initialize dragging for your control group
 const buttonGroup1 = document.querySelector('#buttonGroup1');
 makeDraggable(buttonGroup1);
@@ -1213,15 +1194,10 @@ makeDraggable(buttonGroup6);
 const howToPlayStartBtn = document.getElementById('howToPlayStartBtn')
 if (howToPlayStartBtn) {
   howToPlayStartBtn.addEventListener('click', () => {
-    document.dispatchEvent(new KeyboardEvent('keydown', {
-      key: 'P',
-      code: 'KeyP',
-      bubbles: true,
-      cancelable: true
-    }))
+    sendHotkeyToDocument('P')
   })
 }
-
+sendHotkeyToDocument('?')
 })
 
 function displayCollision(col, row) {
@@ -1427,3 +1403,4 @@ function displayFinancialResults() {
     }
   })
 }
+

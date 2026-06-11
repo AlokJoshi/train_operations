@@ -36,6 +36,12 @@ function makeDraggable(element) {
   }
 
 }
+
+function ck(value) {
+  return Math.round(value / 1000)
+}
+
 export { 
-  makeDraggable 
+  makeDraggable,
+  ck
 }

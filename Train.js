@@ -1,5 +1,5 @@
 "use strict";
-import { makeDraggable } from './utility.js'
+import { makeDraggable , ck } from './utility.js'
 class Train {
   static lengthEngine = 40
   static widthEngine = 14
@@ -48,7 +48,6 @@ class Train {
     this.trainType = trainType
     // speed parameter: 1=slowest, 20=fastest. Internally inverted to a frame-step divisor (lower=faster).
     // Freight trains run at a fixed half-of-maximum speed (divisor 11 = parameter 10 out of 20).
-    this.speed = this.trainType == 'passenger' ? Math.max(1, 21 - speed) : 11
     const maxInitialCoaches = this.trainType === 'freight' ? Train.maxNumFreightWagons : Train.maxNumCoaches
     this.numCoaches = numCoaches ? Math.min(Math.max(numCoaches, Train.minNumCoaches), maxInitialCoaches) : Math.floor((Train.minNumCoaches + Train.maxNumCoaches) / 2)
     this.ticks = 0
@@ -102,6 +101,25 @@ class Train {
     this.rawMaterialOnBoard = 0
     this.distanceTraveledInTimeUnit = 0
     this.popups = popups
+    //when freight train has an upgraded engine, its max speed increases by 50%
+    //when passenger train has an upgraded engine, its speed increases quickly from zero
+    this.speed = this.trainType == 'passenger' ? Math.max(1, 21 - speed) : 11
+    this.upgradedEngine = false
+
+    // add num coaches label to the UI
+    const lblNumCoaches = document.querySelector(`#lblNumCoaches${trainNumber}`)
+    if (lblNumCoaches) {
+      lblNumCoaches.textContent = `${this.numCoaches}`
+    }
+  }
+
+  upgradeEngine(){
+    if (this.upgradedEngine) return // already upgraded
+    this.financials.upgradeEngine(this.getCurrentTimeIndex(), this.trainNumber)
+    this.upgradedEngine = true
+    if (this.trainType === 'freight') {
+      this.speed = 5
+    }
   }
 
   addCoach() {
@@ -113,6 +131,11 @@ class Train {
       this.maxVisualCoaches = this.numCoaches
     }
     this.trainlength = Train.lengthEngine + (Train.lengthCoach + 2) * this.numCoaches
+    // update the num coaches label in the UI
+    const lblNumCoaches = document.querySelector(`#lblNumCoaches${this.trainNumber}`)
+    if (lblNumCoaches) {
+      lblNumCoaches.textContent = `${this.numCoaches}`
+    }
   }
   removeCoach() {
     if (this.numCoaches > Train.minNumCoaches) {
@@ -121,6 +144,11 @@ class Train {
         this.maxVisualCoaches = this.numCoaches
       }
       this.trainlength = Train.lengthEngine + (Train.lengthCoach + 2) * this.numCoaches
+      // update the num coaches label in the UI
+      const lblNumCoaches = document.querySelector(`#lblNumCoaches${this.trainNumber}`)
+      if (lblNumCoaches) {
+        lblNumCoaches.textContent = `${this.numCoaches}`
+      }
     }
   }
 
@@ -163,14 +191,23 @@ class Train {
   draw() {
 
     // we want to start the train gradually from a zero speed to avoid the jarring effect of the train suddenly appearing at full speed. So we can use the ticks variable to control the speed of the train in the initial phase. The train will start moving after a certain number of ticks have passed, which is determined by the delayBeforeStart variable. We can also use the ticks variable to control the speed of the train in the initial phase. The train will start moving after a certain number of ticks have passed, which is determined by the delayBeforeStart variable. This way we can create a smooth acceleration effect for the train when it starts moving.
-    const step1 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 1 / 6) : 20
-    const step2 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 2 / 6) : 20
-    const step3 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 3 / 6) : 20
-    const step4 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 4 / 6) : 20
-    const step5 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 5 / 6) : 20
+    let currSpeed
+    if(!this.upgradedEngine){
 
-    const currSpeed = this.ticks < 50 ? step1 : this.ticks < 150 ? step2 : this.ticks < 250 ? step3 : this.ticks < 350 ?
+      const step1 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 1 / 6) : 20
+      const step2 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 2 / 6) : 20
+      const step3 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 3 / 6) : 20
+      const step4 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 4 / 6) : 20
+      const step5 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 5 / 6) : 20
+      
+      currSpeed = this.ticks < 50 ? step1 : this.ticks < 150 ? step2 : this.ticks < 250 ? step3 : this.ticks < 350 ?
       step4 : this.ticks < 450 ? step5 : this.speed
+    } else {
+      const step1 = this.trainType == "freight" ? 20 - Math.floor(this.speed * 1 / 6) : 20
+      const step2 = this.trainType == "freight" ? 20 - Math.floor(this.speed * 2 / 6) : 20
+      const step3 = this.trainType == "freight" ? 20 - Math.floor(this.speed * 3 / 6) : 20
+      currSpeed = this.ticks < 50 ? step1 : this.ticks < 150 ? step2 : this.ticks < 250 ? step3 : this.speed
+     }
 
     if (this.dysfunctional) {
       // If the train is dysfunctional, we don't update its position or draw it.
@@ -405,10 +442,11 @@ class Train {
           }
           let infoText = ''
           if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
-            infoText = `T${this.trainNumber} F: - ${totalUnloading} + ${rawMaterialLoaded} = ${this.rawMaterialOnBoard}`
+            infoText = `T${this.trainNumber} F: - ${ck(totalUnloading)}K + ${ck(rawMaterialLoaded)}K = ${ck(this.rawMaterialOnBoard)}K | (${(demand-rawMaterialLoaded)>0 ? ck(demand-rawMaterialLoaded):0}K??)`
           } else {
-            infoText = `T${this.trainNumber} F: ${this.rawMaterialOnBoard}`
+            infoText = `T${this.trainNumber} F: ${ck(this.rawMaterialOnBoard)}K | (${(demand-rawMaterialLoaded)>0 ? ck(demand-rawMaterialLoaded):0}K??)`
           }
+          infoText += `D: ${ck(totalRawMaterialDemand)}K, A: ${ck(rawMaterialAvailable)}K, C: ${ck(availableCapacity)}K`
           // this.infoText = infoText
           // this.infoTextTicks = 400
           this.popups.addTrain({
