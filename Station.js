@@ -38,9 +38,11 @@ class Station{
     this.ctx.strokeStyle = 'rgba(255,0,0,1)'
     this.ctx.lineWidth = 2
     this.ctx.stroke()
-    this.ctx.font = '12px Arial'
-    this.ctx.fillStyle = 'black'
-    this.ctx.fillText(this.name, this.x + 10, this.y - 10) 
+    // we do not need this anymore because we will show the station name and other information in the popups when the 
+    // train passes that station.
+    // this.ctx.font = '12px Arial'
+    // this.ctx.fillStyle = 'black'
+    // this.ctx.fillText(this.name, this.x + 10, this.y - 10) 
   }
 }
 

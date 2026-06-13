@@ -84,25 +84,55 @@ button:hover{
   font-size: 1.2em;
 }
 
-.traininfo {
-  font-size: 10px;
-  width:100px;
-  height:30px;
-  position: fixed;
-  z-index: 1000;
+#buttonGroup1,
+#buttonGroup2,
+#buttonGroup3,
+#buttonGroup4,
+#buttonGroup5 {
+  padding: 0;
+  overflow: hidden;
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #1f3a5b;
+  color: #fff;
+  padding: 10px 14px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.dialogTitle {
+  font-weight: 700;
+}
+
+.dialogClose {
+  cursor: pointer;
+}
+
+.dialogContent {
+  padding: 14px 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.trainsInfo1,.trainsInfo2 {
+  font-size: 15px;
+  /* width:150px; */
   background-color: rgba(0, 0, 0, 0.5);
   color: #eee;
   padding: 5px;
-  border-radius: 5px;
-  top: 10000px;
-  left: 10000px;
 }
-
+.trainsInfo2 {
+  font-size:12px;
+}
 .popupInfo {
   position: absolute;
   z-index: 1001;
   pointer-events: auto;
-  background-color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(100, 0, 0, 0.75);
   color: #eee;
   padding: 10px 12px;
   border-radius: 8px;
@@ -151,8 +181,12 @@ button:hover{
   margin-bottom: 0;
 }
 
-.trainsInfo {
+.trainsInfo1 {
   font-size: 1.2em;
+}
+
+.trainsInfo2 {
+  font-size: 1.0em;
 }
 
 .key {

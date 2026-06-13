@@ -3,6 +3,7 @@ class Financials {
   // We can have a fixed cost per unit distance traveled on the track. This way, the user will have 
   // to invest in maintaining the track if they want their trains to run smoothly and avoid breakdowns. 
   // This will add an additional layer of strategy for the user when they are building their tracks and stations.
+  static CASH_IN_HAND = 5000000
   constructor(totalTimeUnits = 100) {
     this.totalRevenue = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0))
     this.totalExpenses = Array.from({ length: totalTimeUnits }, () => new Array(9).fill(0))
@@ -21,7 +22,7 @@ class Financials {
     this.cumProfitByTrain = new Array(9).fill(0)
     this.trackMaintenanceCostPerUnitPerTimePeriod = 4
     this.stationMaintenanceCostPerStationPerTimePeriod = 100
-    this.cashInHand = 5000000
+    this.cashInHand = Financials.CASH_IN_HAND
     this.totalTimeUnits = totalTimeUnits
   }
   upgradeEngine(timeIndex, trainNumber) {

@@ -99,6 +99,18 @@ const freightWagonCostValueEl = document.querySelector('#freightWagonCost')
 if (freightWagonCostValueEl) {
   freightWagonCostValueEl.textContent = `$${game.getFreightWagonCost().toLocaleString('en-US')}`
 }
+const engineUpgradeCostValueEl = document.querySelector('#engineUpgradeCost')
+if (engineUpgradeCostValueEl) {
+  engineUpgradeCostValueEl.textContent = `$${game.getEngineUpgradeCost().toLocaleString('en-US')}`
+}
+const initialCashValueEl = document.querySelector('#initialCash')
+if (initialCashValueEl) {
+  initialCashValueEl.textContent = `$${game.getInitialCash().toLocaleString('en-US')}`
+}
+const timeUnitDurationValueEl = document.querySelector('#timeUnitDuration')
+if (timeUnitDurationValueEl) {
+  timeUnitDurationValueEl.textContent = `${game.getTimeUnitDuration()}`
+}
 
 
 let positions = [
@@ -324,7 +336,6 @@ window.addEventListener('load', () => {
       if (!showingResults) {
         modal.style.display = 'flex'
         displayFinancialResults()
-
       } else {
         modal.style.display = 'none'
       }
@@ -1169,7 +1180,20 @@ window.removeCoach = function (trainNumber) {
 }
 
 window.upgradeEngine = function (trainNumber) {
-  game.upgradeEngine(trainNumber)
+  const costOfUpgrade = game.getEngineUpgradeCost()
+  swal.fire({
+    title: `Upgrade Engine for Train ${trainNumber}`,
+    text: `Upgrading the engine will increase the speed of the train. This will allow the train to move faster and reduce the travel time between stations. 
+    However, this will cost you $${costOfUpgrade.toLocaleString('en-US')}. Do you want to upgrade the engine?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Yes',
+    cancelButtonText: 'No'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      game.upgradeEngine(trainNumber)
+    }
+  })
 }
 
 // Initialize dragging for your control group

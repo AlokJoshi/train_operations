@@ -13,18 +13,19 @@ class Popups {
     }
     this.popupMap.set(key, popupInfo)
   }
-  addTrain({ x, y, stationName, trainNumber, trainInfo }) {
+  addTrain({ x, y, stationName, trainNumber, trainInfo1, trainInfo2 }) {
     const key = this.getKey(x, y)
     const popupInfo = this.popupMap.get(key) || {Stations:[], Trains:[]}
     if (!popupInfo.Stations.find(station => station === stationName)) {
       popupInfo.Stations.push(stationName)
     }
     if (!popupInfo.Trains.find(train => train.Trainnumber === trainNumber)) {
-      popupInfo.Trains.push({'Trainnumber': trainNumber, 'TrainInfo': trainInfo})
+      popupInfo.Trains.push({'Trainnumber': trainNumber, 'TrainInfo1': trainInfo1, 'TrainInfo2': trainInfo2})
     }else {
       // If the train already exists, update its information
       const existingTrain = popupInfo.Trains.find(train => train.Trainnumber === trainNumber)
-      existingTrain.TrainInfo = trainInfo
+      existingTrain.TrainInfo1 = trainInfo1
+      existingTrain.TrainInfo2 = trainInfo2
     }
     this.popupMap.set(key, popupInfo)
   }

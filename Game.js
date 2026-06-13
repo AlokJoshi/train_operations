@@ -49,7 +49,16 @@ class Game {
     // console.log(this.rawmaterialDemand)
     this.rawmaterialDemand.displayStatistics()
   }
-  
+  getTimeUnitDuration() {
+    return this.getMinutesPerTimeUnit()
+  }
+  getInitialCash() {
+    // we return the number in millions
+    return Math.floor(Financials.CASH_IN_HAND / 1000000)
+  }
+  getMinutesPerTimeUnit() {
+    return Math.ceil(this.ticksPerTimeUnit / (60 * 60))
+  }
   getCashInHand() {
     return this.financials.cashInHand
   }
@@ -58,6 +67,9 @@ class Game {
   }
   getEngineCost() {
     return this.financials.engineCost
+  }
+  getEngineUpgradeCost() {
+    return this.financials.engineUpgradeCost
   }
   getStationCost() {
     return this.financials.stationCost

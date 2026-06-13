@@ -1,5 +1,5 @@
 "use strict";
-import { makeDraggable , ck } from './utility.js'
+import { makeDraggable, ck } from './utility.js'
 class Train {
   static lengthEngine = 40
   static widthEngine = 14
@@ -113,7 +113,7 @@ class Train {
     }
   }
 
-  upgradeEngine(){
+  upgradeEngine() {
     if (this.upgradedEngine) return // already upgraded
     this.financials.upgradeEngine(this.getCurrentTimeIndex(), this.trainNumber)
     this.upgradedEngine = true
@@ -192,22 +192,22 @@ class Train {
 
     // we want to start the train gradually from a zero speed to avoid the jarring effect of the train suddenly appearing at full speed. So we can use the ticks variable to control the speed of the train in the initial phase. The train will start moving after a certain number of ticks have passed, which is determined by the delayBeforeStart variable. We can also use the ticks variable to control the speed of the train in the initial phase. The train will start moving after a certain number of ticks have passed, which is determined by the delayBeforeStart variable. This way we can create a smooth acceleration effect for the train when it starts moving.
     let currSpeed
-    if(!this.upgradedEngine){
+    if (!this.upgradedEngine) {
 
       const step1 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 1 / 6) : 20
       const step2 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 2 / 6) : 20
       const step3 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 3 / 6) : 20
       const step4 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 4 / 6) : 20
       const step5 = this.trainType == "passenger" ? 20 - Math.floor(this.speed * 5 / 6) : 20
-      
+
       currSpeed = this.ticks < 50 ? step1 : this.ticks < 150 ? step2 : this.ticks < 250 ? step3 : this.ticks < 350 ?
-      step4 : this.ticks < 450 ? step5 : this.speed
+        step4 : this.ticks < 450 ? step5 : this.speed
     } else {
       const step1 = this.trainType == "freight" ? 20 - Math.floor(this.speed * 1 / 6) : 20
       const step2 = this.trainType == "freight" ? 20 - Math.floor(this.speed * 2 / 6) : 20
       const step3 = this.trainType == "freight" ? 20 - Math.floor(this.speed * 3 / 6) : 20
       currSpeed = this.ticks < 50 ? step1 : this.ticks < 150 ? step2 : this.ticks < 250 ? step3 : this.speed
-     }
+    }
 
     if (this.dysfunctional) {
       // If the train is dysfunctional, we don't update its position or draw it.
@@ -332,7 +332,7 @@ class Train {
             // if the number of passengers on board after boarding and deboarding exceeds the passenger capacity of the train, then we can assume that only the passengers that can fit in the train will board the train and the rest will not board the train. This is a simplification but it should work for our purposes.
             unableToBoard = totalBoarding + this.passengersOnBoard - totalDeboarding - passengerCapacity
             // proportionBoarding = (passengerCapacity - this.passengersOnBoard + totalDeboarding) / totalBoarding
-            proportionBoarding = (totalBoarding-unableToBoard) / totalBoarding
+            proportionBoarding = (totalBoarding - unableToBoard) / totalBoarding
           }
           totalBoarding = Math.floor(totalBoarding * proportionBoarding)
           for (const fromToKey of this.passengerMap.keys()) {
@@ -366,11 +366,12 @@ class Train {
           this.passengersOnBoard = this.passengersOnBoard + totalBoarding - totalDeboarding
           // ticket sales is based on total boarding passengers and a distance-adjusted ticket price.
           // console.log(`Train ${this.trainNumber} at station ${thisStationKey} deboarded ${totalDeboarding} passengers, boarded ${totalBoarding} passengers, total passengers on board: ${this.passengersOnBoard}`)
-          let infoText = ''
+          let infoText1 = ''
+          let infoText2 = ''
           if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
-            infoText = `T${this.trainNumber} P: - ${totalDeboarding} + ${totalBoarding} = ${this.passengersOnBoard} | (${unableToBoard}??)`
+            infoText1 = `T${this.trainNumber} P: - ${totalDeboarding} + ${totalBoarding} = ${this.passengersOnBoard} | (${unableToBoard}??)`
           } else {
-            infoText = `T${this.trainNumber} P: ${this.passengersOnBoard} | (${unableToBoard}??)`
+            infoText1 = `T${this.trainNumber} P: ${this.passengersOnBoard} | (${unableToBoard}??)`
           }
           // this.infoText = infoText
           // this.infoTextTicks = 400
@@ -379,10 +380,11 @@ class Train {
             y: station.y,
             stationName: station.name,
             trainNumber: this.trainNumber,
-            trainInfo: infoText,
+            trainInfo1: infoText1,
+            trainInfo2: infoText2,
           })
           const existingPopupInfo = this.popups.getPopupInfo(station.x, station.y)
-          this.displayInfo(existingPopupInfo, station.x,station.y)
+          this.displayInfo(existingPopupInfo, station.x, station.y)
         }
         if (this.trainType == 'freight') {
           // For freight trains, we can assume that they take a fixed amount of time at each station for loading and unloading. 
@@ -434,19 +436,20 @@ class Train {
           let capacity = this.numCoaches * Train.rawMaterialCapacityPerFreightCoach
           let availableCapacity = capacity - (this.rawMaterialOnBoard ?? 0)
           let rawMaterialLoaded = Math.min(totalRawMaterialDemand - this.rawMaterialOnBoard, rawMaterialAvailable, availableCapacity)
-          
+
           if (rawMaterialLoaded > 0) {
             this.rawMaterialOnBoard += rawMaterialLoaded
             this.rawMaterialSupply.decreaseRawMaterial(station.x, station.y, rawMaterialLoaded)
             console.log(`Train ${this.trainNumber} loaded ${rawMaterialLoaded} units of raw material at station ${station.stationNumber}, remaining capacity: ${availableCapacity - rawMaterialLoaded} units`)
           }
-          let infoText = ''
+          let infoText1 = ''
+          let infoText2 = ''
           if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
-            infoText = `T${this.trainNumber} F: - ${ck(totalUnloading)}K + ${ck(rawMaterialLoaded)}K = ${ck(this.rawMaterialOnBoard)}K | (${(demand-rawMaterialLoaded)>0 ? ck(demand-rawMaterialLoaded):0}K??)`
+            infoText1 = `T${this.trainNumber} F: - ${ck(totalUnloading)}K + ${ck(rawMaterialLoaded)}K = ${ck(this.rawMaterialOnBoard)}K | (${(demand - rawMaterialLoaded) > 0 ? ck(demand - rawMaterialLoaded) : 0}K??)`
           } else {
-            infoText = `T${this.trainNumber} F: ${ck(this.rawMaterialOnBoard)}K | (${(demand-rawMaterialLoaded)>0 ? ck(demand-rawMaterialLoaded):0}K??)`
+            infoText1 = `T${this.trainNumber} F: ${ck(this.rawMaterialOnBoard)}K | (${(demand - rawMaterialLoaded) > 0 ? ck(demand - rawMaterialLoaded) : 0}K??)`
           }
-          infoText += `D: ${ck(totalRawMaterialDemand)}K, A: ${ck(rawMaterialAvailable)}K, C: ${ck(availableCapacity)}K`
+          infoText2 = `D: ${ck(totalRawMaterialDemand)}K, A: ${ck(rawMaterialAvailable)}K, C: ${ck(availableCapacity)}K`
           // this.infoText = infoText
           // this.infoTextTicks = 400
           this.popups.addTrain({
@@ -454,7 +457,8 @@ class Train {
             y: station.y,
             stationName: station.name,
             trainNumber: this.trainNumber,
-            trainInfo: infoText,
+            trainInfo1: infoText1,
+            trainInfo2: infoText2,
           })
           const existingPopupInfo = this.popups.getPopupInfo(station.x, station.y)
           this.displayInfo(existingPopupInfo, station.x, station.y)
@@ -726,10 +730,17 @@ class Train {
       popupHeaderElement.appendChild(stationNameElement)
       popupElement.appendChild(popupHeaderElement)
       //create an element to hold the train info below the station name
-      const trainsInfoElement = document.createElement('div')
-      trainsInfoElement.id = `popupInfoTrainsInfo${x}${y}`
-      trainsInfoElement.className = 'trainsInfo'
-      popupElement.appendChild(trainsInfoElement)
+      const trainsInfoElement1 = document.createElement('div')
+      trainsInfoElement1.id = `popupInfoTrainsInfo1${x}${y}`
+      trainsInfoElement1.className = 'trainsInfo1'
+      popupElement.appendChild(trainsInfoElement1)
+      //create an element to hold the train info below the station name
+      const trainsInfoElement2 = document.createElement('div')
+      trainsInfoElement2.id = `popupInfoTrainsInfo2${x}${y}`
+      trainsInfoElement2.className = 'trainsInfo2'
+      popupElement.appendChild(trainsInfoElement2)
+
+
       document.body.appendChild(popupElement)
       popupElement.style.top = `${popupTop}px`
       popupElement.style.left = `${popupLeft}px`
@@ -738,7 +749,7 @@ class Train {
     }
     //convert the popupInfo object to a string
     //concatenate the station names and that will be the heading of the popup
-    
+
     const stationsNames = popupInfo.Stations.join(', ')
     const stationNameElement = document.querySelector(`#popupInfoStationName${x}${y}`)
     if (stationNameElement) {
@@ -746,18 +757,23 @@ class Train {
     }
     //show the train info below the station names
 
-    const trainsInfoElement = document.querySelector(`#popupInfoTrainsInfo${x}${y}`)
-    if (trainsInfoElement) {
-      trainsInfoElement.innerHTML   = '' // clear previous train info
-     }
+    // const trainsInfoElement1 = document.querySelector(`#popupInfoTrainsInfo1${x}${y}`)
+    // if (trainsInfoElement1) {
+    //   trainsInfoElement1.innerHTML   = '' // clear previous train info
+    //  }
+    // const trainsInfoElement2 = document.querySelector(`#popupInfoTrainsInfo2${x}${y}`)
+    // if (trainsInfoElement2) {
+    //   trainsInfoElement2.innerHTML   = '' // clear previous train info
+    //  }
     popupInfo.Trains.forEach(train => {
       //each train object has trainNumber and trainInfo
-      const trainInfo = train.TrainInfo
-      
-      const trainInfoElement = document.createElement('div')
-      trainInfoElement.className = 'trainInfo'
-      trainInfoElement.innerText = trainInfo
-      trainsInfoElement.appendChild(trainInfoElement)
+      const trainInfo1 = train.TrainInfo1
+      const trainInfo2 = train.TrainInfo2
+
+      const trainsInfoElement1 = document.querySelector(`#popupInfoTrainsInfo1${x}${y}`)
+      trainsInfoElement1.innerText = trainInfo1
+      const trainsInfoElement2 = document.querySelector(`#popupInfoTrainsInfo2${x}${y}`)
+      trainsInfoElement2.innerText = trainInfo2
     })
 
   }

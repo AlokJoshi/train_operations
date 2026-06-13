@@ -14,7 +14,7 @@
 
 <body>
   <div>
-    <div id="gameStage">
+    <div id="gameStage" style="background-image: url('./engine.png'); background-size: 30px 30px;">
       <canvas id="canvas_tracks"></canvas>
       <canvas id="canvas"></canvas>
       <canvas id="canvas_results"></canvas>
@@ -23,11 +23,13 @@
     <div id="controls">
       <div id="buttonGroup1" class="modal"
         style="width:250px; display:none; position:fixed; top:300px; left:10px; flex-direction:column; gap:10px">
-        <!-- Close button for the modal -->
-        <span style="align-self:flex-end; cursor:pointer;"
-          onclick="document.getElementById('buttonGroup1').style.display='none';">
-          <i class="fas fa-times" title="Close"></i>
-        </span>
+        <div class="dialogHeader">
+          <span class="dialogTitle">Train</span>
+          <span class="dialogClose" onclick="document.getElementById('buttonGroup1').style.display='none';">
+            <i class="fas fa-times" title="Close"></i>
+          </span>
+        </div>
+        <div class="dialogContent">
         <div>
           <label for="startPauseBtn">Start/Pause All:</label>
           <i class="fas fa-play" id="startPauseBtn" title="Start/Pause All Trains" style="cursor:pointer"></i>
@@ -333,15 +335,18 @@
           <i class="fas fa-times" style="cursor:pointer;" title="Cancel Track" id="cancelTrack"
             onclick="canceltrack()"></i>
         </div>
+        </div>
       </div>
 
       <div id="buttonGroup2" class="modal"
-        style="width:200px; display:none; position:fixed; top:300px;left:150px; flex-direction:column; gap:10px">
-        <!-- Close button for the modal -->
-        <span style="align-self:flex-end; cursor:pointer;"
-          onclick="document.getElementById('buttonGroup2').style.display='none';">
-          <i class="fas fa-times" title="Close"></i>
-        </span>
+        style="width:300px; display:none; position:fixed; top:300px;left:150px; flex-direction:column; gap:10px">
+        <div class="dialogHeader">
+          <span class="dialogTitle">Flyovers</span>
+          <span class="dialogClose" onclick="document.getElementById('buttonGroup2').style.display='none';">
+            <i class="fas fa-times" title="Close"></i>
+          </span>
+        </div>
+        <div class="dialogContent">
         <label for="startFlyover">Start Flyover Specification. Please click where you will gain
           by building a flyover to avoid collisions. Each flyover costs 20000000.
         </label>
@@ -349,15 +354,18 @@
           onclick="startFlyover()"></i>
         <!-- <label for="cancelFlyover">If you change your mind you can Cancel the flyover specification.</label>
         <i class="fas fa-times" id="cancelFlyover" title="Cancel Flyover" onclick="cancelFlyover()"></i> -->
+        </div>
       </div>
 
       <div id="buttonGroup3" class="modal"
-        style="width:200px; display:none; position:fixed; top:200px;left: 450px; flex-direction:column; gap:10px">
-        <!-- Close button for the modal -->
-        <span style="align-self:flex-end; cursor:pointer;"
-          onclick="document.getElementById('buttonGroup3').style.display='none';">
-          <i class="fas fa-times" title="Close"></i>
-        </span>
+        style="width:300px; display:none; position:fixed; top:200px;left: 450px; flex-direction:column; gap:10px">
+        <div class="dialogHeader">
+          <span class="dialogTitle">Stations</span>
+          <span class="dialogClose" onclick="document.getElementById('buttonGroup3').style.display='none';">
+            <i class="fas fa-times" title="Close"></i>
+          </span>
+        </div>
+        <div class="dialogContent">
         <label for="stationFortrain">Select the Train for which you want to build the station. Please note that the game
           will
           display the locations where you can click to build a Station. Each station costs 1000000. Note that two or
@@ -371,17 +379,20 @@
           <i class="fas fa-flag-checkered" style="cursor:pointer;" id="flagoffStation" title="Start Station"
             onclick="flagoffStation()"></i>
         </div>
+        </div>
       </div>
 
     </div>
     
     <div id="buttonGroup4" class="modal"
-      style="width:250px; display:none; position:fixed; top:300px;left:490px; flex-direction:column; gap:10px">
-      <!-- For displaying results -->
-      <span style="align-self:flex-end; cursor:pointer;"
-        onclick="document.getElementById('buttonGroup4').style.display='none';">
-        <i class="fas fa-times" title="Close"></i>
-      </span>
+      style="width:300px; display:none; position:fixed; top:300px;left:490px; flex-direction:column; gap:10px">
+      <div class="dialogHeader">
+        <span class="dialogTitle">Results</span>
+        <span class="dialogClose" onclick="document.getElementById('buttonGroup4').style.display='none';">
+          <i class="fas fa-times" title="Close"></i>
+        </span>
+      </div>
+      <div class="dialogContent">
       <table id="trainResultsTable">
         <thead>
           <tr>
@@ -401,20 +412,27 @@
           <!-- Results will be dynamically inserted here -->
         </tbody>
       </table>
+      </div>
     </div>
     <div id="buttonGroup5" class="modal"
-      style="display:none; width:500px; height:900px; overflow-y:scroll;  position:fixed; top:70px;left:400px; flex-direction:column; gap:10px">
-      <!-- Close button for the modal -->
-      <span style="align-self:flex-end; cursor:pointer;"
-        onclick="document.getElementById('buttonGroup5').style.display='none';">
-        <i class="fas fa-times" title="Close"></i>
-      </span>
+      style="display:none; width:500px; height:900px; position:fixed; top:70px;left:400px; flex-direction:column; gap:10px">
+      <div class="dialogHeader">
+        <span class="dialogTitle">How to play</span>
+        <span class="dialogClose" onclick="document.getElementById('buttonGroup5').style.display='none';">
+          <i class="fas fa-times" title="Close"></i>
+        </span>
+      </div>
+      <div class="dialogContent">
       <!-- Instructions for how to use the game will be displayed here -->
-      <p>How to play</p>
       <p>Click on the Start Button to begin the game. The game will run for <span id="totalTimeUnits"></span> time
         units. Each time unit is shown at the
-        center of the screen.
+        center of the screen and will take about <span id="timeUnitDuration"></span> minutes of playing time. The time for
+        which the entire game is paused is not counted.
       </p>
+      <p>Your objective to earn as much profit as possible by running up to a total of 9 trains.
+        You start with a cash in hand of <span id="initialCash"></span> million dollars and 2 passenger trains and
+        1 freight train.
+      </p> 
       <p>You can pause the entire game at any time by pressing the <span class="key">P</span> key on the keyboard. <span
           class="key">P</span>
         also starts the game if it is paused. When the game is in the paused state, the time units will not progress but
@@ -435,6 +453,15 @@
         in the train dialog box. You can also stop or pause any train by using the pause button in the train dialog box
         or
         by pressing the corresponding number key for each train (1 for Train #1, 2 for Train #2 and so on).
+        There is an option to delete a train completely but if you do that, you will lose all the money you invested in that train and you will not be able to get it back.
+        When a new train is started, it comes with a standard engine which costs <span id="engineCost"></span>. However, you can upgrade the engine later in the game to increase the speed of the train. 
+        Each engine upgrade costs <span id="engineUpgradeCost"></span>. 
+        There is also an option to extend the train route by clicking on the extend button in the train dialog box. This
+        extension can be done from either end of the train track. After clicking on the extend button, you will need to click on the map to specify the additional route for the train. 
+        Once the additional route is specified, you can either confirm the extension by clicking on the check button in the train dialog box or cancel the extension by clicking on the times button in the train dialog box. 
+        Below the train level controls, there is a button to start the track specification for a new train. After clicking on that button, you will need to click on the map to 
+        specify the route for the new train and then click on the flag off button in the train dialog box to start the new train. You can also cancel the track specification for the new train by clicking on the cancel button in the train dialog box.
+        You will need to specify the type of the train (passenger or freight), the number of coaches or freight wagons and the speed of the train before flagging off the new train.
       </p>
       <p>
         Similarly <span class="key">S</span> brings up the Stations dialog box to add more stations to any train's
@@ -482,10 +509,6 @@
       <p>
         If you press the <span class="key">?</span> key, the game will display the 'How to play' dialog box.</p>
       <p>
-      <p>The game already includes 3 trains, 2 passenger trains and 1 freight train. Also you have a 5 million dollars
-        fund
-        to start with.
-      </p>
       <p>Keep in mind the following obvious information:</p>
       <ul>
         <li>Passenger trains earn you money based on the number of passengers they carry. Each passenger coach you add
@@ -510,7 +533,8 @@
         </li>
       </ul>
       <div style="display:flex; align-items:center; justify-content:center;">
-        <button type="button" id="howToPlayStartBtn">Start/Pause</button>
+        <button type="button" style="border-radius: 10px;" id="howToPlayStartBtn">Start/Pause</button>
+      </div>
       </div>
     </div>
     <div id="buttonGroup6" class="modal"
@@ -523,10 +547,10 @@
       <button type="button" class="mobile-hotkey" data-hotkey="S" title="Stations" aria-label="Stations">S</button>
       <button type="button" class="mobile-hotkey" data-hotkey="F" title="Flyovers" aria-label="Flyovers">F</button>
       <button type="button" class="mobile-hotkey" data-hotkey="R" title="Results" aria-label="Results">R</button>
-      <button type="button" class="mobile-hotkey" data-hotkey="X" title="Show Population"
+      <button type="button" class="mobile-hotkey" data-hotkey="X" title="Show Population Map"
         aria-label="Show population map">X</button>
-      <button type="button" class="mobile-hotkey" data-hotkey="Y" title="Show Rawmaterials Map"
-        aria-label="Show raw materials map">Y</button>
+      <button type="button" class="mobile-hotkey" data-hotkey="Y" title="Show Rawmaterials SupplyMap"
+        aria-label="Show raw materials supply map">Y</button>
       <button type="button" class="mobile-hotkey" data-hotkey="Z" title="Show Rawmaterial Demand Map"
         aria-label="Show raw material demand map">Z</button>
     </div>
