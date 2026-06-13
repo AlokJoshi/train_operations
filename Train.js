@@ -23,7 +23,7 @@ class Train {
   constructor({
     ctx,
     ctxTemp,
-    speed,
+    // speed,
     track,
     color,
     numCoaches,
@@ -103,7 +103,7 @@ class Train {
     this.popups = popups
     //when freight train has an upgraded engine, its max speed increases by 50%
     //when passenger train has an upgraded engine, its speed increases quickly from zero
-    this.speed = this.trainType == 'passenger' ? Math.max(1, 21 - speed) : 11
+    this.speed = this.trainType == 'passenger' ? 1 : 11
     this.upgradedEngine = false
 
     // add num coaches label to the UI
@@ -179,13 +179,13 @@ class Train {
     this.userPaused = !!state
   }
 
-  speedUp() {
-    this.speed = Math.max(1, this.speed - 1)
-  }
+  // speedUp() {
+  //   this.speed = Math.max(1, this.speed - 1)
+  // }
 
-  slowDown() {
-    this.speed = Math.min(20, this.speed + 1)
-  }
+  // slowDown() {
+  //   this.speed = Math.min(20, this.speed + 1)
+  // }
 
 
   draw() {

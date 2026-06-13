@@ -120,7 +120,7 @@ let positions = [
 ]
 
 
-game.addTrain(positions, 20, 15, 0, intersections, { trainType: 'passenger', partOfInitialSetup: true })
+game.addTrain(positions, 7, 0, intersections, { trainType: 'passenger', partOfInitialSetup: true })
 
 
 positions = [
@@ -131,7 +131,7 @@ positions = [
   { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 1000 },
   { x: CANVASMARGIN + 700, y: CANVASMARGIN + 1000 }
 ]
-let trainNumber = game.addTrain(positions, 19, 10, 1, intersections,
+let trainNumber = game.addTrain(positions, 1, 0,  intersections,
   { trainType: 'passenger', partOfInitialSetup: true })
 game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, 'medium', { partOfInitialSetup: true })
 game.addStation(trainNumber, 1200, 900, `S${trainNumber}1310`, 30, 'medium', { partOfInitialSetup: true })
@@ -142,7 +142,7 @@ positions = [
   { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 600 },
   { x: CANVASMARGIN + 800, y: CANVASMARGIN + 600 }
 ]
-trainNumber = game.addFreightTrain(positions, 1, 50, 0, intersections,
+trainNumber = game.addFreightTrain(positions, 50, 0, intersections,
   { trainType: 'freight', partOfInitialSetup: true })
 game.addStation(trainNumber, 1800, 600, `S${trainNumber}1907`, 30, 'large', { partOfInitialSetup: true })
 
@@ -961,13 +961,13 @@ window.addEventListener('load', () => {
     game.trains[event.train2 - 1].setDysfunctional(true)
   })
 
-  window.speedtrain = (direction, trainnumber) => {
-    if (direction === 'up') {
-      game.increaseTrainSpeed(trainnumber)
-    } else if (direction === 'down') {
-      game.decreaseTrainSpeed(trainnumber)
-    }
-  }
+  // window.speedtrain = (direction, trainnumber) => {
+  //   if (direction === 'up') {
+  //     game.increaseTrainSpeed(trainnumber)
+  //   } else if (direction === 'down') {
+  //     game.decreaseTrainSpeed(trainnumber)
+  //   }
+  // }
 
   window.startStopTrain = (trainnumber) => {
     game.startStopTrain(trainnumber)
@@ -1093,15 +1093,15 @@ window.addEventListener('load', () => {
       return
     }
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-    const speedEl = document.querySelector('#speed')
+    // const speedEl = document.querySelector('#speed')
     const numCoachesEl = document.querySelector('#numcoaches')
     const numFreightWagonsEl = document.querySelector('#numfreightwagons')
     const selectTrainTypeEl = document.querySelector('#typeoftrain')
     const trainType = selectTrainTypeEl?.value === 'freight' ? 'freight' : 'passenger'
-    const parsedSpeed = Number.parseInt(speedEl?.value ?? '', 10)
-    const speed = Number.isInteger(parsedSpeed) && parsedSpeed >= 1 && parsedSpeed <= 20
-      ? parsedSpeed
-      : Math.ceil(Math.random() * 20)
+    // const parsedSpeed = Number.parseInt(speedEl?.value ?? '', 10)
+    // const speed = Number.isInteger(parsedSpeed) && parsedSpeed >= 1 && parsedSpeed <= 20
+    //   ? parsedSpeed
+    //   : Math.ceil(Math.random() * 20)
 
     const parsedNumCoaches = Number.parseInt(numCoachesEl?.value ?? '', 10)
     const parsedNumFreightWagons = Number.parseInt(numFreightWagonsEl?.value ?? '', 10)
@@ -1123,7 +1123,8 @@ window.addEventListener('load', () => {
       document.querySelector('#startTrack').style.display = 'block'
       return
     }
-    game.addTrain(positions, speed, numCoaches, 0, intersections, { trainType })
+    // game.addTrain(positions, speed, numCoaches, 0, intersections, { trainType })
+    game.addTrain(positions, numCoaches, 0, intersections, { trainType })
     game.setPossibleFlyoverLocations()
 
     //set the icon to play

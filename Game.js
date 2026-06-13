@@ -187,7 +187,7 @@ class Game {
     }
   }
 
-  addTrain( positions, engineSpeed,  numCoaches, delayBeforeStart, intersections, options = {}) {
+  addTrain( positions,  numCoaches, delayBeforeStart, intersections, options = {}) {
 
     // Apply freight train defaults automatically when trainType is 'freight'
     if (options.trainType === 'freight') {
@@ -239,7 +239,7 @@ class Game {
     const train = new Train({
       ctx: this.ctx,
       ctxTemp: this.ctxTemp,
-      speed: engineSpeed,
+      // speed: engineSpeed,
       track,
       color,
       numCoaches,
@@ -290,8 +290,8 @@ class Game {
     return trainNumber
   }
 
-  addFreightTrain(positions, engineSpeed, numCoaches, delayBeforeStart, intersections, options = {}) {
-    return this.addTrain(positions, engineSpeed, numCoaches, delayBeforeStart, intersections, {
+  addFreightTrain(positions, numCoaches, delayBeforeStart, intersections, options = {}) {
+    return this.addTrain(positions, numCoaches, delayBeforeStart, intersections, {
       trainType: 'freight',
       visualLengthScale: 0.35,
       maxVisualCoaches: 18,
@@ -319,16 +319,16 @@ class Game {
     })
     // this.checkForCollissions()
   }
-  increaseTrainSpeed(trainNumber) {
-    if (trainNumber <= this.trains.length) {
-      this.trains[trainNumber - 1].speedUp()
-    }
-  }
-  decreaseTrainSpeed(trainNumber) {
-    if (trainNumber <= this.trains.length) {
-      this.trains[trainNumber - 1].slowDown()
-    }
-  }
+  // increaseTrainSpeed(trainNumber) {
+  //   if (trainNumber <= this.trains.length) {
+  //     this.trains[trainNumber - 1].speedUp()
+  //   }
+  // }
+  // decreaseTrainSpeed(trainNumber) {
+  //   if (trainNumber <= this.trains.length) {
+  //     this.trains[trainNumber - 1].slowDown()
+  //   }
+  // }
   removeTrain(trainNumber) {
     if (trainNumber <= this.trains.length) {
       const train = this.trains[trainNumber - 1]
