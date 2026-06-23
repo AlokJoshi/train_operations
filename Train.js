@@ -449,7 +449,7 @@ class Train {
           } else {
             infoText1 = `T${this.trainNumber} F: ${ck(this.rawMaterialOnBoard)}K | (${(demand - rawMaterialLoaded) > 0 ? ck(demand - rawMaterialLoaded) : 0}K??)`
           }
-          infoText2 = `D: ${ck(totalRawMaterialDemand)}K, A: ${ck(rawMaterialAvailable)}K, C: ${ck(availableCapacity)}K`
+          infoText2 = `DA: ${ck(totalRawMaterialDemand)}K, AH: ${ck(rawMaterialAvailable)}K, UH: ${ck(totalUnloading)}K, LH: ${ck(rawMaterialLoaded)}K`
           // this.infoText = infoText
           // this.infoTextTicks = 400
           this.popups.addTrain({

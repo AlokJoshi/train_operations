@@ -164,8 +164,8 @@ class Financials {
     return this.stationCost
   }
 
-  addStation(timeIndex, trainNumber, type) {
-    const cost = this.getStationCost(type)
+  addStation(timeIndex, trainNumber) {
+    const cost = this.getStationCost()
     const trainIndex = trainNumber - 1
     this.incrementExpenses(timeIndex, trainIndex, cost, 'Adding Station')
     this.incrementNumStations(timeIndex, trainIndex)

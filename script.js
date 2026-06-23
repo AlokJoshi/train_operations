@@ -133,8 +133,8 @@ positions = [
 ]
 let trainNumber = game.addTrain(positions, 1, 0,  intersections,
   { trainType: 'passenger', partOfInitialSetup: true })
-game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, 'medium', { partOfInitialSetup: true })
-game.addStation(trainNumber, 1200, 900, `S${trainNumber}1310`, 30, 'medium', { partOfInitialSetup: true })
+game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, { partOfInitialSetup: true })
+game.addStation(trainNumber, 1200, 900, `S${trainNumber}1310`, 30, { partOfInitialSetup: true })
 
 // check statically entered freight train
 positions = [
@@ -144,7 +144,7 @@ positions = [
 ]
 trainNumber = game.addFreightTrain(positions, 50, 0, intersections,
   { trainType: 'freight', partOfInitialSetup: true })
-game.addStation(trainNumber, 1800, 600, `S${trainNumber}1907`, 30, 'large', { partOfInitialSetup: true })
+game.addStation(trainNumber, 1800, 600, `S${trainNumber}1907`, 30, { partOfInitialSetup: true })
 
 const drawScene = () => {
   if (!paused) {
@@ -516,7 +516,7 @@ window.addEventListener('load', () => {
             cancelButtonText: 'No'
           }).then((result) => {
             if (result.isConfirmed) {
-              game.addStation(selectedTrainNumber, location.x, location.y, `S${selectedTrainNumber}${String((location.x / gridSize) + 1).padStart(2, '0')}${String((location.y / gridSize) + 1).padStart(2, '0')}`, 30, 'small')
+              game.addStation(selectedTrainNumber, location.x, location.y, `S${selectedTrainNumber}${String((location.x / gridSize) + 1).padStart(2, '0')}${String((location.y / gridSize) + 1).padStart(2, '0')}`, 30)
               //clear the canvasTemp after adding the station
               ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
             }

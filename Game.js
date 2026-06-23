@@ -207,8 +207,6 @@ class Game {
     } else {
       trainNumber = this.trains.length + 1
     }
-    // const stations = new Stations()
-    const stationType = numCoaches <= 5 ? 'small' : numCoaches <= 10 ? 'medium' : 'large'
     const firstPosition = positions[0]
     const lastPosition = positions[positions.length - 1]
 
@@ -218,14 +216,14 @@ class Game {
       alert('The starting and ending positions are the same. Please choose different positions for the starting and ending points.')
       return
     } else{
-      //we add small stations at both starting and ending points
-      track.addStation(createStation(this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0 , `S${trainNumber}${String((firstPosition.x / this.gridSize) + 1).padStart(2, '0')}${String((firstPosition.y / this.gridSize) + 1).padStart(2, '0')}`, 30, false, stationType))
-      track.addStation(createStation(this.ctxTracks, lastPosition.x, lastPosition.y, this.gridSize, 0,  `S${trainNumber}${String((lastPosition.x / this.gridSize) + 1).padStart(2, '0')}${String((lastPosition.y / this.gridSize) + 1).padStart(2, '0')}`, 30, false, stationType))
+      //we add stations at both starting and ending points
+      track.addStation(createStation(this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0 , trainNumber, 30))
+      track.addStation(createStation(this.ctxTracks, lastPosition.x, lastPosition.y, this.gridSize, 0,  trainNumber, 30))
       intersections.updateIntersectionsWithStationLocation(firstPosition.y/this.gridSize, firstPosition.x/this.gridSize, 'Station')
       intersections.updateIntersectionsWithStationLocation(lastPosition.y/this.gridSize, lastPosition.x/this.gridSize, 'Station')
       if(!options.partOfInitialSetup){
-        this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
-        this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
+        this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
+        this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
       }
     }
     // if (stations.length > 1) {
@@ -354,14 +352,14 @@ class Game {
       this.Flyovers.draw()
     }
   }
-  addStation(trainNumber, x, y, name, stopDuration, stationType, options = {}) {
+  addStation(trainNumber, x, y, name, stopDuration, options = {}) {
     if (trainNumber <= this.trains.length) {
       const train = this.trains[trainNumber - 1]
-      const station = createStation(this.ctxTracks, x, y, this.gridSize, 0, name, stopDuration, stationType)
+      const station = createStation(this.ctxTracks, x, y, this.gridSize, 0, trainNumber, stopDuration)
       train.addStation(station)
       train.intersections.updateIntersectionsWithStationLocation(y / this.gridSize, x / this.gridSize, 'Station')
       if(!options.partOfInitialSetup){
-        this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, stationType)
+        this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
       }
     }
   }
@@ -381,10 +379,10 @@ class Game {
     const train = this.trains[trainNumber - 1]
     if(train){
       const stationLocation  = train.extendTrain(positionsForExtendTrain)
-      const station = createStation(this.ctxTracks, stationLocation.x, stationLocation.y, this.gridSize, 0, `S${trainNumber}${String((stationLocation.x / this.gridSize) + 1).padStart(2, '0')}${String((stationLocation.y / this.gridSize) + 1).padStart(2, '0')}`, 30, 'small')
+      const station = createStation(this.ctxTracks, stationLocation.x, stationLocation.y, this.gridSize, 0, trainNumber, 30)
       train.addStation(station)
       train.intersections.updateIntersectionsWithStationLocation(stationLocation.y / this.gridSize, stationLocation.x / this.gridSize, 'Station')
-      this.financials.addStation(this.getCurrentTimeIndex(), trainNumber, 'small')
+      this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
     }
   }
 }

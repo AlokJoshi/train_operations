@@ -6,18 +6,16 @@ class Station{
   // will the train stop or go through without stopping. I think it is better for the train to go through without stopping because it is not related to the train's track and it will not cause any issues for the train. However, we can add a cost for passing through a station that is not related to the train's track. This way, the user will have to invest in the station if they want their trains to pass through it without stopping. 
   // This will add an additional layer of strategy for the user when they are building their tracks and stations.
   // station is passed ctx_tracks because we want to draw the station on the tracks layer so that it appears below the trains. If we draw the station on the main ctx, then it will appear above the trains and it will look weird when the train is passing through the station.
-  constructor(ctx,x,y,gridSize,distanceFromStart,name,dwellTime=30,type) {
+  constructor(ctx,x,y,gridSize,distanceFromStart,trainNumber,dwellTime=30) {
     this.ctx = ctx
     this.x = x
     this.y = y
     this.distanceFromStart = distanceFromStart
-    this.name = name?name:`S-${x/gridSize + 1}-${y/gridSize + 1}`
+    this.name = this.stationName(x,y,gridSize,trainNumber)
     // enroute station is false for Starting and Ending terminal stations and true for stations in between. 
     // This is important because we want to calculate the number of passengers boarding and alighting at each station 
     // this.enRouteStation = enRouteStation
     this.dwellTime = dwellTime
-    // small=2 to 5 coaches, medium=6 to 10 coaches, large=11 to 15 coaches
-    this.type = type // can be 'small', 'medium', 'large' which determines the maximum number of coaches that can be added to the train at this station
     
     // station number will start from 1 and that will indicate that it is the strting station.
     // if the station number is x and total stations are x then it is the ending station.
@@ -27,8 +25,16 @@ class Station{
     this.stationNumber=0
     this.totalStations=0
   }
-  // static getStationCost(type){
-  //   return type === 'small' ? this.STATION_COST_SMALL : type === 'medium' ? this.STATION_COST_MEDIUM : this.STATION_COST_LARGE  
+  stationName(x,y,gridSize,trainNumber){
+    const n ='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    const col = Math.floor(x / gridSize)
+    const row = Math.floor(y / gridSize)
+    const colName = (col>n.length ? n[Math.floor(col / n.length)] : '') + n[col]
+    const rowName = (row>n.length ? n[Math.floor(row / n.length)] : '') + n[row]
+    return `T${trainNumber} : ${colName}-${rowName}`
+  }
+  // static getStationCost(){
+  //   return this.STATION_COST_SMALL
   // }
   draw(){
     this.ctx.beginPath()
@@ -46,8 +52,8 @@ class Station{
   }
 }
 
-function createStation(ctx, x, y, gridSize, distanceFromStart, name, dwellTime=30, type='small') {
-  return new Station(ctx, x, y, gridSize, distanceFromStart, name, dwellTime, type);
+function createStation(ctx, x, y, gridSize, distanceFromStart, trainNumber, dwellTime=30) {
+  return new Station(ctx, x, y, gridSize, distanceFromStart, trainNumber, dwellTime);
 }
 
 export {

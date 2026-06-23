@@ -80,10 +80,39 @@ class RawmaterialDemand {
     return totalDemand
   }
   decreaseDemand(x, y, amount) {
-    const key = this.getKey(x, y)
-    const currentDemand = this.values.get(key) ?? 0
-    const newDemand = Math.max(currentDemand - amount, 0)
-    this.values.set(key, newDemand)
-  } 
+    //we decrease the demand from a specific grid point that is a demand center and closest to this point
+    const demandCenters = []
+    for(let x1 = 0; x1 <= this.canvasWidth; x1 += this.gridSize) {
+      for(let y1 = 0; y1 <= this.canvasHeight; y1 += this.gridSize) {
+        // check if this grid point is a demand center and closest to the specified (x, y) point
+        const demand = this.values.get(this.getKey(x1, y1)) ?? 0
+        if (demand > 0) {
+          const distance = Math.sqrt((x - x1) ** 2 + (y - y1) ** 2)
+          demandCenters.push({ x: x1, y: y1, distance, demand })
+        }
+      }
+    }
+    // sort demand centers by distance to the specified (x, y) point
+    demandCenters.sort((a, b) => a.distance - b.distance)
+    
+    // go over each of the demand centers starting with the closest and decrease the demand by the specified amount until the amount is depleted or there are no more demand centers left
+    let i = 0
+    console.log(`Starting decreaseDemand at (${x}, ${y}) by amount: ${amount}`)
+    while (amount > 0 && i < demandCenters.length) {
+      const nextClosest = demandCenters[i]
+      const nextKey = this.getKey(nextClosest.x, nextClosest.y)
+      const nextCurrentDemand = this.values.get(nextKey) ?? 0
+      if (nextCurrentDemand > amount) {
+        console.log(`demand reduced at ${nextClosest.x}, ${nextClosest.y} by ${amount} current demand: ${nextCurrentDemand-amount}` )
+        this.values.set(nextKey, Math.max(nextCurrentDemand - amount, 0))
+        amount = 0
+      } else {
+        console.log(`demand reduced at ${nextClosest.x}, ${nextClosest.y} by ${amount-nextCurrentDemand} current demand: ${0}` )
+        this.values.set(nextKey, 0)
+        amount -= nextCurrentDemand
+      }
+      i++
+    }
+  }
 }
 export { RawmaterialDemand }

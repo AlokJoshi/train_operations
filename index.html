@@ -57,7 +57,9 @@
             onclick="removetrain(1)"></i>
           </div>
           <div id="trainExtensionControls1" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
             <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(1)" id="completeTrainExtension1" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
             <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(1)" id="cancelTrainExtension1" style="cursor:pointer;"></i>
           </div>
         </div>
@@ -87,7 +89,9 @@
             onclick="removetrain(2)"></i>
           </div>
           <div id="trainExtensionControls2" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
             <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(2)" id="completeTrainExtension2" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
             <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(2)" id="cancelTrainExtension2" style="cursor:pointer;"></i>
           </div>
         </div>
@@ -118,7 +122,9 @@
             onclick="removetrain(3)"></i>
           </div>
           <div id="trainExtensionControls3" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
             <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(3)" id="completeTrainExtension3" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
             <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(3)" id="cancelTrainExtension3" style="cursor:pointer;"></i>
           </div>
         </div>
@@ -148,7 +154,9 @@
             onclick="removetrain(4)"></i>
           </div>
           <div id="trainExtensionControls4" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
             <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(4)" id="completeTrainExtension4" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
             <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(4)" id="cancelTrainExtension4" style="cursor:pointer;"></i>
           </div>
         </div>
@@ -178,7 +186,9 @@
             onclick="removetrain(5)"></i>
           </div>
           <div id="trainExtensionControls5" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
             <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(5)" id="completeTrainExtension5" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
             <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(5)" id="cancelTrainExtension5" style="cursor:pointer;"></i>
           </div>
         </div>
@@ -207,7 +217,9 @@
             onclick="removetrain(6)"></i>
           </div>
           <div id="trainExtensionControls6" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
             <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(6)" id="completeTrainExtension6" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
             <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(6)" id="cancelTrainExtension6" style="cursor:pointer;"></i>
           </div>
         </div>
@@ -237,7 +249,9 @@
             onclick="removetrain(7)"></i>
           </div>
           <div id="trainExtensionControls7" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
             <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(7)" id="completeTrainExtension7" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
             <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(7)" id="cancelTrainExtension7" style="cursor:pointer;"></i>
           </div>
         </div>
@@ -267,7 +281,9 @@
             onclick="removetrain(8)"></i>
           </div>
           <div id="trainExtensionControls8" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
             <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(8)" id="completeTrainExtension8" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
             <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(8)" id="cancelTrainExtension8" style="cursor:pointer;"></i>
           </div>
         </div>
@@ -296,7 +312,9 @@
             onclick="removetrain(9)"></i>
           </div>
           <div id="trainExtensionControls9" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
             <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(9)" id="completeTrainExtension9" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
             <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(9)" id="cancelTrainExtension9" style="cursor:pointer;"></i>
           </div>
         </div>
@@ -448,13 +466,11 @@
         costs
         <span id="coachCost"></span> and each freight wagon costs <span id="freightWagonCost"></span>. You can
         add or remove coaches or freight wagons by using the
-        <span class="key">+</span> and <span class="key">-</span> buttons in the train dialog box. You can also speed up
-        or slow down the trains by using the <span class="key">↑</span> and <span class="key">↓</span> arrows
-        in the train dialog box. You can also stop or pause any train by using the pause button in the train dialog box
-        or
-        by pressing the corresponding number key for each train (1 for Train #1, 2 for Train #2 and so on).
+        <span class="key">+</span> and <span class="key">-</span> buttons in the train dialog box. You can also stop or pause any train by using the pause button <i class="fa fa-pause"></i> in the train dialog box
+        or by pressing the corresponding number key for each train (1 for Train #1, 2 for Train #2 and so on).
         There is an option to delete a train completely but if you do that, you will lose all the money you invested in that train and you will not be able to get it back.
-        When a new train is started, it comes with a standard engine which costs <span id="engineCost"></span>. However, you can upgrade the engine later in the game to increase the speed of the train. 
+        When a new train is started, it comes with a standard engine which costs <span id="engineCost"></span>. However, you can upgrade the engine of freight trains later in the 
+        game to increase the speed of the freight trains by clicking on the upgrade button <span class="fa fa-bolt"></span> in the train dialog box. 
         Each engine upgrade costs <span id="engineUpgradeCost"></span>. 
         There is also an option to extend the train route by clicking on the extend button in the train dialog box. This
         extension can be done from either end of the train track. After clicking on the extend button, you will need to click on the map to specify the additional route for the train. 
