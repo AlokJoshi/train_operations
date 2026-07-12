@@ -7,11 +7,13 @@ import { Flyover } from './Flyover.js'
 import { createStation } from './Station.js'
 import { Intersections } from './Intersections.js'
 import { Population } from './Population.js'
-import { TravelPopulation} from './TravelPopulation.js'
+import { TravelPopulation } from './TravelPopulation.js'
 import { Rawmaterials } from './Rawmaterials.js'
 import { RawmaterialDemand } from './RawmaterialDemand.js'
 import { RawMaterialSupply } from './RawMaterialSupply.js'
-import { Popups} from "./Popups.js"
+import { Popups } from "./Popups.js"
+import { TrainInfo } from './TrainInfo.js'
+import { getCommonSegmentsMap } from './utility.js'
 class Game {
 
   TRAINCONFIG = [
@@ -43,11 +45,9 @@ class Game {
     this.rawmaterialDemand = new RawmaterialDemand(ctx.canvas.width, ctx.canvas.height, gridSize)
     this.rawmaterialSupply = new RawMaterialSupply(ctx.canvas.width, ctx.canvas.height, gridSize)
     this.popups = new Popups()
-    //log population to check the values
-    // console.log(this.population)
-    // console.log(this.travelPopulation)
-    // console.log(this.rawmaterialDemand)
     this.rawmaterialDemand.displayStatistics()
+    this.maxTrains = 9
+    this.trainInfo = new TrainInfo(this.maxTrains, this.totalTimeUnits)
   }
   getTimeUnitDuration() {
     return this.getMinutesPerTimeUnit()
@@ -84,7 +84,7 @@ class Game {
     return this.financials.trackCostPerUnit
   }
   getCoachCapacity() {
-    return Train.coachPassengerCapacity 
+    return Train.coachPassengerCapacity
   }
   getTotalTimeUnits() {
     return this.totalTimeUnits
@@ -100,14 +100,14 @@ class Game {
     return this.financials.coachCost
   }
   getTrackCost(positions) {
-    return Track.getTrackLength(positions)* this.getTrackCostPerUnit()
+    return Track.getTrackLength(positions) * this.getTrackCostPerUnit()
   }
   getCumProfit() {
     return this.financials.cumProfitByTrain.reduce((acc, profit) => acc + profit, 0)
   }
   getRank() {
     //change this after we start saving the games to the database
-    
+
     return 1
   }
 
@@ -123,7 +123,7 @@ class Game {
     const train = this.trains[trainNumber - 1]
     if (train) {
       train.addCoach()
-      this.financials.buyCoach(this.getCurrentTimeIndex(), trainNumber, 1) 
+      this.financials.buyCoach(this.getCurrentTimeIndex(), trainNumber, 1)
     }
   }
 
@@ -159,16 +159,16 @@ class Game {
     this.tracks.add(track)
   }
 
-  setPossibleFlyoverLocations(locations){
+  setPossibleFlyoverLocations(locations) {
     this.Flyovers.setPossibleFlyoverLocations(locations)
   }
 
   addFlyover(row, col) {
-    const flyover = new Flyover( row, col)
+    const flyover = new Flyover(row, col)
     this.Flyovers.addFlyover(flyover)
   }
 
-  getNumberOfFlyovers(){
+  getNumberOfFlyovers() {
     return this.Flyovers.getAllFlyovers().length
   }
 
@@ -187,8 +187,28 @@ class Game {
     }
   }
 
-  addTrain( positions,  numCoaches, delayBeforeStart, intersections, options = {}) {
+  addTrain(positions, numCoaches, delayBeforeStart, intersections, options = {}) {
+    const overlapMatches = []
+    for (const train of this.trains) {
+      if (train === null) continue
+      const commonSegmentsMap = getCommonSegmentsMap(positions, train.track?.positions)
+      if (commonSegmentsMap.size > 0) {
+        overlapMatches.push({
+          trainNumber: train.trainNumber,
+          commonSegmentsMap
+        })
+      }
+    }
 
+    let useParallelTrack = false
+    if (overlapMatches.length > 0 && !options.partOfInitialSetup) {
+      const commonTrainNumbers = overlapMatches.map((match) => match.trainNumber)
+      useParallelTrack = window.confirm(
+        `The new train overlaps with existing train(s): ${commonTrainNumbers.join(', ')}.\n\n` +
+        'Choose OK to enable parallel-track mode (these trains will not collide on shared grid points), ' +
+        'or Cancel to manage collisions manually.'
+      )
+    }
     // Apply freight train defaults automatically when trainType is 'freight'
     if (options.trainType === 'freight') {
       options = {
@@ -210,18 +230,18 @@ class Game {
     const firstPosition = positions[0]
     const lastPosition = positions[positions.length - 1]
 
-    const track = new Track(this.ctxTracks, positions,'',this.gridSize)
+    const track = new Track(this.ctxTracks, positions, '', this.gridSize)
 
-    if(firstPosition.x == lastPosition.x && firstPosition.y == lastPosition.y){
+    if (firstPosition.x == lastPosition.x && firstPosition.y == lastPosition.y) {
       alert('The starting and ending positions are the same. Please choose different positions for the starting and ending points.')
       return
-    } else{
+    } else {
       //we add stations at both starting and ending points
-      track.addStation(createStation(this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0 , trainNumber, 30))
-      track.addStation(createStation(this.ctxTracks, lastPosition.x, lastPosition.y, this.gridSize, 0,  trainNumber, 30))
-      intersections.updateIntersectionsWithStationLocation(firstPosition.y/this.gridSize, firstPosition.x/this.gridSize, 'Station')
-      intersections.updateIntersectionsWithStationLocation(lastPosition.y/this.gridSize, lastPosition.x/this.gridSize, 'Station')
-      if(!options.partOfInitialSetup){
+      track.addStation(createStation(this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0, trainNumber, 30))
+      track.addStation(createStation(this.ctxTracks, lastPosition.x, lastPosition.y, this.gridSize, 0, trainNumber, 30))
+      intersections.updateIntersectionsWithStationLocation(firstPosition.y / this.gridSize, firstPosition.x / this.gridSize, 'Station')
+      intersections.updateIntersectionsWithStationLocation(lastPosition.y / this.gridSize, lastPosition.x / this.gridSize, 'Station')
+      if (!options.partOfInitialSetup) {
         this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
         this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
       }
@@ -251,28 +271,37 @@ class Game {
       rawMaterialSupply: this.rawmaterialSupply,
       getCurrentTimeIndex: () => this.getCurrentTimeIndex(),
       trainType: options.trainType,
+      lane: options.lane ?? 0,
       visualLengthScale: options.visualLengthScale,
       maxVisualCoaches: options.maxVisualCoaches,
-      popups: this.popups
+      popups: this.popups,
+      trainInfo: this.trainInfo
     })
     const length = track.getTotalLength()
     const currentTimeIndex = this.getCurrentTimeIndex()
-    if(!options.partOfInitialSetup){
+    if (!options.partOfInitialSetup) {
       this.financials.incrementTrackCost(currentTimeIndex, trainNumber, length)
       this.financials.buyEngine(currentTimeIndex, trainNumber)
       this.financials.buyCoach(currentTimeIndex, trainNumber, numCoaches)
     }
     this.trains[trainNumber - 1] = train
+
+    if (useParallelTrack) {
+      overlapMatches.forEach((match) => {
+        intersections.allowTrainsForCommonSegments(match.commonSegmentsMap, [match.trainNumber, trainNumber])
+      })
+    }
+
     const trainElement = document.querySelector(`#train${trainNumber}`)
     if (trainElement) {
-      if(nullIndex !== -1){
+      if (nullIndex !== -1) {
         trainElement.style.filter = "none"
-      } else{
-      trainElement.style.display = 'grid'
+      } else {
+        trainElement.style.display = 'grid'
       }
       trainElement.style.backgroundColor = color
       //if freight train them disable the speed control buttons for that train
-      if(options.trainType === 'freight'){
+      if (options.trainType === 'freight') {
         const speedUpButton = document.querySelector(`#speedUpTrain${trainNumber}`)
         const slowDownButton = document.querySelector(`#slowDownTrain${trainNumber}`)
         if (speedUpButton) {
@@ -298,10 +327,16 @@ class Game {
     })
   }
 
+  addPassengerTrain(positions, numCoaches, delayBeforeStart, intersections, options = {}) {
+    return this.addTrain(positions, numCoaches, delayBeforeStart, intersections, {
+      trainType: 'passenger',
+      ...options
+    })
+  }
   startStopTrain(trainNumber) {
     if (trainNumber <= this.trains.length) {
-      const el= document.querySelector(`#pauseTrain${trainNumber}`)
-      if(el){
+      const el = document.querySelector(`#pauseTrain${trainNumber}`)
+      if (el) {
         el.classList.toggle('fa-pause')
         el.classList.toggle('fa-play')
       }
@@ -309,24 +344,23 @@ class Game {
       train.startStop()
     }
   }
+
+  setTrainLane(trainNumber, lane) {
+    const train = this.trains[trainNumber - 1]
+    if (train) {
+      train.setLane(lane)
+    }
+  }
+
   draw() {
     this.trains.forEach((train, index) => {
-      if(train){
+      if (train) {
         train.draw()
       }
     })
     // this.checkForCollissions()
   }
-  // increaseTrainSpeed(trainNumber) {
-  //   if (trainNumber <= this.trains.length) {
-  //     this.trains[trainNumber - 1].speedUp()
-  //   }
-  // }
-  // decreaseTrainSpeed(trainNumber) {
-  //   if (trainNumber <= this.trains.length) {
-  //     this.trains[trainNumber - 1].slowDown()
-  //   }
-  // }
+
   removeTrain(trainNumber) {
     if (trainNumber <= this.trains.length) {
       const train = this.trains[trainNumber - 1]
@@ -337,13 +371,13 @@ class Game {
       // we remove the track for the deleted train. We do this by
       // redrawing the tracks only for the remaining trains. This is a simple way to remove the track of the deleted train without having to implement a more complex track management system.
       this.trains.forEach(train => {
-          if(train){  
-            train.track.drawUsingNewPositions()
-            const stations = train.track.stations.getAllStations()
-            stations.forEach(station => {
-              station.draw()
-            })
-          }
+        if (train) {
+          train.track.drawUsingNewPositions()
+          const stations = train.track.stations.getAllStations()
+          stations.forEach(station => {
+            station.draw()
+          })
+        }
       })
       const trainElement = document.querySelector(`#train${trainNumber}`)
       if (trainElement) {
@@ -358,7 +392,7 @@ class Game {
       const station = createStation(this.ctxTracks, x, y, this.gridSize, 0, trainNumber, stopDuration)
       train.addStation(station)
       train.intersections.updateIntersectionsWithStationLocation(y / this.gridSize, x / this.gridSize, 'Station')
-      if(!options.partOfInitialSetup){
+      if (!options.partOfInitialSetup) {
         this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
       }
     }
@@ -372,13 +406,12 @@ class Game {
     this.rawmaterialDemand.incrementTimeUnit()
 
     this.financials.incrementTimeUnit()
-    // this.travelPopulation.incrementTimeUnit()
   }
 
-  extendTrain(trainNumber, positionsForExtendTrain){
+  extendTrain(trainNumber, positionsForExtendTrain) {
     const train = this.trains[trainNumber - 1]
-    if(train){
-      const stationLocation  = train.extendTrain(positionsForExtendTrain)
+    if (train) {
+      const stationLocation = train.extendTrain(positionsForExtendTrain)
       const station = createStation(this.ctxTracks, stationLocation.x, stationLocation.y, this.gridSize, 0, trainNumber, 30)
       train.addStation(station)
       train.intersections.updateIntersectionsWithStationLocation(stationLocation.y / this.gridSize, stationLocation.x / this.gridSize, 'Station')

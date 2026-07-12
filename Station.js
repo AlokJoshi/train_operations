@@ -1,3 +1,4 @@
+import {rowAndColumnName} from './utility.js'
 class Station{
   
   static STATION_CIRCLE_RADIUS = 20
@@ -26,11 +27,12 @@ class Station{
     this.totalStations=0
   }
   stationName(x,y,gridSize,trainNumber){
-    const n ='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    const col = Math.floor(x / gridSize)
-    const row = Math.floor(y / gridSize)
-    const colName = (col>n.length ? n[Math.floor(col / n.length)] : '') + n[col]
-    const rowName = (row>n.length ? n[Math.floor(row / n.length)] : '') + n[row]
+    // const n ='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    // const col = Math.floor(x / gridSize)
+    // const row = Math.floor(y / gridSize)
+    // const colName = (col>n.length ? n[Math.floor(col / n.length)] : '') + n[col]
+    // const rowName = (row>n.length ? n[Math.floor(row / n.length)] : '') + n[row]
+    const [rowName, colName] = rowAndColumnName(x, y, gridSize)
     return `T${trainNumber} : ${colName}-${rowName}`
   }
   // static getStationCost(){

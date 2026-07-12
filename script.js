@@ -1,6 +1,6 @@
 import { Game } from './Game.js'
 import { Intersections } from './Intersections.js'
-import {makeDraggable} from './utility.js'
+import { makeDraggable, alpha, getDetailedSegmentsMap, getCommonSegmentsMap } from './utility.js'
 
 globalThis.globalTicks = 0
 
@@ -10,7 +10,7 @@ const CANVASWIDTH = 1200 * 2
 const CANVASMARGIN = 0
 const OFFSET_X = 0
 const OFFSET_Y = 0
-const gridSize = 100
+const gridSize = 50
 
 const canvas = document.querySelector('#canvas')
 const ctx = canvas.getContext('2d')
@@ -31,6 +31,7 @@ let startExtendTrain = false
 let startFlyover = false
 let startStation = false
 let showingResults = false
+let showingInfo = false
 let showingHowToPlay = false
 let click_error = 20
 let validTrackPoints = new Set()
@@ -114,9 +115,10 @@ if (timeUnitDurationValueEl) {
 
 
 let positions = [
-  { x: CANVASMARGIN + 100, y: CANVASMARGIN + 100 },
-  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 100 },
-  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 }
+  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
+  { x: CANVASMARGIN + 1450, y: CANVASMARGIN + 500 },
+  { x: CANVASMARGIN + 1450, y: CANVASMARGIN + 1000 },
+  { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 1000 }
 ]
 
 
@@ -131,7 +133,7 @@ positions = [
   { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 1000 },
   { x: CANVASMARGIN + 700, y: CANVASMARGIN + 1000 }
 ]
-let trainNumber = game.addTrain(positions, 1, 0,  intersections,
+let trainNumber = game.addTrain(positions, 1, 0, intersections,
   { trainType: 'passenger', partOfInitialSetup: true })
 game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, { partOfInitialSetup: true })
 game.addStation(trainNumber, 1200, 900, `S${trainNumber}1310`, 30, { partOfInitialSetup: true })
@@ -140,10 +142,10 @@ game.addStation(trainNumber, 1200, 900, `S${trainNumber}1310`, 30, { partOfIniti
 positions = [
   { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 200 },
   { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 600 },
-  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 600 }
+  { x: CANVASMARGIN + 300, y: CANVASMARGIN + 600 }
 ]
 trainNumber = game.addFreightTrain(positions, 50, 0, intersections,
-  { trainType: 'freight', partOfInitialSetup: true })
+  { partOfInitialSetup: true })
 game.addStation(trainNumber, 1800, 600, `S${trainNumber}1907`, 30, { partOfInitialSetup: true })
 
 const drawScene = () => {
@@ -191,9 +193,9 @@ const drawScene = () => {
     }
     ctx.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
     game.draw()
-    ctx.font = '12px Arial'
+    ctx.font = '14px Arial'
     ctx.fillStyle = 'black'
-    ctx.fillText(`Ticks: ${globalThis.globalTicks}`, CANVASWIDTH - 100, 20)
+    ctx.fillText(`Ticks: ${globalThis.globalTicks}`, CANVASWIDTH - 150, 20)
   }
   requestAnimationFrame(drawScene)
 }
@@ -207,6 +209,16 @@ window.addEventListener('load', () => {
   let showingRawmaterialDemandMap = false
   let positionsForExtendTrain = []
   let activeTrainExtensionTrainNumber = null
+
+  const drawValidTrackPoint = (ctx, x, y, click_error) => {
+    ctx.beginPath()
+    ctx.moveTo(x + click_error, y)
+    ctx.arc(x, y, click_error, 0, Math.PI * 2)
+    ctx.lineWidth = 5
+    ctx.strokeStyle = `rgba(0,255,0,0.3)`
+    ctx.closePath()
+    ctx.stroke()
+  }
 
   const getActiveTrainExtensionTrainNumber = (fallbackTrainNumber = null) => {
     const resolvedTrainNumber = Number.isInteger(fallbackTrainNumber)
@@ -340,6 +352,34 @@ window.addEventListener('load', () => {
         modal.style.display = 'none'
       }
       showingResults = !showingResults
+    } else if (event.code === 'KeyI') {
+      //if the code is I then show the info on train operations widget
+      const modal = document.querySelector('#buttonGroup7')
+      const div = document.querySelector('#infoForTrain')
+      div.replaceChildren()
+      for (let i = 1; i <= game.trains.length; i++) {
+        const span = document.createElement('span')
+        span.dataset.value = String(i)
+        span.textContent = `T${i}`
+        span.style = 'cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
+        span.addEventListener('click', () => {
+          console.log(`Train ${i} clicked`)
+          //hide all
+          for (let j = 1; j <= game.trains.length; j++) {
+            const infoDiv = document.querySelector(`#infotrainoperations${j}`)
+            infoDiv.style.display = 'none'
+          }
+          const infoDiv = document.querySelector(`#infotrainoperations${i}`)
+          infoDiv.style.display = 'block'
+        })
+        div.appendChild(span)
+      }
+      if (!showingInfo) {
+        modal.style.display = 'flex'
+      } else {
+        modal.style.display = 'none'
+      }
+      showingInfo = !showingInfo
     } else if (event.key === '?') {
       //if the code is ? then show the 'How to play' widget
       const modal = document.querySelector('#buttonGroup5')
@@ -381,6 +421,7 @@ window.addEventListener('load', () => {
     'S': 'KeyS',
     'F': 'KeyF',
     'R': 'KeyR',
+    'I': 'KeyI',
     'X': 'KeyX',
     'Y': 'KeyY',
     'Z': 'KeyZ'
@@ -447,6 +488,12 @@ window.addEventListener('load', () => {
   if (zHotkeyButton) {
     zHotkeyButton.addEventListener('click', () => {
       sendHotkeyToDocument('Z')
+    })
+  }
+  const infoHotkeyButton = document.getElementById('I')
+  if (infoHotkeyButton) {
+    infoHotkeyButton.addEventListener('click', () => {
+      sendHotkeyToDocument('I')
     })
   }
 
@@ -681,7 +728,7 @@ window.addEventListener('load', () => {
       const span = document.createElement('span')
       span.dataset.value = String(i)
       span.textContent = `T${i}`
-      span.style = 'cursor:pointer;font-size:12px;padding:2px;margin:1px;border:1px solid black;display:inline-block'
+      span.style = 'cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
       div.appendChild(span)
     }
     document.querySelector('#canvas_temp').style = 'cursor:crosshair'
@@ -769,11 +816,12 @@ window.addEventListener('load', () => {
     const { x: last_x, y: last_y } = positionsForExtendTrain[positionsForExtendTrain.length - 1]
     //when extending the train we want to allow the user to extend the train in the same 
     // direction as the last track segment or make a gradual turn but we do not want to allow sharp turns. 
-    // Since if the user makes a sharp turn, we will lost the station as it will no longer be on the track.
+    // Since if the user makes a sharp turn, we will lose the station as it will no longer be on the track.
     // So we will calculate the direction of the last track segment and then only show valid track points in the same direction 
     // for the first segment. The later logic will remain the same.
 
-    // if there is onlyone position in the positionsForExtendTrain then we will get the x-before_last_x from the train object
+    // if there is only one position in the positionsForExtendTrain then we will get the 
+    // x-before_last_x from the train object
     let x_before_last_x = null
     let y_before_last_y = null
     if (positionsForExtendTrain.length === 1) {
@@ -809,69 +857,71 @@ window.addEventListener('load', () => {
 
     // special logic only for the first point after selecting the starting point
     if (positionsForExtendTrain.length === 1) {
-    if (increasingRow || decreasingRow) {
-      for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
-        if ((decreasingRow && row < lastRow ) || (increasingRow && row > lastRow )) {
-          //drawCircle
-          ctxTemp.beginPath()
-          ctxTemp.moveTo(last_x + click_error, row * gridSize)
-          ctxTemp.arc(last_x, row * gridSize, click_error, 0, Math.PI * 2)
-          ctxTemp.strokeStyle = `rgba(0,255,0,0.3)`
-          ctxTemp.closePath()
-          ctxTemp.stroke()
-          validTrackPoints.add(`${last_x},${row * gridSize}`)
+      if (increasingRow || decreasingRow) {
+        for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
+          if ((decreasingRow && row < lastRow - 1) || (increasingRow && row > lastRow + 1)) {
+            //drawCircle
+            ctxTemp.beginPath()
+            ctxTemp.moveTo(last_x + click_error, row * gridSize)
+            ctxTemp.arc(last_x, row * gridSize, click_error, 0, Math.PI * 2)
+            ctxTemp.strokeStyle = `rgb(9, 108, 2)`
+            ctxTemp.closePath()
+            ctxTemp.stroke()
+            validTrackPoints.add(`${last_x},${row * gridSize}`)
+          }
+        }
+      } else if (increasingCol || decreasingCol) {
+        for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
+          if ((decreasingCol && col < lastCol - 1) || (increasingCol && col > lastCol + 1)) {
+            //drawCircle
+            ctxTemp.beginPath()
+            ctxTemp.moveTo(col * gridSize + click_error, last_y)
+            ctxTemp.arc(col * gridSize, last_y, click_error, 0, Math.PI * 2)
+            ctxTemp.strokeStyle = `rgb(9,108,2)`
+            ctxTemp.closePath()
+            ctxTemp.stroke()
+            validTrackPoints.add(`${col * gridSize},${last_y}`)
+          }
         }
       }
-    } else if (increasingCol || decreasingCol) {
-      for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
-        if ((decreasingCol && col < lastCol ) || (increasingCol && col > lastCol )) {
-          //drawCircle
-          ctxTemp.beginPath()
-          ctxTemp.moveTo(col * gridSize + click_error, last_y)
-          ctxTemp.arc(col * gridSize, last_y, click_error, 0, Math.PI * 2)
-          ctxTemp.strokeStyle = `rgba(0,255,0,0.3)`
-          ctxTemp.closePath()
-          ctxTemp.stroke()
-          validTrackPoints.add(`${col * gridSize},${last_y}`)
-        }
+      return
+    }
+
+
+    for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
+      if (row == lastRow || row == lastRow - 1 || row == lastRow + 1 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
+        //go to next iteration since we want only gradual change in track direction and not sharp turns
+        continue
+      } else {
+        //drawCircle
+        ctxTemp.beginPath()
+        ctxTemp.moveTo(last_x + click_error, row * gridSize)
+        ctxTemp.arc(last_x, row * gridSize, click_error, 0, Math.PI * 2)
+        ctxTemp.lineWidth = 5
+        ctxTemp.strokeStyle = `rgb(9,108,2)`
+        ctxTemp.closePath()
+        ctxTemp.stroke()
+        validTrackPoints.add(`${last_x},${row * gridSize}`)
       }
     }
-    return
-  }
-  
 
-  for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
-    if (row == lastRow || row == lastRow - 1 || row == lastRow + 1 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
-      //go to next iteration since we want only gradual change in track direction and not sharp turns
-      continue
-    } else {
-      //drawCircle
-      ctxTemp.beginPath()
-      ctxTemp.moveTo(last_x + click_error, row * gridSize)
-      ctxTemp.arc(last_x, row * gridSize, click_error, 0, Math.PI * 2)
-      ctxTemp.strokeStyle = `rgba(0,255,0,0.3)`
-      ctxTemp.closePath()
-      ctxTemp.stroke()
-      validTrackPoints.add(`${last_x},${row * gridSize}`)
+    for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
+      if (col == lastCol || col == lastCol - 1 || col == lastCol + 1 || (x_before_last_x !== null && ((increasingCol && col < lastCol) || (decreasingCol && col > lastCol)))) {
+        //go to next iteration since we want only gradual change in track direction and not sharp turns
+        continue
+      } else {
+        //drawCircle
+        ctxTemp.beginPath()
+        ctxTemp.moveTo(col * gridSize + click_error, last_y)
+        ctxTemp.arc(col * gridSize, last_y, click_error, 0, Math.PI * 2)
+        ctxTemp.lineWidth = 5
+        ctxTemp.strokeStyle = `rgb(9,108,2)`
+        ctxTemp.closePath()
+        ctxTemp.stroke()
+        validTrackPoints.add(`${col * gridSize},${last_y}`)
+      }
     }
   }
-
-  for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
-    if (col == lastCol || col == lastCol - 1 || col == lastCol + 1 || (x_before_last_x !== null && ((increasingCol && col < lastCol) || (decreasingCol && col > lastCol)))) {
-      //go to next iteration since we want only gradual change in track direction and not sharp turns
-      continue
-    } else {
-      //drawCircle
-      ctxTemp.beginPath()
-      ctxTemp.moveTo(col * gridSize + click_error, last_y)
-      ctxTemp.arc(col * gridSize, last_y, click_error, 0, Math.PI * 2)
-      ctxTemp.strokeStyle = `rgba(0,255,0,0.3)`
-      ctxTemp.closePath()
-      ctxTemp.stroke()
-      validTrackPoints.add(`${col * gridSize},${last_y}`)
-    }
-  }
-}
 
   function updateCanvasTemp() {
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
@@ -911,35 +961,109 @@ window.addEventListener('load', () => {
     const decreasingCol = x_before_last_x !== null && last_x < x_before_last_x
 
     for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
-      if (row == lastRow || row == lastRow - 1 || row == lastRow + 1 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
-        //go to next iteration since we want only gradual change in track direction and not sharp turns
-        continue
-      } else {
-        //drawCircle
-        ctxTemp.beginPath()
-        ctxTemp.moveTo(last_x + click_error, row * gridSize)
-        ctxTemp.arc(last_x, row * gridSize, click_error, 0, Math.PI * 2)
-        ctxTemp.strokeStyle = `rgba(0,255,0,0.3)`
-        ctxTemp.closePath()
-        ctxTemp.stroke()
+      // if (y_before_last_y==null){
+      //   if (row == lastRow || row < lastRow - 3 || row > lastRow + 3 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
+      //     drawValidTrackPoint(ctxTemp, last_x, row * gridSize, click_error)
+      //     validTrackPoints.add(`${last_x},${row * gridSize}`)
+      //   }
+      // } else if(increasingRow){
+      //     if (row > lastRow ){
+      //       drawValidTrackPoint(ctxTemp, last_x, row * gridSize, click_error)
+      //       validTrackPoints.add(`${last_x},${row * gridSize}`)
+      //     }
+      // } else if(decreasingRow){
+      //     if (row < lastRow ){
+      //       drawValidTrackPoint(ctxTemp, last_x, row * gridSize, click_error)
+      //       validTrackPoints.add(`${last_x},${row * gridSize}`)
+      //     }
+      // }
+
+      if (increasingRow && row > lastRow) {
+        drawValidTrackPoint(ctxTemp, last_x, row * gridSize, click_error)
         validTrackPoints.add(`${last_x},${row * gridSize}`)
       }
+      else if (decreasingRow && row < lastRow) {
+        drawValidTrackPoint(ctxTemp, last_x, row * gridSize, click_error)
+        validTrackPoints.add(`${last_x},${row * gridSize}`)
+      }
+      else if (!increasingRow && !decreasingRow && (row < lastRow - 3 || row > lastRow + 3)) {
+        drawValidTrackPoint(ctxTemp, last_x, row * gridSize, click_error)
+        validTrackPoints.add(`${last_x},${row * gridSize}`)
+      }
+
     }
+    // for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
+    //   if (row == lastRow || row == lastRow - 1 || row == lastRow + 1 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
+    //     //go to next iteration since we want only gradual change in track direction and not sharp turns
+    //     continue
+    //   } else {
+    //     //drawCircle
+    //     ctxTemp.beginPath()
+    //     ctxTemp.moveTo(last_x + click_error, row * gridSize)
+    //     ctxTemp.arc(last_x, row * gridSize, click_error, 0, Math.PI * 2)
+    //     ctxTemp.lineWidth = 5
+    //     ctxTemp.strokeStyle = `rgba(0,255,0,0.3)`
+    //     ctxTemp.closePath()
+    //     ctxTemp.stroke()
+    //     validTrackPoints.add(`${last_x},${row * gridSize}`)
+    //   }
+    // }
 
     for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
-      if (col == lastCol || col == lastCol - 1 || col == lastCol + 1 || (x_before_last_x !== null && ((increasingCol && col < lastCol) || (decreasingCol && col > lastCol)))) {
-        //go to next iteration since we want only gradual change in track direction and not sharp turns
-        continue
-      } else {
-        //drawCircle
-        ctxTemp.beginPath()
-        ctxTemp.moveTo(col * gridSize + click_error, last_y)
-        ctxTemp.arc(col * gridSize, last_y, click_error, 0, Math.PI * 2)
-        ctxTemp.strokeStyle = `rgba(0,255,0,0.3)`
-        ctxTemp.closePath()
-        ctxTemp.stroke()
+      // if (col == lastCol || col == lastCol - 1 || col == lastCol + 1 || (x_before_last_x !== null && ((increasingCol && col < lastCol) || (decreasingCol && col > lastCol)))) {
+      //go to next iteration since we want only gradual change in track direction and not sharp turns
+      //continue
+
+      // } else {
+      //   //drawCircle
+      //   ctxTemp.beginPath()
+      //   ctxTemp.moveTo(col * gridSize + click_error, last_y)
+      //   ctxTemp.arc(col * gridSize, last_y, click_error, 0, Math.PI * 2)
+      //   ctxTemp.strokeStyle = `rgba(0,255,0,0.3)`
+      //   ctxTemp.closePath()
+      //   ctxTemp.stroke()
+      //   validTrackPoints.add(`${col * gridSize},${last_y}`)
+      // }
+
+      // if (x_before_last_x == null) {
+      //   if (col == lastCol || col < lastCol - 3 || col > lastCol + 3 || (x_before_last_x !== null && ((increasingCol && col < lastCol) || (decreasingCol && col > lastCol)))) {
+      //     drawValidTrackPoint(ctxTemp, col * gridSize, last_y, click_error)
+      //     validTrackPoints.add(`${col * gridSize},${last_y}`)
+      //   }
+      // } else if (increasingCol) {
+      //   if (col > lastCol) {
+      //     drawValidTrackPoint(ctxTemp, col * gridSize, last_y, click_error)
+      //     validTrackPoints.add(`${col * gridSize},${last_y}`)
+      //   }
+      // } else if (decreasingCol) {
+      //   if (col < lastCol) {
+      //     drawValidTrackPoint(ctxTemp, col * gridSize, last_y, click_error)
+      //     validTrackPoints.add(`${col * gridSize},${last_y}`)
+      //   }
+      // }
+
+      if (increasingCol && col > lastCol) {
+        drawValidTrackPoint(ctxTemp,col * gridSize, last_y, click_error)
         validTrackPoints.add(`${col * gridSize},${last_y}`)
       }
+      else if (decreasingCol && col < lastCol) {
+        drawValidTrackPoint(ctxTemp,col * gridSize, last_y, click_error)
+        validTrackPoints.add(`${col * gridSize},${last_y}`)
+      }
+      else if (!increasingCol && !decreasingCol && (col < lastCol - 3 || col > lastCol + 3)) {
+        drawValidTrackPoint(ctxTemp,col * gridSize, last_y, click_error)
+        validTrackPoints.add(`${col * gridSize},${last_y}`)
+      }
+      // if (col == lastCol || col < lastCol - 3 || col > lastCol + 3 || (x_before_last_x !== null && ((increasingCol && col < lastCol) || (decreasingCol && col > lastCol)))) {
+      //   //drawCircle
+      //   ctxTemp.beginPath()
+      //   ctxTemp.moveTo(col * gridSize + click_error, last_y)
+      //   ctxTemp.arc(col * gridSize, last_y, click_error, 0, Math.PI * 2)
+      //   ctxTemp.strokeStyle = `rgba(0,255,0,0.3)`
+      //   ctxTemp.closePath()
+      //   ctxTemp.stroke()
+      //   validTrackPoints.add(`${col * gridSize},${last_y}`)
+      // }
     }
   }
   window.addEventListener('collision', (event) => {
@@ -1152,77 +1276,80 @@ window.addEventListener('load', () => {
   }
 
   const trainTypeSelect = document.querySelector('#typeoftrain')
-const passengerCoachSection = document.querySelector('#numcoaches')?.closest('div')
-const freightWagonSection = document.querySelector('#numfreightwagons')?.closest('div')
+  const passengerCoachSection = document.querySelector('#numcoaches')?.closest('div')
+  const freightWagonSection = document.querySelector('#numfreightwagons')?.closest('div')
 
-const syncTrainTypeInputs = () => {
-  const isFreight = trainTypeSelect?.value === 'freight'
-  if (passengerCoachSection) {
-    passengerCoachSection.hidden = isFreight
-  }
-  if (freightWagonSection) {
-    freightWagonSection.hidden = !isFreight
-  }
-}
-
-if (trainTypeSelect) {
-  trainTypeSelect.addEventListener('change', syncTrainTypeInputs)
-}
-syncTrainTypeInputs()
-
-
-
-window.addCoach = function (trainNumber) {
-  game.addCoach(trainNumber)
-}
-
-window.removeCoach = function (trainNumber) {
-  game.removeCoach(trainNumber)
-}
-
-window.upgradeEngine = function (trainNumber) {
-  const costOfUpgrade = game.getEngineUpgradeCost()
-  swal.fire({
-    title: `Upgrade Engine for Train ${trainNumber}`,
-    text: `Upgrading the engine will increase the speed of the train. This will allow the train to move faster and reduce the travel time between stations. 
-    However, this will cost you $${costOfUpgrade.toLocaleString('en-US')}. Do you want to upgrade the engine?`,
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: 'Yes',
-    cancelButtonText: 'No'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      game.upgradeEngine(trainNumber)
+  const syncTrainTypeInputs = () => {
+    const isFreight = trainTypeSelect?.value === 'freight'
+    if (passengerCoachSection) {
+      passengerCoachSection.hidden = isFreight
     }
-  })
-}
+    if (freightWagonSection) {
+      freightWagonSection.hidden = !isFreight
+    }
+  }
 
-// Initialize dragging for your control group
-const buttonGroup1 = document.querySelector('#buttonGroup1');
-makeDraggable(buttonGroup1);
+  if (trainTypeSelect) {
+    trainTypeSelect.addEventListener('change', syncTrainTypeInputs)
+  }
+  syncTrainTypeInputs()
 
-const buttonGroup2 = document.querySelector('#buttonGroup2');
-makeDraggable(buttonGroup2);
 
-const buttonGroup3 = document.querySelector('#buttonGroup3');
-makeDraggable(buttonGroup3);
 
-const buttonGroup4 = document.querySelector('#buttonGroup4');
-makeDraggable(buttonGroup4);
+  window.addCoach = function (trainNumber) {
+    game.addCoach(trainNumber)
+  }
 
-const buttonGroup5 = document.querySelector('#buttonGroup5');
-makeDraggable(buttonGroup5);
+  window.removeCoach = function (trainNumber) {
+    game.removeCoach(trainNumber)
+  }
 
-const buttonGroup6 = document.querySelector('#buttonGroup6');
-makeDraggable(buttonGroup6);
+  window.upgradeEngine = function (trainNumber) {
+    const costOfUpgrade = game.getEngineUpgradeCost()
+    swal.fire({
+      title: `Upgrade Engine for Train ${trainNumber}`,
+      text: `Upgrading the engine will increase the speed of the train. This will allow the train to move faster and reduce the travel time between stations. 
+    However, this will cost you $${costOfUpgrade.toLocaleString('en-US')}. Do you want to upgrade the engine?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes',
+      cancelButtonText: 'No'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        game.upgradeEngine(trainNumber)
+      }
+    })
+  }
 
-const howToPlayStartBtn = document.getElementById('howToPlayStartBtn')
-if (howToPlayStartBtn) {
-  howToPlayStartBtn.addEventListener('click', () => {
-    sendHotkeyToDocument('P')
-  })
-}
-sendHotkeyToDocument('?')
+  // Initialize dragging for your control group
+  const buttonGroup1 = document.querySelector('#buttonGroup1');
+  makeDraggable(buttonGroup1);
+
+  const buttonGroup2 = document.querySelector('#buttonGroup2');
+  makeDraggable(buttonGroup2);
+
+  const buttonGroup3 = document.querySelector('#buttonGroup3');
+  makeDraggable(buttonGroup3);
+
+  const buttonGroup4 = document.querySelector('#buttonGroup4');
+  makeDraggable(buttonGroup4);
+
+  const buttonGroup5 = document.querySelector('#buttonGroup5');
+  makeDraggable(buttonGroup5);
+
+  const buttonGroup6 = document.querySelector('#buttonGroup6');
+  makeDraggable(buttonGroup6);
+
+  const buttonGroup7 = document.querySelector('#buttonGroup7');
+  makeDraggable(buttonGroup7);
+
+  const howToPlayStartBtn = document.getElementById('howToPlayStartBtn')
+  if (howToPlayStartBtn) {
+    howToPlayStartBtn.addEventListener('click', () => {
+      sendHotkeyToDocument('P')
+    })
+  }
+  sendHotkeyToDocument('?')
 })
 
 function displayCollision(col, row) {
@@ -1384,10 +1511,10 @@ function drawGrid(ctx) {
   ctx.fillStyle = 'black'
   ctx.font = '12px Arial'
   for (let i = 0; i < numCols; i++) {
-    ctx.fillText(i + 1, CANVASMARGIN + i * gridSize + 5, CANVASMARGIN + 10)
+    ctx.fillText(alpha(i), CANVASMARGIN + i * gridSize + 5, CANVASMARGIN + 10)
   }
   for (let j = 1; j < numRows; j++) {
-    ctx.fillText(j + 1, CANVASMARGIN + 5, CANVASMARGIN + j * gridSize + 10)
+    ctx.fillText(alpha(j), CANVASMARGIN + 5, CANVASMARGIN + j * gridSize + 10)
   }
 
 }
@@ -1429,3 +1556,52 @@ function displayFinancialResults() {
   })
 }
 
+// getDetailedSegmentsMap([{x:0,y:0},{x:100,y:0},{x:200,y:0}])
+// getDetailedSegmentsMap([{x:200,y:0},{x:100,y:0},{x:0,y:0}])
+// getDetailedSegmentsMap([{x:0,y:0},{x:100,y:0},{x:200,y:0},{x:200,y:150}])
+// getDetailedSegmentsMap([{x:0,y:300},{x:100,y:300},{x:200,y:300},{x:200,y:150}])
+// getDetailedSegmentsMap([{x:0,y:0},{x:100,y:0},{x:200,y:0},{x:200,y:100},{x:200,y:200},{x:200,y:300}])
+// getDetailedSegmentsMap([{x:0,y:0},{x:100,y:0},{x:200,y:0},
+//   {x:200,y:100},{x:200,y:200},{x:200,y:300},{x:300,y:300},{x:400,y:300}])
+// getDetailedSegmentsMap([{ x: CANVASMARGIN + 100, y: CANVASMARGIN + 100 },
+//   { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 100 },
+//   { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 }])
+/*
+console.log(getDetailedSegmentsMap([
+  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 },
+  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 200 },
+  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 500 },
+  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
+  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 1000 },
+  { x: CANVASMARGIN + 700, y: CANVASMARGIN + 1000 }
+]))
+let commonSegmentsMap = getCommonSegmentsMap([
+  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 },
+  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 200 },
+  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 500 },
+  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
+  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 1000 },
+  { x: CANVASMARGIN + 700, y: CANVASMARGIN + 1000 }
+], [
+  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 500 },
+  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 200 },
+  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 }
+  // { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
+  // { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 1000 },
+  // { x: CANVASMARGIN + 700, y: CANVASMARGIN + 1000 }
+])
+//display the common segments on ctxTemp
+for (const key of commonSegmentsMap.keys()) {
+  const [startKey, endKey] = key.split('-')
+  const startx = parseInt(startKey.split(',')[0])
+  const starty = parseInt(startKey.split(',')[1])
+  const endx = parseInt(endKey.split(',')[0])
+  const endy = parseInt(endKey.split(',')[1])
+  ctxTemp.beginPath()
+  ctxTemp.moveTo(startx, starty)
+  ctxTemp.lineTo(endx, endy)
+  ctxTemp.strokeStyle = 'red'
+  ctxTemp.lineWidth = 2
+  ctxTemp.stroke()
+}
+  */

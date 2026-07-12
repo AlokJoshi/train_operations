@@ -25,7 +25,7 @@ class Population {
   */
   static UPPER_BOUND = 1000000
   static NE_ADJUST = 0.5  // reduce population in northeast quadrant to create a more interesting map with one dense city and one sparse city
-  static VERYBIG_ADJUST = 5  // increase population in very big cities to make them more distinct
+  static VERYBIG_ADJUST = 10  // increase population in very big cities to make them more distinct
   constructor(canvasWidth, canvasHeight, gridSize, seed = 123456789, skewExponent = 4) {
     this.canvasWidth = canvasWidth
     this.canvasHeight = canvasHeight
