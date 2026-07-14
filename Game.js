@@ -237,8 +237,8 @@ class Game {
       return
     } else {
       //we add stations at both starting and ending points
-      track.addStation(createStation(this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0, trainNumber, 30))
-      track.addStation(createStation(this.ctxTracks, lastPosition.x, lastPosition.y, this.gridSize, 0, trainNumber, 30))
+      track.addStation(createStation(this.canvasWidth, this.canvasHeight, this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0, trainNumber, 30))
+      track.addStation(createStation(this.canvasWidth, this.canvasHeight, this.ctxTracks, lastPosition.x, lastPosition.y, this.gridSize, 0, trainNumber, 30))
       intersections.updateIntersectionsWithStationLocation(firstPosition.y / this.gridSize, firstPosition.x / this.gridSize, 'Station')
       intersections.updateIntersectionsWithStationLocation(lastPosition.y / this.gridSize, lastPosition.x / this.gridSize, 'Station')
       if (!options.partOfInitialSetup) {
@@ -389,7 +389,7 @@ class Game {
   addStation(trainNumber, x, y, name, stopDuration, options = {}) {
     if (trainNumber <= this.trains.length) {
       const train = this.trains[trainNumber - 1]
-      const station = createStation(this.ctxTracks, x, y, this.gridSize, 0, trainNumber, stopDuration)
+      const station = createStation(this.canvasWidth, this.canvasHeight, this.ctxTracks, x, y, this.gridSize, 0, trainNumber, stopDuration)
       train.addStation(station)
       train.intersections.updateIntersectionsWithStationLocation(y / this.gridSize, x / this.gridSize, 'Station')
       if (!options.partOfInitialSetup) {
@@ -412,7 +412,7 @@ class Game {
     const train = this.trains[trainNumber - 1]
     if (train) {
       const stationLocation = train.extendTrain(positionsForExtendTrain)
-      const station = createStation(this.ctxTracks, stationLocation.x, stationLocation.y, this.gridSize, 0, trainNumber, 30)
+      const station = createStation(this.canvasWidth, this.canvasHeight, this.ctxTracks, stationLocation.x, stationLocation.y, this.gridSize, 0, trainNumber, 30)
       train.addStation(station)
       train.intersections.updateIntersectionsWithStationLocation(stationLocation.y / this.gridSize, stationLocation.x / this.gridSize, 'Station')
       this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)

@@ -239,6 +239,11 @@ window.addEventListener('load', () => {
 
   const handleTrainHotkeys = (event) => {
 
+    if(!startTrack && !startExtendTrain && !startFlyover && event.key==='Escape') {
+      ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+      return;
+    }
+
     // NEW: Do nothing if the user is typing in an input or textarea
     if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
       return;
@@ -284,7 +289,7 @@ window.addEventListener('load', () => {
         const rMaxSquare = (gridSize / 2) ** 2
         populationMap.forEach(p => {
           const radiusSquare = rMaxSquare * (p.population / maxPopulation)
-          const radius = Math.sqrt(radiusSquare)
+          const radius = 2 * Math.sqrt(radiusSquare)
           ctxTemp.beginPath()
           ctxTemp.arc(p.x, p.y, radius, 0, 2 * Math.PI)
           ctxTemp.fillStyle = 'rgba(0,255,0,0.5)'
@@ -601,6 +606,23 @@ window.addEventListener('load', () => {
   document.querySelector('#canvas_temp').addEventListener('mousemove', (event) => {
     const point = getCanvasPoint(event)
     //console.log(`mouse move event listener added`)
+    if(!startTrack && !startExtendTrain && !startFlyover){
+      if ( (point.x<click_error || point.x>CANVASWIDTH-click_error || point.y<click_error || point.y>CANVASHEIGHT-click_error) && Math.abs(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize - point.x) < click_error && Math.abs(CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize - point.y) < click_error) {
+        //draw a horizontal or vertical dashed line on the ctxTemp
+        ctxTemp.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
+        ctxTemp.save()
+        ctxTemp.beginPath()
+        ctxTemp.strokeStyle = 'black'
+        ctxTemp.setLineDash([5, 5])
+        ctxTemp.moveTo(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize, CANVASMARGIN)
+        ctxTemp.lineTo(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize, CANVASHEIGHT - CANVASMARGIN)
+        ctxTemp.moveTo(CANVASMARGIN, CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize)
+        ctxTemp.lineTo(CANVASWIDTH - CANVASMARGIN, CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize)
+        ctxTemp.stroke()
+        ctxTemp.setLineDash([])
+        ctxTemp.restore()
+      }
+    }
     if (startTrack) {
       //console.log(`mouse movin inside startTrack`)
       const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
@@ -960,24 +982,8 @@ window.addEventListener('load', () => {
     const increasingCol = x_before_last_x !== null && last_x > x_before_last_x
     const decreasingCol = x_before_last_x !== null && last_x < x_before_last_x
 
-    for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
-      // if (y_before_last_y==null){
-      //   if (row == lastRow || row < lastRow - 3 || row > lastRow + 3 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
-      //     drawValidTrackPoint(ctxTemp, last_x, row * gridSize, click_error)
-      //     validTrackPoints.add(`${last_x},${row * gridSize}`)
-      //   }
-      // } else if(increasingRow){
-      //     if (row > lastRow ){
-      //       drawValidTrackPoint(ctxTemp, last_x, row * gridSize, click_error)
-      //       validTrackPoints.add(`${last_x},${row * gridSize}`)
-      //     }
-      // } else if(decreasingRow){
-      //     if (row < lastRow ){
-      //       drawValidTrackPoint(ctxTemp, last_x, row * gridSize, click_error)
-      //       validTrackPoints.add(`${last_x},${row * gridSize}`)
-      //     }
-      // }
-
+    for (let row = 0; row <= CANVASHEIGHT / gridSize; row++) {
+      
       if (increasingRow && row > lastRow) {
         drawValidTrackPoint(ctxTemp, last_x, row * gridSize, click_error)
         validTrackPoints.add(`${last_x},${row * gridSize}`)
@@ -992,55 +998,9 @@ window.addEventListener('load', () => {
       }
 
     }
-    // for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
-    //   if (row == lastRow || row == lastRow - 1 || row == lastRow + 1 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
-    //     //go to next iteration since we want only gradual change in track direction and not sharp turns
-    //     continue
-    //   } else {
-    //     //drawCircle
-    //     ctxTemp.beginPath()
-    //     ctxTemp.moveTo(last_x + click_error, row * gridSize)
-    //     ctxTemp.arc(last_x, row * gridSize, click_error, 0, Math.PI * 2)
-    //     ctxTemp.lineWidth = 5
-    //     ctxTemp.strokeStyle = `rgba(0,255,0,0.3)`
-    //     ctxTemp.closePath()
-    //     ctxTemp.stroke()
-    //     validTrackPoints.add(`${last_x},${row * gridSize}`)
-    //   }
-    // }
+    
 
-    for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
-      // if (col == lastCol || col == lastCol - 1 || col == lastCol + 1 || (x_before_last_x !== null && ((increasingCol && col < lastCol) || (decreasingCol && col > lastCol)))) {
-      //go to next iteration since we want only gradual change in track direction and not sharp turns
-      //continue
-
-      // } else {
-      //   //drawCircle
-      //   ctxTemp.beginPath()
-      //   ctxTemp.moveTo(col * gridSize + click_error, last_y)
-      //   ctxTemp.arc(col * gridSize, last_y, click_error, 0, Math.PI * 2)
-      //   ctxTemp.strokeStyle = `rgba(0,255,0,0.3)`
-      //   ctxTemp.closePath()
-      //   ctxTemp.stroke()
-      //   validTrackPoints.add(`${col * gridSize},${last_y}`)
-      // }
-
-      // if (x_before_last_x == null) {
-      //   if (col == lastCol || col < lastCol - 3 || col > lastCol + 3 || (x_before_last_x !== null && ((increasingCol && col < lastCol) || (decreasingCol && col > lastCol)))) {
-      //     drawValidTrackPoint(ctxTemp, col * gridSize, last_y, click_error)
-      //     validTrackPoints.add(`${col * gridSize},${last_y}`)
-      //   }
-      // } else if (increasingCol) {
-      //   if (col > lastCol) {
-      //     drawValidTrackPoint(ctxTemp, col * gridSize, last_y, click_error)
-      //     validTrackPoints.add(`${col * gridSize},${last_y}`)
-      //   }
-      // } else if (decreasingCol) {
-      //   if (col < lastCol) {
-      //     drawValidTrackPoint(ctxTemp, col * gridSize, last_y, click_error)
-      //     validTrackPoints.add(`${col * gridSize},${last_y}`)
-      //   }
-      // }
+    for (let col = 0; col <= CANVASWIDTH / gridSize; col++) {
 
       if (increasingCol && col > lastCol) {
         drawValidTrackPoint(ctxTemp,col * gridSize, last_y, click_error)
@@ -1054,18 +1014,10 @@ window.addEventListener('load', () => {
         drawValidTrackPoint(ctxTemp,col * gridSize, last_y, click_error)
         validTrackPoints.add(`${col * gridSize},${last_y}`)
       }
-      // if (col == lastCol || col < lastCol - 3 || col > lastCol + 3 || (x_before_last_x !== null && ((increasingCol && col < lastCol) || (decreasingCol && col > lastCol)))) {
-      //   //drawCircle
-      //   ctxTemp.beginPath()
-      //   ctxTemp.moveTo(col * gridSize + click_error, last_y)
-      //   ctxTemp.arc(col * gridSize, last_y, click_error, 0, Math.PI * 2)
-      //   ctxTemp.strokeStyle = `rgba(0,255,0,0.3)`
-      //   ctxTemp.closePath()
-      //   ctxTemp.stroke()
-      //   validTrackPoints.add(`${col * gridSize},${last_y}`)
-      // }
+      
     }
   }
+  
   window.addEventListener('collision', (event) => {
     // console.log(`Collision between train ${event.train1} and train ${event.train2}`)
     // count total collisions
@@ -1084,14 +1036,6 @@ window.addEventListener('load', () => {
     game.trains[event.train1 - 1].setDysfunctional(true)
     game.trains[event.train2 - 1].setDysfunctional(true)
   })
-
-  // window.speedtrain = (direction, trainnumber) => {
-  //   if (direction === 'up') {
-  //     game.increaseTrainSpeed(trainnumber)
-  //   } else if (direction === 'down') {
-  //     game.decreaseTrainSpeed(trainnumber)
-  //   }
-  // }
 
   window.startStopTrain = (trainnumber) => {
     game.startStopTrain(trainnumber)
@@ -1128,8 +1072,6 @@ window.addEventListener('load', () => {
     })
     startExtendTrain = true
   }
-
-
 
   window.starttrack = () => {
     startTrack = true
@@ -1511,10 +1453,16 @@ function drawGrid(ctx) {
   ctx.fillStyle = 'black'
   ctx.font = '12px Arial'
   for (let i = 0; i < numCols; i++) {
+    //first row, number the columns
     ctx.fillText(alpha(i), CANVASMARGIN + i * gridSize + 5, CANVASMARGIN + 10)
+    //last row, number the columns
+    ctx.fillText(alpha(i), CANVASMARGIN + i * gridSize + 5, CANVASHEIGHT - CANVASMARGIN - 5)
   }
   for (let j = 1; j < numRows; j++) {
+    //first column, number the rows
     ctx.fillText(alpha(j), CANVASMARGIN + 5, CANVASMARGIN + j * gridSize + 10)
+    //last column, number the rows
+    ctx.fillText(alpha(j), CANVASWIDTH - CANVASMARGIN - 15, CANVASMARGIN + j * gridSize + 10)
   }
 
 }

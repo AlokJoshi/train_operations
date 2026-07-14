@@ -386,7 +386,7 @@
       </div> <!-- End of buttonGroup3 -->
 
       <div id="buttonGroup4" class="modal"
-        style="width:300px; display:none; position:fixed; top:300px;left:490px; flex-direction:column; gap:10px">
+        style="width:400px; display:none; position:fixed; top:450px;left:490px; flex-direction:column; gap:10px">
         <div class="dialogHeader">
           <span class="dialogTitle">Results</span>
           <span class="dialogClose" onclick="document.getElementById('buttonGroup4').style.display='none';">
@@ -394,7 +394,7 @@
           </span>
         </div>
         <div class="dialogContent">
-          <table id="trainResultsTable">
+          <table id="trainResultsTable" style="font-size: 1.2em; width: 100%;border-collapse: separate">
             <thead>
               <tr>
                 <th colspan="4">All in (Mln $)</th>
@@ -425,6 +425,9 @@
           </span>
         </div>
         <div class="dialogContent">
+          <div style="display:flex; align-items:center; justify-content:center;">
+            <button type="button" style="border-radius: 10px;" onclick="document.getElementById('startPauseBtn').click();">Start/Pause</button>
+          </div>
           <!-- Instructions for how to use the game will be displayed here -->
           <p>Click on the Start Button to begin the game. The game will run for <span id="totalTimeUnits"></span> time
             units. Each time unit is shown at the

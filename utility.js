@@ -52,7 +52,7 @@ function rowAndColumnName(x, y, gridSize) {
 
 function alpha(index) {
   const n = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-  return (index > n.length ? n[Math.floor((index / n.length)-1)] : '') + n[index % n.length]
+  return (index >= n.length ? n[Math.floor((index / n.length)-1)] : '') + n[index % n.length]
 }
 
 function getDetailedSegmentsMap(positions, turningCircle=100, gridSize=50) {

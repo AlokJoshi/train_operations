@@ -13,7 +13,7 @@ class Train {
   static maxNumFreightWagons = 100
   static minNumCoaches = 2
   static coachPassengerCapacity = 100
-  static baseTicketPrice = 300
+  static baseTicketPrice = 400
   static rawMaterialCapacityPerFreightCoach = 10000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
   static rawMaterialChargePerUnit = 100 // fixed charge per unit of raw material to keep it simple. Revenue is calculated based on the amount of raw material unloaded at the station.
   static ticketPriceMap = new Map() // key is from row,col to row,col and value is the ticket price for that route. 
@@ -419,7 +419,7 @@ class Train {
             trainInfo1: infoText1,
             trainInfo2: infoText2
           })
-          this.updateInfoOnTrainOperations()
+          this.updateInfoOnTrainOperations('passenger')
 
           const existingPopupInfo = this.popups.getPopupInfo(station.x, station.y)
           // this.displayInfo(existingPopupInfo, station.x, station.y)
@@ -498,6 +498,16 @@ class Train {
             trainInfo1: infoText1,
             trainInfo2: infoText2,
           })
+          this.trainInfo.setTrainInfo(this.trainNumber, this.getCurrentTimeIndex(), {
+            tripNumber: this.tripNumber,
+            stationName: station.name,
+            unloading: totalUnloading,
+            rawMaterialLoaded: rawMaterialLoaded,
+            rawMaterialOnBoard: this.rawMaterialOnBoard,
+            unableToLoad: demand - (this.rawMaterialOnBoard + rawMaterialLoaded),
+            earnings: totalUnloading*Train.rawMaterialChargePerUnit
+          })
+          this.updateInfoOnTrainOperations('freight')
           const existingPopupInfo = this.popups.getPopupInfo(station.x, station.y)
           // this.displayInfo(existingPopupInfo, station.x, station.y)
       }
@@ -796,7 +806,7 @@ class Train {
 
   }
   */
-  updateInfoOnTrainOperations() {
+  updateInfoOnTrainOperations(typeOfTrain) {
     const div = document.getElementById(`infotrainoperations${this.trainNumber}`)
     const currentTimeIndex = this.getCurrentTimeIndex()
     if (div) {
@@ -811,13 +821,13 @@ class Train {
       const th3 = document.createElement('th')
       th3.textContent = 'Station'
       const th4 = document.createElement('th')
-      th4.textContent = 'DeBoarding'
+      th4.textContent = typeOfTrain === 'passenger' ? 'DeBoarding' : 'Unloading'
       const th5 = document.createElement('th')
-      th5.textContent = 'Boarding'
+      th5.textContent = typeOfTrain === 'passenger' ?'Boarding' : 'Loading'
       const th6 = document.createElement('th')
-      th6.textContent = 'Onboard'
+      th6.textContent = typeOfTrain === 'passenger' ?'Onboard' : 'Onboard'
       const th7 = document.createElement('th')
-      th7.textContent = 'Unable to Board'
+      th7.textContent = typeOfTrain === 'passenger' ?'Unable to Board' : 'Unable to Load'
       const th8 = document.createElement('th')
       th8.textContent = 'Earnings'
       headerRow.appendChild(th1)
@@ -841,13 +851,13 @@ class Train {
         const td3 = document.createElement('td')
         td3.textContent = obj.stationName.substring(4)
         const td4 = document.createElement('td')
-        td4.textContent = obj.deboarding
+        td4.textContent = typeOfTrain === 'passenger' ? obj.deboarding : obj.unloading
         const td5 = document.createElement('td')
-        td5.textContent = obj.boarding
+        td5.textContent = typeOfTrain === 'passenger' ? obj.boarding : obj.loading
         const td6 = document.createElement('td')
-        td6.textContent = obj.onboard
+        td6.textContent = typeOfTrain === 'passenger' ? obj.onboard : obj.onboard
         const td7 = document.createElement('td')
-        td7.textContent = obj.unableToBoard
+        td7.textContent = typeOfTrain === 'passenger' ? obj.unableToBoard : obj.unableToLoad
         const td8 = document.createElement('td')
         td8.textContent = obj.earnings
         row.appendChild(td1)

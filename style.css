@@ -251,6 +251,16 @@ p {
   text-align: center;
 }
 
+td {
+  text-align: center;
+  border: 1px solid #ccc;
+}
+
+ul li {
+  font-size: 1.2em;
+  margin-bottom: 5px;
+}
+
 @media (max-width: 900px) {
   #buttonGroup6 {
     left: 8px !important;
