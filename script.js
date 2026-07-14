@@ -17,13 +17,15 @@ const ctx = canvas.getContext('2d')
 
 const canvasTracks = document.querySelector('#canvas_tracks')
 const canvasResults = document.querySelector('#canvas_results')
+const canvasMaps = document.querySelector('#canvas_maps')
+const canvasTemp = document.querySelector('#canvas_temp')
 const ctxTracks = canvasTracks.getContext('2d')
 const ctxResults = canvasResults.getContext('2d')
-const canvasTemp = document.querySelector('#canvas_temp')
+const ctxMaps = canvasMaps.getContext('2d')
 const ctxTemp = canvasTemp.getContext('2d')
 
-canvas.height = canvasTracks.height = canvasTemp.height = canvasResults.height = CANVASHEIGHT + CANVASMARGIN
-canvas.width = canvasTracks.width = canvasTemp.width = canvasResults.width = CANVASWIDTH + CANVASMARGIN
+canvas.height = canvasTracks.height = canvasTemp.height = canvasResults.height = canvasMaps.height = CANVASHEIGHT + CANVASMARGIN
+canvas.width = canvasTracks.width = canvasTemp.width = canvasResults.width = canvasMaps.width = CANVASWIDTH + CANVASMARGIN
 
 let paused = true
 let startTrack = false
@@ -163,9 +165,10 @@ const drawScene = () => {
       const textMetrics = ctxResults.measureText(`${currentTimeUnit}`)
       ctxResults.fillText(`${currentTimeUnit}`, CANVASWIDTH / 2 - textMetrics.width / 2, CANVASHEIGHT / 2 - textMetrics.actualBoundingBoxDescent / 2)
       ctxResults.restore()
-      window.setTimeout(() => {
-        ctxResults.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
-      }, 10000)
+      //do not clear the ctxResults at all
+      // window.setTimeout(() => {
+      //   ctxResults.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
+      // }, 10000)
       if (currentTimeUnit === 100) {
         paused = true
         swal.fire({
@@ -240,7 +243,7 @@ window.addEventListener('load', () => {
   const handleTrainHotkeys = (event) => {
 
     if(!startTrack && !startExtendTrain && !startFlyover && event.key==='Escape') {
-      ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+      ctxMaps.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       return;
     }
 
@@ -283,7 +286,7 @@ window.addEventListener('load', () => {
     } else if (event.code === 'KeyX') {
       //if the code is X then show the population Map
       if (!showingPopulationMap) {
-        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        // ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
         const populationMap = game.population.getAll()
         const maxPopulation = Math.max(...populationMap.map(p => p.population))
         const rMaxSquare = (gridSize / 2) ** 2
@@ -303,26 +306,26 @@ window.addEventListener('load', () => {
     } else if (event.code === 'KeyY') {
       //if the code is Y then show the rawmaterials Map
       if (!showingRawmaterialsMap) {
-        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        // ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
         const rawmaterialsMap = game.rawmaterials.getAll()
         const maxRawmaterial = Math.max(...rawmaterialsMap.map(p => p.rawmaterial))
         const rMaxSquare = (gridSize / 2) ** 2
         rawmaterialsMap.forEach(p => {
           const radiusSquare = rMaxSquare * (p.rawmaterial / maxRawmaterial)
           const radius = Math.sqrt(radiusSquare)
-          ctxTemp.beginPath()
-          ctxTemp.arc(p.x, p.y, radius, 0, 2 * Math.PI)
-          ctxTemp.fillStyle = 'rgba(255,255,0,0.5)'
-          ctxTemp.fill()
+          ctxMaps.beginPath()
+          ctxMaps.arc(p.x, p.y, radius, 0, 2 * Math.PI)
+          ctxMaps.fillStyle = 'rgba(255,255,0,0.5)'
+          ctxMaps.fill()
         })
       } else {
-        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        ctxMaps.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       }
       showingRawmaterialsMap = !showingRawmaterialsMap
     } else if (event.code === 'KeyZ') {
       //if the code is Z then show the rawmaterial demand Map
       if (!showingRawmaterialDemandMap) {
-        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        // ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
         const rawmaterialDemandMap = game.rawmaterialDemand.getAll()
         const maxRawmaterialDemand = Math.max(...rawmaterialDemandMap.map(p => p.rawmaterial))
 
@@ -332,19 +335,19 @@ window.addEventListener('load', () => {
 
             const radiusSquare = rMaxSquare * (p.rawmaterial / maxRawmaterialDemand)
             const radius = Math.sqrt(radiusSquare)
-            ctxTemp.beginPath()
-            ctxTemp.arc(p.x, p.y, radius, 0, 2 * Math.PI)
-            ctxTemp.fillStyle = 'rgba(0,0,255,0.5)'
-            ctxTemp.fill()
+            ctxMaps.beginPath()
+            ctxMaps.arc(p.x, p.y, radius, 0, 2 * Math.PI)
+            ctxMaps.fillStyle = 'rgba(0,0,255,0.5)'
+            ctxMaps.fill()
 
-            ctxTemp.font = '20px Arial'
-            ctxTemp.fillStyle = 'black'
-            const textMetrics = ctxTemp.measureText(`${Math.floor(p.rawmaterial)}`)
-            ctxTemp.fillText(`${Math.floor(p.rawmaterial)}`, p.x - textMetrics.width / 2, p.y + 10)
+            ctxMaps.font = '20px Arial'
+            ctxMaps.fillStyle = 'black'
+            const textMetrics = ctxMaps.measureText(`${Math.floor(p.rawmaterial)}`)
+            ctxMaps.fillText(`${Math.floor(p.rawmaterial)}`, p.x - textMetrics.width / 2, p.y + 10)
           }
         })
       } else {
-        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        ctxMaps.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       }
       showingRawmaterialDemandMap = !showingRawmaterialDemandMap
     } else if (event.code === 'KeyR') {
@@ -609,18 +612,18 @@ window.addEventListener('load', () => {
     if(!startTrack && !startExtendTrain && !startFlyover){
       if ( (point.x<click_error || point.x>CANVASWIDTH-click_error || point.y<click_error || point.y>CANVASHEIGHT-click_error) && Math.abs(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize - point.x) < click_error && Math.abs(CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize - point.y) < click_error) {
         //draw a horizontal or vertical dashed line on the ctxTemp
-        ctxTemp.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
-        ctxTemp.save()
-        ctxTemp.beginPath()
-        ctxTemp.strokeStyle = 'black'
-        ctxTemp.setLineDash([5, 5])
-        ctxTemp.moveTo(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize, CANVASMARGIN)
-        ctxTemp.lineTo(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize, CANVASHEIGHT - CANVASMARGIN)
-        ctxTemp.moveTo(CANVASMARGIN, CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize)
-        ctxTemp.lineTo(CANVASWIDTH - CANVASMARGIN, CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize)
-        ctxTemp.stroke()
-        ctxTemp.setLineDash([])
-        ctxTemp.restore()
+        ctxMaps.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
+        ctxMaps.save()
+        ctxMaps.beginPath()
+        ctxMaps.strokeStyle = 'black'
+        ctxMaps.setLineDash([5, 5])
+        ctxMaps.moveTo(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize, CANVASMARGIN)
+        ctxMaps.lineTo(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize, CANVASHEIGHT - CANVASMARGIN)
+        ctxMaps.moveTo(CANVASMARGIN, CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize)
+        ctxMaps.lineTo(CANVASWIDTH - CANVASMARGIN, CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize)
+        ctxMaps.stroke()
+        ctxMaps.setLineDash([])
+        ctxMaps.restore()
       }
     }
     if (startTrack) {
@@ -1017,7 +1020,7 @@ window.addEventListener('load', () => {
       
     }
   }
-  
+
   window.addEventListener('collision', (event) => {
     // console.log(`Collision between train ${event.train1} and train ${event.train2}`)
     // count total collisions
@@ -1028,7 +1031,7 @@ window.addEventListener('load', () => {
     setTimeout(() => {
       clearCollision(event.col, event.row, collisionAnimationStartedAt)
       showCustomAlert(`Collision detected between train ${event.train1} and train 
-        ${event.train2} at intersection (${event.col + 1},${event.row + 1}).
+        ${event.train2} at intersection (${alpha(event.col + 1)},${alpha(event.row + 1)}).
         Trains will be out of service temporarily for repairs.`)
     }, 5000)
     //we want to inform the train about the collision and set its state to 
