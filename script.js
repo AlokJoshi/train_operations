@@ -369,9 +369,17 @@ window.addEventListener('load', () => {
         const span = document.createElement('span')
         span.dataset.value = String(i)
         span.textContent = `T${i}`
-        span.style = 'cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
+        const colorConfig = game.TRAINCONFIG[(i - 1) % game.TRAINCONFIG.length]
+        span.style.backgroundColor = colorConfig.Color
+        span.style = 'background-color:' + colorConfig.Color + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
         span.addEventListener('click', () => {
-          console.log(`Train ${i} clicked`)
+          //remove 'selected' class from all other spans
+          const allSpans = div.querySelectorAll('span')
+          allSpans.forEach(s => {
+            s.classList.remove('selected')
+          })
+          span.classList.add('selected')
+          // console.log(`Train ${i} clicked`)
           //hide all
           for (let j = 1; j <= game.trains.length; j++) {
             const infoDiv = document.querySelector(`#infotrainoperations${j}`)
@@ -379,6 +387,8 @@ window.addEventListener('load', () => {
           }
           const infoDiv = document.querySelector(`#infotrainoperations${i}`)
           infoDiv.style.display = 'block'
+
+          //select all the elements
         })
         div.appendChild(span)
       }
@@ -513,6 +523,20 @@ window.addEventListener('load', () => {
     }
   }
 
+  const typeOfTrain = document.getElementById('typeoftrain')
+  if (typeOfTrain) {
+    typeOfTrain.addEventListener('change', (event) => {
+      if(event.target.value=='passenger'){
+        //hide the freight train related controls
+        document.querySelector('#freightTrainControls').style.display = 'none'
+        document.querySelector('#passengerTrainControls').style.display = 'grid'
+      } else if(event.target.value=='freight'){
+        //hide the passenger train related controls
+        document.querySelector('#passengerTrainControls').style.display = 'none'
+        document.querySelector('#freightTrainControls').style.display = 'grid'
+      }
+    })
+  }
   document.querySelector('#canvas_temp').addEventListener('click', (event) => {
     const point = getCanvasPoint(event)
     if (startExtendTrain) {
@@ -1493,7 +1517,10 @@ function displayFinancialResults() {
   tableBody.replaceChildren()
   financialSummary.totalRevenue.forEach((revenue, index) => {
     if (revenue > 0 || financialSummary.totalExpenses[index] > 0) {
+      const colorConfig = game.TRAINCONFIG[(index) % game.TRAINCONFIG.length]
       const row = document.createElement('tr')
+      row.style.backgroundColor = game.trains[index]?.typeOfTrain === 'freight' ? 'rgba(80,80,80,0.75)' : colorConfig.Color
+      // row.style.color = colorConfig.textColor
       const expenses = financialSummary.totalExpenses[index]
       const profit = financialSummary.profit[index]
       row.innerHTML = `
@@ -1507,16 +1534,7 @@ function displayFinancialResults() {
   })
 }
 
-// getDetailedSegmentsMap([{x:0,y:0},{x:100,y:0},{x:200,y:0}])
-// getDetailedSegmentsMap([{x:200,y:0},{x:100,y:0},{x:0,y:0}])
-// getDetailedSegmentsMap([{x:0,y:0},{x:100,y:0},{x:200,y:0},{x:200,y:150}])
-// getDetailedSegmentsMap([{x:0,y:300},{x:100,y:300},{x:200,y:300},{x:200,y:150}])
-// getDetailedSegmentsMap([{x:0,y:0},{x:100,y:0},{x:200,y:0},{x:200,y:100},{x:200,y:200},{x:200,y:300}])
-// getDetailedSegmentsMap([{x:0,y:0},{x:100,y:0},{x:200,y:0},
-//   {x:200,y:100},{x:200,y:200},{x:200,y:300},{x:300,y:300},{x:400,y:300}])
-// getDetailedSegmentsMap([{ x: CANVASMARGIN + 100, y: CANVASMARGIN + 100 },
-//   { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 100 },
-//   { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 }])
+
 /*
 console.log(getDetailedSegmentsMap([
   { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 },

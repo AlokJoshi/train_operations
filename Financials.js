@@ -24,6 +24,7 @@ class Financials {
     this.stationMaintenanceCostPerStationPerTimePeriod = 50
     this.cashInHand = Financials.CASH_IN_HAND
     this.totalTimeUnits = totalTimeUnits
+    this.parallelTrackCostPerSegment = 50000
   }
   upgradeEngine(timeIndex, trainNumber) {
     const trainIndex = trainNumber - 1

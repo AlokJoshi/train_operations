@@ -88,7 +88,7 @@ button:hover{
 #buttonGroup2,
 #buttonGroup3,
 #buttonGroup4,
-#buttonGroup5 {
+#buttonGroup5, #buttonGroup6, #buttonGroup7 {
   padding: 0;
   overflow: hidden;
 }
@@ -259,6 +259,11 @@ td {
 ul li {
   font-size: 1.2em;
   margin-bottom: 5px;
+}
+
+#infoForTrain.selected {
+  font-weight: bold;
+  border: 2px solid #fff;
 }
 
 @media (max-width: 900px) {

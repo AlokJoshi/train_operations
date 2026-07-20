@@ -94,6 +94,7 @@ class Train {
     this.totalTravelPopulation = Array.from(this.travelPopulation.travelPopulation.values()).reduce((a, b) => a + b.population, 0)
     this.passengersOnBoard = 0
     this.lastProcessedStationNumber = null  // prevents boarding/deboarding from firing on every frame while at a station
+    this.stationVisitContext = null
     this.remainingDwellTime = 0
     this.infoText = ''
     // this.infoTextTicks = 0
@@ -376,7 +377,7 @@ class Train {
               // above to save ticket price caclulation time on subsequent lookups for the same route.
               earnings = Math.floor(ticketPrice * adjustedBoarding)
               totalEarnings += earnings
-              if(adjustedBoarding>0 && earnings==0) debugger;
+              // if(adjustedBoarding>0 && earnings==0) debugger;
               // if (this.trainNumber === 2) {
                 //   console.log(`Train ${this.trainNumber} boarding from station ${fromKey} to station ${toKeyInMap}: ${currentBoarding} passengers, adjusted boarding: ${adjustedBoarding} passengers, ticket sale per passenger: ${ticketPrice}, total ticket sale: ${ticketPrice * adjustedBoarding}`)
                 // }
@@ -391,35 +392,41 @@ class Train {
           this.passengersOnBoard = this.passengersOnBoard + totalAdjustedBoarding - totalDeboarding
           // ticket sales is based on total boarding passengers and a distance-adjusted ticket price.
           // console.log(`Train ${this.trainNumber} at station ${thisStationKey} deboarded ${totalDeboarding} passengers, boarded ${totalBoarding} passengers, total passengers on board: ${this.passengersOnBoard}`)
-          let infoText1 = ''
-          let infoText2 = ''
-          if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
-            infoText1 = `T${this.trainNumber} P: - ${totalDeboarding} + ${totalAdjustedBoarding} = ${this.passengersOnBoard} | (${unableToBoard}??)`
-          } else {
-            infoText1 = `T${this.trainNumber} P: ${this.passengersOnBoard} | (${unableToBoard}??)`
-          }
-          // this.infoText = infoText
-          // this.infoTextTicks = 400
-          this.popups.addTrain({
-            x: station.x,
-            y: station.y,
-            stationName: station.name,
-            trainNumber: this.trainNumber,
-            trainInfo1: infoText1,
-            trainInfo2: infoText2,
-          })
-          this.trainInfo.setTrainInfo(this.trainNumber, this.getCurrentTimeIndex(), {
-            tripNumber: this.tripNumber,
-            stationName: station.name,
+          // let infoText1 = ''
+          // let infoText2 = ''
+          // if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
+          //   infoText1 = `T${this.trainNumber} P: - ${totalDeboarding} + ${totalAdjustedBoarding} = ${this.passengersOnBoard} | (${unableToBoard}??)`
+          // } else {
+          //   infoText1 = `T${this.trainNumber} P: ${this.passengersOnBoard} | (${unableToBoard}??)`
+          // }
+          // // this.infoText = infoText
+          // // this.infoTextTicks = 400
+          // this.popups.addTrain({
+          //   x: station.x,
+          //   y: station.y,
+          //   stationName: station.name,
+          //   trainNumber: this.trainNumber,
+          //   trainInfo1: infoText1,
+          //   trainInfo2: infoText2,
+          // })
+          const passengerMetrics = {
             deboarding: totalDeboarding,
             boarding: totalAdjustedBoarding,
             onboard: this.passengersOnBoard,
-            unableToBoard: unableToBoard,
+            unableToBoard,
             earnings: totalEarnings,
-            trainInfo1: infoText1,
-            trainInfo2: infoText2
-          })
-          this.updateInfoOnTrainOperations('passenger')
+          }
+
+          this.stationVisitContext = {
+            trainType: 'passenger',
+            stationName: station.name,
+            isTerminal: isTerminalForCurrentDirection,
+            metrics: passengerMetrics
+          }
+
+          if (isTerminalForCurrentDirection) {
+            this.logStationOperation('arrival', this.stationVisitContext)
+          }
 
           const existingPopupInfo = this.popups.getPopupInfo(station.x, station.y)
           // this.displayInfo(existingPopupInfo, station.x, station.y)
@@ -480,42 +487,54 @@ class Train {
             this.rawMaterialSupply.decreaseRawMaterial(station.x, station.y, rawMaterialLoaded)
             // console.log(`Train ${this.trainNumber} loaded ${rawMaterialLoaded} units of raw material at station ${station.stationNumber}, remaining capacity: ${availableCapacity - rawMaterialLoaded} units`)
           }
-          let infoText1 = ''
-          let infoText2 = ''
-          if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
-            infoText1 = `T${this.trainNumber} F: - ${ck(totalUnloading)}K + ${ck(rawMaterialLoaded)}K = ${ck(this.rawMaterialOnBoard)}K | (${(demand - rawMaterialLoaded) > 0 ? ck(demand - rawMaterialLoaded) : 0}K??)`
-          } else {
-            infoText1 = `T${this.trainNumber} F: ${ck(this.rawMaterialOnBoard)}K | (${(demand - rawMaterialLoaded) > 0 ? ck(demand - rawMaterialLoaded) : 0}K??)`
-          }
-          infoText2 = `DA: ${ck(totalRawMaterialDemand)}K, AH: ${ck(rawMaterialAvailable)}K, UH: ${ck(totalUnloading)}K, LH: ${ck(rawMaterialLoaded)}K`
-          // this.infoText = infoText
-          // this.infoTextTicks = 400
-          this.popups.addTrain({
-            x: station.x,
-            y: station.y,
-            stationName: station.name,
-            trainNumber: this.trainNumber,
-            trainInfo1: infoText1,
-            trainInfo2: infoText2,
-          })
-          this.trainInfo.setTrainInfo(this.trainNumber, this.getCurrentTimeIndex(), {
-            tripNumber: this.tripNumber,
-            stationName: station.name,
+          // let infoText1 = ''
+          // let infoText2 = ''
+          // if (station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber) {
+          //   infoText1 = `T${this.trainNumber} F: - ${ck(totalUnloading)}K + ${ck(rawMaterialLoaded)}K = ${ck(this.rawMaterialOnBoard)}K | (${(demand - rawMaterialLoaded) > 0 ? ck(demand - rawMaterialLoaded) : 0}K??)`
+          // } else {
+          //   infoText1 = `T${this.trainNumber} F: ${ck(this.rawMaterialOnBoard)}K | (${(demand - rawMaterialLoaded) > 0 ? ck(demand - rawMaterialLoaded) : 0}K??)`
+          // }
+          // infoText2 = `DA: ${ck(totalRawMaterialDemand)}K, AH: ${ck(rawMaterialAvailable)}K, UH: ${ck(totalUnloading)}K, LH: ${ck(rawMaterialLoaded)}K`
+          // // this.infoText = infoText
+          // // this.infoTextTicks = 400
+          // this.popups.addTrain({
+          //   x: station.x,
+          //   y: station.y,
+          //   stationName: station.name,
+          //   trainNumber: this.trainNumber,
+          //   trainInfo1: infoText1,
+          //   trainInfo2: infoText2,
+          // })
+          const freightMetrics = {
             unloading: totalUnloading,
-            rawMaterialLoaded: rawMaterialLoaded,
+            rawMaterialLoaded,
             rawMaterialOnBoard: this.rawMaterialOnBoard,
-            unableToLoad: demand - (this.rawMaterialOnBoard + rawMaterialLoaded),
+            unableToLoad: totalRawMaterialDemand - this.rawMaterialOnBoard,
             earnings: totalUnloading*Train.rawMaterialChargePerUnit
-          })
-          this.updateInfoOnTrainOperations('freight')
+          }
+
+          this.stationVisitContext = {
+            trainType: 'freight',
+            stationName: station.name,
+            isTerminal: isTerminalForCurrentDirection,
+            metrics: freightMetrics
+          }
+
+          if (isTerminalForCurrentDirection) {
+            this.logStationOperation('arrival', this.stationVisitContext)
+          }
           const existingPopupInfo = this.popups.getPopupInfo(station.x, station.y)
           // this.displayInfo(existingPopupInfo, station.x, station.y)
       }
     }
 
-
-
-    if (!atAStation) this.lastProcessedStationNumber = null  // train has left the station, allow retriggering next visit
+    if (!atAStation) {
+      if (this.stationVisitContext) {
+        this.logStationOperation('departure', this.stationVisitContext)
+        this.stationVisitContext = null
+      }
+      this.lastProcessedStationNumber = null  // train has left the station, allow retriggering next visit
+    }
 
     this.ctx.save()
     this.ctx.fillStyle = this.color
@@ -821,15 +840,17 @@ class Train {
       const th3 = document.createElement('th')
       th3.textContent = 'Station'
       const th4 = document.createElement('th')
-      th4.textContent = typeOfTrain === 'passenger' ? 'DeBoarding' : 'Unloading'
+      th4.textContent = 'Event'
       const th5 = document.createElement('th')
-      th5.textContent = typeOfTrain === 'passenger' ?'Boarding' : 'Loading'
+      th5.textContent = typeOfTrain === 'passenger' ? 'DeBoarding' : 'Unloading'
       const th6 = document.createElement('th')
-      th6.textContent = typeOfTrain === 'passenger' ?'Onboard' : 'Onboard'
+      th6.textContent = typeOfTrain === 'passenger' ? 'Boarding' : 'Loading'
       const th7 = document.createElement('th')
-      th7.textContent = typeOfTrain === 'passenger' ?'Unable to Board' : 'Unable to Load'
+      th7.textContent = typeOfTrain === 'passenger' ? 'Onboard' : 'Onboard'
       const th8 = document.createElement('th')
-      th8.textContent = 'Earnings'
+      th8.textContent = typeOfTrain === 'passenger' ? 'Unable to Board' : 'Unable to Load'
+      const th9 = document.createElement('th')
+      th9.textContent = 'Earnings'
       headerRow.appendChild(th1)
       headerRow.appendChild(th2)
       headerRow.appendChild(th3)
@@ -838,6 +859,7 @@ class Train {
       headerRow.appendChild(th6)
       headerRow.appendChild(th7)
       headerRow.appendChild(th8)
+      headerRow.appendChild(th9)
       thead.appendChild(headerRow)
       table.appendChild(thead)
       const tbody = document.createElement('tbody')
@@ -849,17 +871,19 @@ class Train {
         const td2 = document.createElement('td')
         td2.textContent = obj.tripNumber
         const td3 = document.createElement('td')
-        td3.textContent = obj.stationName.substring(4)
+        td3.textContent = obj.stationName
         const td4 = document.createElement('td')
-        td4.textContent = typeOfTrain === 'passenger' ? obj.deboarding : obj.unloading
+        td4.textContent = obj.eventType ?? (obj.stationName?.includes('(arrival)') ? 'arrival' : (obj.stationName?.includes('(departure)') ? 'departure' : ''))
         const td5 = document.createElement('td')
-        td5.textContent = typeOfTrain === 'passenger' ? obj.boarding : obj.loading
+        td5.textContent = typeOfTrain === 'passenger' ? obj.deboarding : obj.unloading
         const td6 = document.createElement('td')
-        td6.textContent = typeOfTrain === 'passenger' ? obj.onboard : obj.onboard
+        td6.textContent = typeOfTrain === 'passenger' ? obj.boarding : obj.rawMaterialLoaded
         const td7 = document.createElement('td')
-        td7.textContent = typeOfTrain === 'passenger' ? obj.unableToBoard : obj.unableToLoad
+        td7.textContent = typeOfTrain === 'passenger' ? obj.onboard : obj.rawMaterialOnBoard
         const td8 = document.createElement('td')
-        td8.textContent = obj.earnings
+        td8.textContent = typeOfTrain === 'passenger' ? obj.unableToBoard : obj.unableToLoad
+        const td9 = document.createElement('td')
+        td9.textContent = Math.floor(obj.earnings/1000) + 'K'
         row.appendChild(td1)
         row.appendChild(td2)
         row.appendChild(td3)
@@ -868,11 +892,43 @@ class Train {
         row.appendChild(td6)
         row.appendChild(td7)
         row.appendChild(td8)
+        row.appendChild(td9)
         tbody.appendChild(row)
       })
       table.appendChild(tbody)
       div.appendChild(table)
     }
+  }
+
+  logStationOperation(eventType, visitContext) {
+    if (!visitContext) return
+
+    const { trainType, stationName, isTerminal, metrics } = visitContext
+    const eventMetrics = { ...metrics }
+
+    if (trainType === 'freight' && isTerminal && eventType === 'departure') {
+      eventMetrics.unloading = 0
+      eventMetrics.earnings = 0
+    }
+
+    if (trainType === 'passenger' && isTerminal && eventType === 'departure') {
+      eventMetrics.deboarding = 0
+      // eventMetrics.earnings = 0
+    }
+
+    if (trainType === 'passenger' && isTerminal && eventType === 'arrival') {
+      eventMetrics.boarding = 0
+      eventMetrics.earnings = 0
+      eventMetrics.onboard = 0
+    }
+
+    this.trainInfo.setTrainInfo(this.trainNumber, this.getCurrentTimeIndex(), {
+      tripNumber: this.tripNumber,
+      stationName,
+      eventType,
+      ...eventMetrics
+    })
+    this.updateInfoOnTrainOperations(trainType)
   }
 }
 export {

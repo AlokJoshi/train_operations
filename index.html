@@ -13,610 +13,612 @@
 </head>
 
 <body>
-    <div id="gameStage" style="background-image: url('./engine.png'); background-size: 30px 30px;">
-      <canvas id="canvas_tracks"></canvas>
-      <canvas id="canvas"></canvas>
-      <canvas id="canvas_results"></canvas>
-      <canvas id="canvas_maps"></canvas>
-      <canvas id="canvas_temp"></canvas>
-    </div>
-    <div id="controls">
-      <div id="buttonGroup1" class="modal"
-        style="width:450px; display:none; position:fixed; top:300px; left:10px; flex-direction:column; gap:10px">
-        <div class="dialogHeader">
-          <span class="dialogTitle">Train</span>
-          <span class="dialogClose" onclick="document.getElementById('buttonGroup1').style.display='none';">
-            <i class="fas fa-times" title="Close"></i>
-          </span>
+  <div id="gameStage" style="background-image: url('./engine.png'); background-size: 30px 30px;">
+    <canvas id="canvas_tracks"></canvas>
+    <canvas id="canvas"></canvas>
+    <canvas id="canvas_results"></canvas>
+    <canvas id="canvas_maps"></canvas>
+    <canvas id="canvas_temp"></canvas>
+  </div>
+  <div id="controls">
+    <div id="buttonGroup1" class="modal"
+      style="width:450px; display:none; position:fixed; top:300px; left:10px; flex-direction:column; gap:10px">
+      <div class="dialogHeader">
+        <span class="dialogTitle">Train</span>
+        <span class="dialogClose" onclick="document.getElementById('buttonGroup1').style.display='none';">
+          <i class="fas fa-times" title="Close"></i>
+        </span>
+      </div>
+      <div class="dialogContent">
+        <div>
+          <label style="font-size: 1.2em;" for="startPauseBtn">Start/Pause All:</label>
+          <i class="fas fa-play" id="startPauseBtn" title="Start/Pause All Trains" style="cursor:pointer"></i>
         </div>
-        <div class="dialogContent">
-          <div>
-            <label for="startPauseBtn">Start/Pause All:</label>
-            <i class="fas fa-play" id="startPauseBtn" title="Start/Pause All Trains" style="cursor:pointer"></i>
+        <div id="train1" class="trainControl" style="display:grid">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <span id="lblTrain1">T1</span>
+            <i class="fas fa-pause" title="Pause Train" id="pauseTrain1" style="cursor:pointer"
+              onclick="startStopTrain(1)"></i>
+            <span style="width:15px;" id="lblNumCoaches1">00</span>
+            <i class="fas fa-plus" title="Add Coach" id="addCoach1" style="cursor:pointer" onclick="addCoach(1)"></i>
+            <i class="fas fa-minus" title="Remove Coach" id="removeCoach1" style="cursor:pointer"
+              onclick="removeCoach(1)"></i>
+            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine1" style="cursor:pointer"
+              onclick="upgradeEngine(1)"></i>
+            <div style="width:20px; height:20px; background-color:red;">
+              <div id="health1" class="health"></div>
+            </div>
+            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain1" style="cursor:pointer"
+              onclick="extendTrain(1)"></i>
+            <i class="fas fa-times" title="Remove Train" id="removeTrain1" style="cursor:pointer"
+              onclick="removetrain(1)"></i>
           </div>
-          <div id="train1" class="trainControl" style="display:grid">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-              <span id="lblTrain1">T1</span>
-              <i class="fas fa-pause" title="Pause Train" id="pauseTrain1" style="cursor:pointer"
-                onclick="startStopTrain(1)"></i>
-              <span style="width:15px;" id="lblNumCoaches1">00</span>
-              <i class="fas fa-plus" title="Add Coach" id="addCoach1" style="cursor:pointer" onclick="addCoach(1)"></i>
-              <i class="fas fa-minus" title="Remove Coach" id="removeCoach1" style="cursor:pointer"
-                onclick="removeCoach(1)"></i>
-              <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine1" style="cursor:pointer"
-                onclick="upgradeEngine(1)"></i>
-              <div style="width:20px; height:20px; background-color:red;">
-                <div id="health1" class="health"></div>
-              </div>
-              <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain1" style="cursor:pointer"
-                onclick="extendTrain(1)"></i>
-              <i class="fas fa-times" title="Remove Train" id="removeTrain1" style="cursor:pointer"
-                onclick="removetrain(1)"></i>
-            </div>
-            <div id="trainExtensionControls1" style="display:none; justify-content:space-evenly;">
-              <span>Extend:</span>
-              <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(1)"
-                id="completeTrainExtension1" style="cursor:pointer;"></i>
-              <span>Cancel:</span>
-              <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(1)"
-                id="cancelTrainExtension1" style="cursor:pointer;"></i>
-            </div>
+          <div id="trainExtensionControls1" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
+            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(1)"
+              id="completeTrainExtension1" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
+            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(1)"
+              id="cancelTrainExtension1" style="cursor:pointer;"></i>
           </div>
-          <div id="train2" class="trainControl">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-
-              <span id="lblTrain2">T2</span>
-              <i class="fas fa-pause" title="Pause Train" id="pauseTrain2" style="cursor:pointer"
-                onclick="startStopTrain(2)"></i>
-              <span style="width:15px;" id="lblNumCoaches2">00</span>
-
-              <i class="fas fa-plus" title="Add Coach" id="addCoach2" style="cursor:pointer" onclick="addCoach(2)"></i>
-              <i class="fas fa-minus" title="Remove Coach" id="removeCoach2" style="cursor:pointer"
-                onclick="removeCoach(2)"></i>
-              <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine2" style="cursor:pointer"
-                onclick="upgradeEngine(2)"></i>
-              <div style="width:20px; height:20px; background-color:red;">
-
-                <div id="health2" class="health"></div>
-              </div>
-              <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain2" style="cursor:pointer"
-                onclick="extendTrain(2)"></i>
-              <i class="fas fa-times" title="Remove Train" id="removeTrain2" style="cursor:pointer"
-                onclick="removetrain(2)"></i>
-            </div>
-            <div id="trainExtensionControls2" style="display:none; justify-content:space-evenly;">
-              <span>Extend:</span>
-              <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(2)"
-                id="completeTrainExtension2" style="cursor:pointer;"></i>
-              <span>Cancel:</span>
-              <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(2)"
-                id="cancelTrainExtension2" style="cursor:pointer;"></i>
-            </div>
-          </div>
-          <div id="train3" class="trainControl">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-
-              <span id="lblTrain3">T3</span>
-              <i class="fas fa-pause" title="Pause Train" id="pauseTrain3" style="cursor:pointer"
-                onclick="startStopTrain(3)"></i>
-              <span style="width:15px;" id="lblNumCoaches3">00</span>
-
-              <i class="fas fa-plus" title="Add Coach" id="addCoach3" style="cursor:pointer" onclick="addCoach(3)"></i>
-              <i class="fas fa-minus" title="Remove Coach" id="removeCoach3" style="cursor:pointer"
-                onclick="removeCoach(3)"></i>
-              <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine3" style="cursor:pointer"
-                onclick="upgradeEngine(3)"></i>
-
-              <div style="width:20px; height:20px; background-color:red;">
-
-                <div id="health3" class="health"></div>
-              </div>
-              <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain3" style="cursor:pointer"
-                onclick="extendTrain(3)"></i>
-              <i class="fas fa-times" title="Remove Train" id="removeTrain3" style="cursor:pointer"
-                onclick="removetrain(3)"></i>
-            </div>
-            <div id="trainExtensionControls3" style="display:none; justify-content:space-evenly;">
-              <span>Extend:</span>
-              <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(3)"
-                id="completeTrainExtension3" style="cursor:pointer;"></i>
-              <span>Cancel:</span>
-              <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(3)"
-                id="cancelTrainExtension3" style="cursor:pointer;"></i>
-            </div>
-          </div>
-          <div id="train4" class="trainControl">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-
-              <span id="lblTrain4">T4</span>
-              <i class="fas fa-pause" title="Pause Train" id="pauseTrain4" style="cursor:pointer"
-                onclick="startStopTrain(4)"></i>
-              <span style="width:15px;" id="lblNumCoaches4">00</span>
-
-              <i class="fas fa-plus" title="Add Coach" id="addCoach4" style="cursor:pointer" onclick="addCoach(4)"></i>
-              <i class="fas fa-minus" title="Remove Coach" id="removeCoach4" style="cursor:pointer"
-                onclick="removeCoach(4)"></i>
-              <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine4" style="cursor:pointer"
-                onclick="upgradeEngine(4)"></i>
-              <div style="width:20px; height:20px; background-color:red;">
-
-                <div id="health4" class="health"></div>
-              </div>
-              <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain4" style="cursor:pointer"
-                onclick="extendTrain(4)"></i>
-              <i class="fas fa-times" title="Remove Train" id="removeTrain4" style="cursor:pointer"
-                onclick="removetrain(4)"></i>
-            </div>
-            <div id="trainExtensionControls4" style="display:none; justify-content:space-evenly;">
-              <span>Extend:</span>
-              <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(4)"
-                id="completeTrainExtension4" style="cursor:pointer;"></i>
-              <span>Cancel:</span>
-              <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(4)"
-                id="cancelTrainExtension4" style="cursor:pointer;"></i>
-            </div>
-          </div>
-          <div id="train5" class="trainControl">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-
-              <span id="lblTrain5">T5</span>
-              <i class="fas fa-pause" title="Pause Train" id="pauseTrain5" style="cursor:pointer"
-                onclick="startStopTrain(5)"></i>
-              <span style="width:15px;" id="lblNumCoaches5">00</span>
-
-              <i class="fas fa-plus" title="Add Coach" id="addCoach5" style="cursor:pointer" onclick="addCoach(5)"></i>
-              <i class="fas fa-minus" title="Remove Coach" id="removeCoach5" style="cursor:pointer"
-                onclick="removeCoach(5)"></i>
-              <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine5" style="cursor:pointer"
-                onclick="upgradeEngine(5)"></i>
-              <div style="width:20px; height:20px; background-color:red;">
-
-                <div id="health5" class="health"></div>
-              </div>
-              <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain5" style="cursor:pointer"
-                onclick="extendTrain(5)"></i>
-              <i class="fas fa-times" title="Remove Train" id="removeTrain5" style="cursor:pointer"
-                onclick="removetrain(5)"></i>
-            </div>
-            <div id="trainExtensionControls5" style="display:none; justify-content:space-evenly;">
-              <span>Extend:</span>
-              <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(5)"
-                id="completeTrainExtension5" style="cursor:pointer;"></i>
-              <span>Cancel:</span>
-              <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(5)"
-                id="cancelTrainExtension5" style="cursor:pointer;"></i>
-            </div>
-          </div>
-          <div id="train6" class="trainControl">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-
-              <span id="lblTrain6">T6</span>
-              <i class="fas fa-pause" title="Pause Train" id="pauseTrain6" style="cursor:pointer"
-                onclick="startStopTrain(6)"></i>
-              <span style="width:15px;" id="lblNumCoaches6">00</span>
-              <i class="fas fa-plus" title="Add Coach" id="addCoach6" style="cursor:pointer" onclick="addCoach(6)"></i>
-              <i class="fas fa-minus" title="Remove Coach" id="removeCoach6" style="cursor:pointer"
-                onclick="removeCoach(6)"></i>
-              <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine6" style="cursor:pointer"
-                onclick="upgradeEngine(6)"></i>
-              <div style="width:20px; height:20px; background-color:red;">
-
-                <div id="health6" class="health"></div>
-              </div>
-              <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain6" style="cursor:pointer"
-                onclick="extendTrain(6)"></i>
-              <i class="fas fa-times" title="Remove Train" id="removeTrain6" style="cursor:pointer"
-                onclick="removetrain(6)"></i>
-            </div>
-            <div id="trainExtensionControls6" style="display:none; justify-content:space-evenly;">
-              <span>Extend:</span>
-              <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(6)"
-                id="completeTrainExtension6" style="cursor:pointer;"></i>
-              <span>Cancel:</span>
-              <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(6)"
-                id="cancelTrainExtension6" style="cursor:pointer;"></i>
-            </div>
-          </div>
-          <div id="train7" class="trainControl">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-
-              <span id="lblTrain7">T7</span>
-              <i class="fas fa-pause" title="Pause Train" id="pauseTrain7" style="cursor:pointer"
-                onclick="startStopTrain(7)"></i>
-              <span style="width:15px;" id="lblNumCoaches7">00</span>
-
-              <i class="fas fa-plus" title="Add Coach" id="addCoach7" style="cursor:pointer" onclick="addCoach(7)"></i>
-              <i class="fas fa-minus" title="Remove Coach" id="removeCoach7" style="cursor:pointer"
-                onclick="removeCoach(7)"></i>
-              <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine7" style="cursor:pointer"
-                onclick="upgradeEngine(7)"></i>
-              <div style="width:20px; height:20px; background-color:red;">
-
-                <div id="health7" class="health"></div>
-              </div>
-              <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain7" style="cursor:pointer"
-                onclick="extendTrain(7)"></i>
-              <i class="fas fa-times" title="Remove Train" id="removeTrain7" style="cursor:pointer"
-                onclick="removetrain(7)"></i>
-            </div>
-            <div id="trainExtensionControls7" style="display:none; justify-content:space-evenly;">
-              <span>Extend:</span>
-              <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(7)"
-                id="completeTrainExtension7" style="cursor:pointer;"></i>
-              <span>Cancel:</span>
-              <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(7)"
-                id="cancelTrainExtension7" style="cursor:pointer;"></i>
-            </div>
-          </div>
-          <div id="train8" class="trainControl">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-
-              <span id="lblTrain8">T8</span>
-              <i class="fas fa-pause" title="Pause Train" id="pauseTrain8" style="cursor:pointer"
-                onclick="startStopTrain(8)"></i>
-              <span style="width:15px;" id="lblNumCoaches8">00</span>
-
-              <i class="fas fa-plus" title="Add Coach" id="addCoach8" style="cursor:pointer" onclick="addCoach(8)"></i>
-              <i class="fas fa-minus" title="Remove Coach" id="removeCoach8" style="cursor:pointer"
-                onclick="removeCoach(8)"></i>
-              <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine8" style="cursor:pointer"
-                onclick="upgradeEngine(8)"></i>
-              <div style="width:20px; height:20px; background-color:red;">
-
-                <div id="health8" class="health"></div>
-              </div>
-              <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain8" style="cursor:pointer"
-                onclick="extendTrain(8)"></i>
-              <i class="fas fa-times" title="Remove Train" id="removeTrain8" style="cursor:pointer"
-                onclick="removetrain(8)"></i>
-            </div>
-            <div id="trainExtensionControls8" style="display:none; justify-content:space-evenly;">
-              <span>Extend:</span>
-              <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(8)"
-                id="completeTrainExtension8" style="cursor:pointer;"></i>
-              <span>Cancel:</span>
-              <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(8)"
-                id="cancelTrainExtension8" style="cursor:pointer;"></i>
-            </div>
-          </div>
-          <div id="train9" class="trainControl">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-
-              <span id="lblTrain9">T9</span>
-              <i class="fas fa-pause" title="Pause Train" id="pauseTrain9" style="cursor:pointer"
-                onclick="startStopTrain(9)"></i>
-              <span style="width:15px;" id="lblNumCoaches9">00</span>
-
-              <i class="fas fa-plus" title="Add Coach" id="addCoach9" style="cursor:pointer" onclick="addCoach(9)"></i>
-              <i class="fas fa-minus" title="Remove Coach" id="removeCoach9" style="cursor:pointer"
-                onclick="removeCoach(9)"></i>
-              <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine9" style="cursor:pointer"
-                onclick="upgradeEngine(9)"></i>
-              <div style="width:20px; height:20px; background-color:red;">
-                <div id="health9" class="health"></div>
-              </div>
-              <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain9" style="cursor:pointer"
-                onclick="extendTrain(9)"></i>
-              <i class="fas fa-times" title="Remove Train" id="removeTrain9" style="cursor:pointer"
-                onclick="removetrain(9)"></i>
-            </div>
-            <div id="trainExtensionControls9" style="display:none; justify-content:space-evenly;">
-              <span>Extend:</span>
-              <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(9)"
-                id="completeTrainExtension9" style="cursor:pointer;"></i>
-              <span>Cancel:</span>
-              <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(9)"
-                id="cancelTrainExtension9" style="cursor:pointer;"></i>
-            </div>
-          </div>
-          <label for="newTrainSpecification">New Train Specification:</label>
-          <div id="newTrainSpecification" style="padding:10px; border:1px solid #ccc; border-radius:5px;">
-            <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
-              <label for="startTrack">Start Track Spec.:</label>
-              <i class="fas fa-play" title="Start Track" id="startTrack" style="cursor:pointer;"
-                onclick="starttrack()"></i>
-            </div>
-            <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
-              <label for="cancelTrack">Cancel Track:</label>
-              <i class="fas fa-times" style="cursor:pointer;" title="Cancel Track" id="cancelTrack"
-                onclick="canceltrack()"></i>
-            </div>
-            <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
-              <label for="typeoftrain">Type of Train:</label>
-              <select title="Type of Train" id="typeoftrain" style="font-size:0.8em">
-                <option value="passenger">Passenger</option>
-                <option value="freight">Freight</option>
-              </select>
-            </div>
-            <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
-              <label for="numcoaches">Coaches:</label>
-              <input type="number" title="# of Coaches" id="numcoaches" min="2" max="15" value="7"
-                placeholder="# of Coaches" style="font-size:0.8em">
-            </div>
-            <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
-              <label for="numfreightwagons">Freight Wagons:</label>
-              <input type="number" title="# Freight Wagons" id="numfreightwagons" min="20" max="100" value="30"
-                placeholder="# Freight Wagons" style="font-size:0.8em">
-            </div>
-            <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
-              <label for="starttrain">Start new Train:</label>
-              <i class="fas fa-flag-checkered" style="cursor:pointer;" title="Start Train" id="starttrain"
-                onclick="newtrain()"></i>
-            </div>
-          </div>
-        </div> <!-- End of newTrainSpecification -->
-      </div> <!-- End of buttonGroup1 -->
-
-      <div id="buttonGroup2" class="modal"
-        style="width:300px; display:none; position:fixed; top:300px;left:150px; flex-direction:column; gap:10px">
-        <div class="dialogHeader">
-          <span class="dialogTitle">Flyovers</span>
-          <span class="dialogClose" onclick="document.getElementById('buttonGroup2').style.display='none';">
-            <i class="fas fa-times" title="Close"></i>
-          </span>
         </div>
-        <div class="dialogContent">
-          <label for="startFlyover">Start Flyover Specification. Please click where you will gain
-            by building a flyover to avoid collisions. Each flyover costs 20000000.
-          </label>
-          <i class="fas fa-play" id="startFlyover" title="Add Flyover" style="cursor:pointer;"
-            onclick="startFlyover()"></i>
-          <!-- <label for="cancelFlyover">If you change your mind you can Cancel the flyover specification.</label>
+        <div id="train2" class="trainControl">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+
+            <span id="lblTrain2">T2</span>
+            <i class="fas fa-pause" title="Pause Train" id="pauseTrain2" style="cursor:pointer"
+              onclick="startStopTrain(2)"></i>
+            <span style="width:15px;" id="lblNumCoaches2">00</span>
+
+            <i class="fas fa-plus" title="Add Coach" id="addCoach2" style="cursor:pointer" onclick="addCoach(2)"></i>
+            <i class="fas fa-minus" title="Remove Coach" id="removeCoach2" style="cursor:pointer"
+              onclick="removeCoach(2)"></i>
+            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine2" style="cursor:pointer"
+              onclick="upgradeEngine(2)"></i>
+            <div style="width:20px; height:20px; background-color:red;">
+
+              <div id="health2" class="health"></div>
+            </div>
+            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain2" style="cursor:pointer"
+              onclick="extendTrain(2)"></i>
+            <i class="fas fa-times" title="Remove Train" id="removeTrain2" style="cursor:pointer"
+              onclick="removetrain(2)"></i>
+          </div>
+          <div id="trainExtensionControls2" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
+            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(2)"
+              id="completeTrainExtension2" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
+            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(2)"
+              id="cancelTrainExtension2" style="cursor:pointer;"></i>
+          </div>
+        </div>
+        <div id="train3" class="trainControl">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+
+            <span id="lblTrain3">T3</span>
+            <i class="fas fa-pause" title="Pause Train" id="pauseTrain3" style="cursor:pointer"
+              onclick="startStopTrain(3)"></i>
+            <span style="width:15px;" id="lblNumCoaches3">00</span>
+
+            <i class="fas fa-plus" title="Add Coach" id="addCoach3" style="cursor:pointer" onclick="addCoach(3)"></i>
+            <i class="fas fa-minus" title="Remove Coach" id="removeCoach3" style="cursor:pointer"
+              onclick="removeCoach(3)"></i>
+            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine3" style="cursor:pointer"
+              onclick="upgradeEngine(3)"></i>
+
+            <div style="width:20px; height:20px; background-color:red;">
+
+              <div id="health3" class="health"></div>
+            </div>
+            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain3" style="cursor:pointer"
+              onclick="extendTrain(3)"></i>
+            <i class="fas fa-times" title="Remove Train" id="removeTrain3" style="cursor:pointer"
+              onclick="removetrain(3)"></i>
+          </div>
+          <div id="trainExtensionControls3" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
+            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(3)"
+              id="completeTrainExtension3" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
+            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(3)"
+              id="cancelTrainExtension3" style="cursor:pointer;"></i>
+          </div>
+        </div>
+        <div id="train4" class="trainControl">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+
+            <span id="lblTrain4">T4</span>
+            <i class="fas fa-pause" title="Pause Train" id="pauseTrain4" style="cursor:pointer"
+              onclick="startStopTrain(4)"></i>
+            <span style="width:15px;" id="lblNumCoaches4">00</span>
+
+            <i class="fas fa-plus" title="Add Coach" id="addCoach4" style="cursor:pointer" onclick="addCoach(4)"></i>
+            <i class="fas fa-minus" title="Remove Coach" id="removeCoach4" style="cursor:pointer"
+              onclick="removeCoach(4)"></i>
+            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine4" style="cursor:pointer"
+              onclick="upgradeEngine(4)"></i>
+            <div style="width:20px; height:20px; background-color:red;">
+
+              <div id="health4" class="health"></div>
+            </div>
+            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain4" style="cursor:pointer"
+              onclick="extendTrain(4)"></i>
+            <i class="fas fa-times" title="Remove Train" id="removeTrain4" style="cursor:pointer"
+              onclick="removetrain(4)"></i>
+          </div>
+          <div id="trainExtensionControls4" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
+            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(4)"
+              id="completeTrainExtension4" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
+            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(4)"
+              id="cancelTrainExtension4" style="cursor:pointer;"></i>
+          </div>
+        </div>
+        <div id="train5" class="trainControl">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+
+            <span id="lblTrain5">T5</span>
+            <i class="fas fa-pause" title="Pause Train" id="pauseTrain5" style="cursor:pointer"
+              onclick="startStopTrain(5)"></i>
+            <span style="width:15px;" id="lblNumCoaches5">00</span>
+
+            <i class="fas fa-plus" title="Add Coach" id="addCoach5" style="cursor:pointer" onclick="addCoach(5)"></i>
+            <i class="fas fa-minus" title="Remove Coach" id="removeCoach5" style="cursor:pointer"
+              onclick="removeCoach(5)"></i>
+            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine5" style="cursor:pointer"
+              onclick="upgradeEngine(5)"></i>
+            <div style="width:20px; height:20px; background-color:red;">
+
+              <div id="health5" class="health"></div>
+            </div>
+            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain5" style="cursor:pointer"
+              onclick="extendTrain(5)"></i>
+            <i class="fas fa-times" title="Remove Train" id="removeTrain5" style="cursor:pointer"
+              onclick="removetrain(5)"></i>
+          </div>
+          <div id="trainExtensionControls5" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
+            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(5)"
+              id="completeTrainExtension5" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
+            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(5)"
+              id="cancelTrainExtension5" style="cursor:pointer;"></i>
+          </div>
+        </div>
+        <div id="train6" class="trainControl">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+
+            <span id="lblTrain6">T6</span>
+            <i class="fas fa-pause" title="Pause Train" id="pauseTrain6" style="cursor:pointer"
+              onclick="startStopTrain(6)"></i>
+            <span style="width:15px;" id="lblNumCoaches6">00</span>
+            <i class="fas fa-plus" title="Add Coach" id="addCoach6" style="cursor:pointer" onclick="addCoach(6)"></i>
+            <i class="fas fa-minus" title="Remove Coach" id="removeCoach6" style="cursor:pointer"
+              onclick="removeCoach(6)"></i>
+            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine6" style="cursor:pointer"
+              onclick="upgradeEngine(6)"></i>
+            <div style="width:20px; height:20px; background-color:red;">
+
+              <div id="health6" class="health"></div>
+            </div>
+            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain6" style="cursor:pointer"
+              onclick="extendTrain(6)"></i>
+            <i class="fas fa-times" title="Remove Train" id="removeTrain6" style="cursor:pointer"
+              onclick="removetrain(6)"></i>
+          </div>
+          <div id="trainExtensionControls6" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
+            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(6)"
+              id="completeTrainExtension6" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
+            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(6)"
+              id="cancelTrainExtension6" style="cursor:pointer;"></i>
+          </div>
+        </div>
+        <div id="train7" class="trainControl">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+
+            <span id="lblTrain7">T7</span>
+            <i class="fas fa-pause" title="Pause Train" id="pauseTrain7" style="cursor:pointer"
+              onclick="startStopTrain(7)"></i>
+            <span style="width:15px;" id="lblNumCoaches7">00</span>
+
+            <i class="fas fa-plus" title="Add Coach" id="addCoach7" style="cursor:pointer" onclick="addCoach(7)"></i>
+            <i class="fas fa-minus" title="Remove Coach" id="removeCoach7" style="cursor:pointer"
+              onclick="removeCoach(7)"></i>
+            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine7" style="cursor:pointer"
+              onclick="upgradeEngine(7)"></i>
+            <div style="width:20px; height:20px; background-color:red;">
+
+              <div id="health7" class="health"></div>
+            </div>
+            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain7" style="cursor:pointer"
+              onclick="extendTrain(7)"></i>
+            <i class="fas fa-times" title="Remove Train" id="removeTrain7" style="cursor:pointer"
+              onclick="removetrain(7)"></i>
+          </div>
+          <div id="trainExtensionControls7" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
+            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(7)"
+              id="completeTrainExtension7" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
+            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(7)"
+              id="cancelTrainExtension7" style="cursor:pointer;"></i>
+          </div>
+        </div>
+        <div id="train8" class="trainControl">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+
+            <span id="lblTrain8">T8</span>
+            <i class="fas fa-pause" title="Pause Train" id="pauseTrain8" style="cursor:pointer"
+              onclick="startStopTrain(8)"></i>
+            <span style="width:15px;" id="lblNumCoaches8">00</span>
+
+            <i class="fas fa-plus" title="Add Coach" id="addCoach8" style="cursor:pointer" onclick="addCoach(8)"></i>
+            <i class="fas fa-minus" title="Remove Coach" id="removeCoach8" style="cursor:pointer"
+              onclick="removeCoach(8)"></i>
+            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine8" style="cursor:pointer"
+              onclick="upgradeEngine(8)"></i>
+            <div style="width:20px; height:20px; background-color:red;">
+
+              <div id="health8" class="health"></div>
+            </div>
+            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain8" style="cursor:pointer"
+              onclick="extendTrain(8)"></i>
+            <i class="fas fa-times" title="Remove Train" id="removeTrain8" style="cursor:pointer"
+              onclick="removetrain(8)"></i>
+          </div>
+          <div id="trainExtensionControls8" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
+            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(8)"
+              id="completeTrainExtension8" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
+            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(8)"
+              id="cancelTrainExtension8" style="cursor:pointer;"></i>
+          </div>
+        </div>
+        <div id="train9" class="trainControl">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+
+            <span id="lblTrain9">T9</span>
+            <i class="fas fa-pause" title="Pause Train" id="pauseTrain9" style="cursor:pointer"
+              onclick="startStopTrain(9)"></i>
+            <span style="width:15px;" id="lblNumCoaches9">00</span>
+
+            <i class="fas fa-plus" title="Add Coach" id="addCoach9" style="cursor:pointer" onclick="addCoach(9)"></i>
+            <i class="fas fa-minus" title="Remove Coach" id="removeCoach9" style="cursor:pointer"
+              onclick="removeCoach(9)"></i>
+            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine9" style="cursor:pointer"
+              onclick="upgradeEngine(9)"></i>
+            <div style="width:20px; height:20px; background-color:red;">
+              <div id="health9" class="health"></div>
+            </div>
+            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain9" style="cursor:pointer"
+              onclick="extendTrain(9)"></i>
+            <i class="fas fa-times" title="Remove Train" id="removeTrain9" style="cursor:pointer"
+              onclick="removetrain(9)"></i>
+          </div>
+          <div id="trainExtensionControls9" style="display:none; justify-content:space-evenly;">
+            <span>Extend:</span>
+            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(9)"
+              id="completeTrainExtension9" style="cursor:pointer;"></i>
+            <span>Cancel:</span>
+            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(9)"
+              id="cancelTrainExtension9" style="cursor:pointer;"></i>
+          </div>
+        </div>
+        <label for="newTrainSpecification">New Train Specification:</label>
+        <div id="newTrainSpecification" style="padding:10px; border:1px solid #ccc; border-radius:5px;">
+          <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
+            <label for="startTrack">Start Track Spec.:</label>
+            <i class="fas fa-play" title="Start Track" id="startTrack" style="cursor:pointer;"
+              onclick="starttrack()"></i>
+          </div>
+          <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
+            <label for="cancelTrack">Cancel Track:</label>
+            <i class="fas fa-times" style="cursor:pointer;" title="Cancel Track" id="cancelTrack"
+              onclick="canceltrack()"></i>
+          </div>
+          <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
+            <label for="typeoftrain">Type of Train:</label>
+            <select title="Type of Train" id="typeoftrain" style="font-size:0.8em">
+              <option value="passenger">Passenger</option>
+              <option value="freight">Freight</option>
+            </select>
+          </div>
+          <div id="passengerTrainControls" style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
+            <label for="numcoaches">Coaches:</label>
+            <input type="number" title="# of Coaches" id="numcoaches" min="2" max="15" value="7"
+              placeholder="# of Coaches" style="font-size:0.8em">
+          </div>
+          <div id="freightTrainControls" style="display:none;grid-template-columns:3fr 2fr; gap:10px;">
+            <label for="numfreightwagons">Freight Wagons:</label>
+            <input type="number" title="# Freight Wagons" id="numfreightwagons" min="20" max="100" value="30"
+              placeholder="# Freight Wagons" style="font-size:0.8em">
+          </div>
+          <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
+            <label for="starttrain">Start new Train:</label>
+            <i class="fas fa-flag-checkered" style="cursor:pointer;" title="Start Train" id="starttrain"
+              onclick="newtrain()"></i>
+          </div>
+        </div>
+      </div> <!-- End of newTrainSpecification -->
+    </div> <!-- End of buttonGroup1 -->
+
+    <div id="buttonGroup2" class="modal"
+      style="width:300px; display:none; position:fixed; top:300px;left:150px; flex-direction:column; gap:10px">
+      <div class="dialogHeader">
+        <span class="dialogTitle">Flyovers</span>
+        <span class="dialogClose" onclick="document.getElementById('buttonGroup2').style.display='none';">
+          <i class="fas fa-times" title="Close"></i>
+        </span>
+      </div>
+      <div class="dialogContent">
+        <label for="startFlyover">Start Flyover Specification. Please click where you will gain
+          by building a flyover to avoid collisions. Each flyover costs 20000000.
+        </label>
+        <i class="fas fa-play" id="startFlyover" title="Add Flyover" style="cursor:pointer;"
+          onclick="startFlyover()"></i>
+        <!-- <label for="cancelFlyover">If you change your mind you can Cancel the flyover specification.</label>
         <i class="fas fa-times" id="cancelFlyover" title="Cancel Flyover" onclick="cancelFlyover()"></i> -->
-        </div>
-      </div> <!-- End of buttonGroup2 -->
+      </div>
+    </div> <!-- End of buttonGroup2 -->
 
-      <div id="buttonGroup3" class="modal"
-        style="width:400px; display:none; position:fixed; top:200px;left: 450px; flex-direction:column; gap:10px">
-        <div class="dialogHeader">
-          <span class="dialogTitle">Stations</span>
-          <span class="dialogClose" onclick="document.getElementById('buttonGroup3').style.display='none';">
-            <i class="fas fa-times" title="Close"></i>
-          </span>
-        </div>
-        <div class="dialogContent" style="font-size:1.2em">
-          <label for="stationFortrain">Select the Train for which you want to build the station. Please note that the
-            game
-            will
-            display the locations where you can click to build a Station. Each station costs 1000000. Note that two or
-            more
-            trains can cross at a station. To this extent you do not need a flyover to avoid collisions.
-          </label>
-          <div id="stationFortrain" style="margin-top:10px;"></div>
-        </div>
-      </div> <!-- End of buttonGroup3 -->
+    <div id="buttonGroup3" class="modal"
+      style="width:400px; display:none; position:fixed; top:200px;left: 450px; flex-direction:column; gap:10px">
+      <div class="dialogHeader">
+        <span class="dialogTitle">Stations</span>
+        <span class="dialogClose" onclick="document.getElementById('buttonGroup3').style.display='none';">
+          <i class="fas fa-times" title="Close"></i>
+        </span>
+      </div>
+      <div class="dialogContent" style="font-size:1.2em">
+        <label for="stationFortrain">Select the Train for which you want to build the station. Please note that the
+          game
+          will
+          display the locations where you can click to build a Station. Each station costs 1000000. Note that two or
+          more
+          trains can cross at a station. To this extent you do not need a flyover to avoid collisions.
+        </label>
+        <div id="stationFortrain" style="margin-top:10px;"></div>
+      </div>
+    </div> <!-- End of buttonGroup3 -->
 
-      <div id="buttonGroup4" class="modal"
-        style="width:400px; display:none; position:fixed; top:450px;left:490px; flex-direction:column; gap:10px">
-        <div class="dialogHeader">
-          <span class="dialogTitle">Results</span>
-          <span class="dialogClose" onclick="document.getElementById('buttonGroup4').style.display='none';">
-            <i class="fas fa-times" title="Close"></i>
-          </span>
-        </div>
-        <div class="dialogContent">
-          <table id="trainResultsTable" style="font-size: 1.2em; width: 100%;border-collapse: separate">
-            <thead>
-              <tr>
-                <th colspan="4">All in (Mln $)</th>
-              </tr>
-              <tr>
-                <th colspan="4">Cash in Hand: <span id="cashInHand"></span> Mln $</th>
-              </tr>
-              <tr>
-                <th>Train #</th>
-                <th>Revenue</th>
-                <th>Expenses</th>
-                <th>Profit</th>
-              </tr>
-            </thead>
-            <tbody id="resultsBody">
-              <!-- Results will be dynamically inserted here -->
-            </tbody>
-          </table>
-        </div>
-      </div> <!-- End of buttonGroup4 -->
+    <div id="buttonGroup4" class="modal"
+      style="width:400px; display:none; position:fixed; top:450px;left:490px; flex-direction:column; gap:10px">
+      <div class="dialogHeader">
+        <span class="dialogTitle">Results</span>
+        <span class="dialogClose" onclick="document.getElementById('buttonGroup4').style.display='none';">
+          <i class="fas fa-times" title="Close"></i>
+        </span>
+      </div>
+      <div class="dialogContent">
+        <table id="trainResultsTable" style="font-size: 1.2em; width: 100%;border-collapse: separate">
+          <thead>
+            <tr>
+              <th colspan="4">All in (Mln $)</th>
+            </tr>
+            <tr>
+              <th colspan="4">Cash in Hand: <span id="cashInHand"></span> Mln $</th>
+            </tr>
+            <tr>
+              <th>Train #</th>
+              <th>Revenue</th>
+              <th>Expenses</th>
+              <th>Profit</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody">
+            <!-- Results will be dynamically inserted here -->
+          </tbody>
+        </table>
+      </div>
+    </div> <!-- End of buttonGroup4 -->
 
-      <div id="buttonGroup5" class="modal"
-        style="display:none; width:500px; height:900px; position:fixed; top:70px;left:400px; flex-direction:column; gap:10px">
-        <div class="dialogHeader">
-          <span class="dialogTitle">How to play</span>
-          <span class="dialogClose" onclick="document.getElementById('buttonGroup5').style.display='none';">
-            <i class="fas fa-times" title="Close"></i>
-          </span>
+    <div id="buttonGroup5" class="modal"
+      style="display:none; width:500px; height:900px; position:fixed; top:70px;left:400px; flex-direction:column; gap:10px">
+      <div class="dialogHeader">
+        <span class="dialogTitle">How to play</span>
+        <span class="dialogClose" onclick="document.getElementById('buttonGroup5').style.display='none';">
+          <i class="fas fa-times" title="Close"></i>
+        </span>
+      </div>
+      <div class="dialogContent">
+        <div style="display:flex; align-items:center; justify-content:center;">
+          <button type="button" style="border-radius: 10px;"
+            onclick="document.getElementById('startPauseBtn').click();">Start/Pause</button>
         </div>
-        <div class="dialogContent">
-          <div style="display:flex; align-items:center; justify-content:center;">
-            <button type="button" style="border-radius: 10px;" onclick="document.getElementById('startPauseBtn').click();">Start/Pause</button>
-          </div>
-          <!-- Instructions for how to use the game will be displayed here -->
-          <p>Click on the Start Button to begin the game. The game will run for <span id="totalTimeUnits"></span> time
-            units. Each time unit is shown at the
-            center of the screen and will take about <span id="timeUnitDuration"></span> minutes of playing time. The
-            time
-            for
-            which the entire game is paused is not counted.
-          </p>
-          <p>Your objective to earn as much profit as possible by running up to a total of 9 trains.
-            You start with a cash in hand of <span id="initialCash"></span> million dollars and 2 passenger trains and
-            1 freight train.
-          </p>
-          <p>You can pause the entire game at any time by pressing the <span class="key">P</span> key on the keyboard.
-            <span class="key">P</span>
-            also starts the game if it is paused. When the game is in the paused state, the time units will not progress
-            but
-            you will still be able to add
-            trains, stations and flyovers.
-          </p>
-          <p>
-            The <span class="key">T</span> key displays the trains dialog box. It also allows you to monitor trains and
-            start a new Train.
-            Pressing the <span class="key">T</span> key again removes the Train dialog box. The passenger trains can
-            have
-            a
-            maximum of <span id="maxNumCoaches"></span> coaches and the
-            freight trains can have a maximum of <span id="maxNumFreightWagons"></span> freight wagons. Each passenger
-            coach
-            costs
-            <span id="coachCost"></span> and each freight wagon costs <span id="freightWagonCost"></span>. You can
-            add or remove coaches or freight wagons by using the
-            <span class="key">+</span> and <span class="key">-</span> buttons in the train dialog box. You can also stop
-            or pause any train by using the pause button <i class="fa fa-pause"></i> in the train dialog box
-            or by pressing the corresponding number key for each train (1 for Train #1, 2 for Train #2 and so on).
-            There is an option to delete a train completely but if you do that, you will lose all the money you invested
-            in that train and you will not be able to get it back.
-            When a new train is started, it comes with a standard engine which costs <span id="engineCost"></span>.
-            However, you can upgrade the engine of freight trains later in the
-            game to increase the speed of the freight trains by clicking on the upgrade button <span
-              class="fa fa-bolt"></span> in the train dialog box.
-            Each engine upgrade costs <span id="engineUpgradeCost"></span>.
-            There is also an option to extend the train route by clicking on the extend button in the train dialog box.
-            This
-            extension can be done from either end of the train track. After clicking on the extend button, you will need
-            to click on the map to specify the additional route for the train.
-            Once the additional route is specified, you can either confirm the extension by clicking on the check button
-            in the train dialog box or cancel the extension by clicking on the times button in the train dialog box.
-            Below the train level controls, there is a button to start the track specification for a new train. After
-            clicking on that button, you will need to click on the map to
-            specify the route for the new train and then click on the flag off button in the train dialog box to start
-            the
-            new train. You can also cancel the track specification for the new train by clicking on the cancel button in
-            the train dialog box.
-            You will need to specify the type of the train (passenger or freight), the number of coaches or freight
-            wagons
-            and the speed of the train before flagging off the new train.
-          </p>
-          <p>
-            Similarly <span class="key">S</span> brings up the Stations dialog box to add more stations to any train's
-            route. Each station costs
-            <span id="stationCost"></span>. However, adding a station allows you to earn more revenue from passengers or
-            freight that is dropped off
-            at that station or picked up from that station.
-          </p>
-          <p>
-            Similarly <span class="key">F</span> brings up the Flyover dialog box to add a flyover at any point where
-            two
-            or more trains cross each other and where they are likely to collide. Note that flyovers are expensive each
-            costs <span id="flyoverCost"></span>.
-            Hence if you do not want to add them, you can manually stop one train to avoid the collision as described
-            above.
-            Each collision costs <span id="collisionCostValue"></span>.
-          </p>
-          <p>
-            Before starting a new train, you may want to know where the cities and passengers are. You can see this
-            information by
-            clicking on the <span class="key">X</span> key.
-          </p>
-          <p>
-            The raw material availablility is shown on the map if you click on the <span class="key">Y</span> key.
-          </p>
-          <p>
-            The raw material demand is shown on the map if you click on the <span class="key">Z</span> key.
-          </p>
-          <p>
-            It is assumed that passengers are moving to and from the cities and hence the passenger
-            demand is higher between cities with higher populations. If the train stops at a station it can pick up
-            passengers or freight
-            and some neighboring passengers or freight may also be available to pick up. The more stations a train stops
-            at,
-            the more passengers or freight it can pick up and drop off and hence the more revenue it can earn. However,
-            stopping at
-            more stations takes time and also increases the cost since facilities need to be provided at each station.
-            Hence you need to find the right balance to maximize your profit. If passengers or freight cannot be picked
-            up
-            at a station
-            because the train is full, it will be shown as (x??) in the station dialog box.
-          </p>
-          <p>
-            Pressing the <span class="key">R</span> key brings up the Results dialog box which displays the revenue,
-            expenses and profit for each train and overall. You can use this information to make informed decisions
-            about
-            how to manage your trains,
-            stations and flyovers to maximize your profit.
-          </p>
-          <p>Please note that you can only add trains, stations, and flyovers if you have enough funds.</p>
-          <p>
-            If you press the <span class="key">?</span> key, the game will display the 'How to play' dialog box.</p>
-          <p>
-          <p>Keep in mind the following obvious information:</p>
-          <ul>
-            <li>Passenger trains earn you money based on the number of passengers they carry. Each passenger coach you
-              add
-              costs money. You pay for the maintenance cost of the track at the end of each period. based on the length
-              of
-              the track and stations on the route also
-              cost
-              money. Each coach has a capacity of <span id="coachCapacity"></span> passengers.
-            </li>
-            <li>Freight trains earn you money based on the amount of freight they carry from the source to the
-              destination.
-              They also cost you money based on the number of stations they stop at.</li>
-            <li>Adding a flyover costs you 20 million dollars but it allows you to avoid collisions which can cause
-              significant damage
-              to your trains and hence significant loss of money because the two trains involved in the collision are
-              out
-              of
-              commission for
-              a certain period of time. In addition to this, you have to compensate for the loss of life and property.
-            </li>
-            <li>Adding a station costs you 1 million dollars but it allows you to earn more revenue from passengers or
-              freight. Also if there
-              is a station at the intersection of two or more trains, they can cross each other without the need for a
-              flyover and hence you
-              can save money by not building a flyover.
-            </li>
-          </ul>
-          <div style="display:flex; align-items:center; justify-content:center;">
-            <button type="button" style="border-radius: 10px;" id="howToPlayStartBtn">Start/Pause</button>
-          </div>
+        <!-- Instructions for how to use the game will be displayed here -->
+        <p>Click on the Start Button to begin the game. The game will run for <span id="totalTimeUnits"></span> time
+          units. Each time unit is shown at the
+          center of the screen and will take about <span id="timeUnitDuration"></span> minutes of playing time. The
+          time
+          for
+          which the entire game is paused is not counted.
+        </p>
+        <p>Your objective to earn as much profit as possible by running up to a total of 9 trains.
+          You start with a cash in hand of <span id="initialCash"></span> million dollars and 2 passenger trains and
+          1 freight train.
+        </p>
+        <p>You can pause the entire game at any time by pressing the <span class="key">P</span> key on the keyboard.
+          <span class="key">P</span>
+          also starts the game if it is paused. When the game is in the paused state, the time units will not progress
+          but
+          you will still be able to add
+          trains, stations and flyovers.
+        </p>
+        <p>
+          The <span class="key">T</span> key displays the trains dialog box. It also allows you to monitor trains and
+          start a new Train.
+          Pressing the <span class="key">T</span> key again removes the Train dialog box. The passenger trains can
+          have
+          a
+          maximum of <span id="maxNumCoaches"></span> coaches and the
+          freight trains can have a maximum of <span id="maxNumFreightWagons"></span> freight wagons. Each passenger
+          coach
+          costs
+          <span id="coachCost"></span> and each freight wagon costs <span id="freightWagonCost"></span>. You can
+          add or remove coaches or freight wagons by using the
+          <span class="key">+</span> and <span class="key">-</span> buttons in the train dialog box. You can also stop
+          or pause any train by using the pause button <i class="fa fa-pause"></i> in the train dialog box
+          or by pressing the corresponding number key for each train (1 for Train #1, 2 for Train #2 and so on).
+          There is an option to delete a train completely but if you do that, you will lose all the money you invested
+          in that train and you will not be able to get it back.
+          When a new train is started, it comes with a standard engine which costs <span id="engineCost"></span>.
+          However, you can upgrade the engine of freight trains later in the
+          game to increase the speed of the freight trains by clicking on the upgrade button <span
+            class="fa fa-bolt"></span> in the train dialog box.
+          Each engine upgrade costs <span id="engineUpgradeCost"></span>.
+          There is also an option to extend the train route by clicking on the extend button in the train dialog box.
+          This
+          extension can be done from either end of the train track. After clicking on the extend button, you will need
+          to click on the map to specify the additional route for the train.
+          Once the additional route is specified, you can either confirm the extension by clicking on the check button
+          in the train dialog box or cancel the extension by clicking on the times button in the train dialog box.
+          Below the train level controls, there is a button to start the track specification for a new train. After
+          clicking on that button, you will need to click on the map to
+          specify the route for the new train and then click on the flag off button in the train dialog box to start
+          the
+          new train. You can also cancel the track specification for the new train by clicking on the cancel button in
+          the train dialog box.
+          You will need to specify the type of the train (passenger or freight), the number of coaches or freight
+          wagons
+          and the speed of the train before flagging off the new train.
+        </p>
+        <p>
+          Similarly <span class="key">S</span> brings up the Stations dialog box to add more stations to any train's
+          route. Each station costs
+          <span id="stationCost"></span>. However, adding a station allows you to earn more revenue from passengers or
+          freight that is dropped off
+          at that station or picked up from that station.
+        </p>
+        <p>
+          Similarly <span class="key">F</span> brings up the Flyover dialog box to add a flyover at any point where
+          two
+          or more trains cross each other and where they are likely to collide. Note that flyovers are expensive each
+          costs <span id="flyoverCost"></span>.
+          Hence if you do not want to add them, you can manually stop one train to avoid the collision as described
+          above.
+          Each collision costs <span id="collisionCostValue"></span>.
+        </p>
+        <p>
+          Before starting a new train, you may want to know where the cities and passengers are. You can see this
+          information by
+          clicking on the <span class="key">X</span> key.
+        </p>
+        <p>
+          The raw material availablility is shown on the map if you click on the <span class="key">Y</span> key.
+        </p>
+        <p>
+          The raw material demand is shown on the map if you click on the <span class="key">Z</span> key.
+        </p>
+        <p>
+          It is assumed that passengers are moving to and from the cities and hence the passenger
+          demand is higher between cities with higher populations. If the train stops at a station it can pick up
+          passengers or freight
+          and some neighboring passengers or freight may also be available to pick up. The more stations a train stops
+          at,
+          the more passengers or freight it can pick up and drop off and hence the more revenue it can earn. However,
+          stopping at
+          more stations takes time and also increases the cost since facilities need to be provided at each station.
+          Hence you need to find the right balance to maximize your profit. If passengers or freight cannot be picked
+          up
+          at a station
+          because the train is full, it will be shown as (x??) in the station dialog box.
+        </p>
+        <p>
+          Pressing the <span class="key">R</span> key brings up the Results dialog box which displays the revenue,
+          expenses and profit for each train and overall. You can use this information to make informed decisions
+          about
+          how to manage your trains,
+          stations and flyovers to maximize your profit.
+        </p>
+        <p>Please note that you can only add trains, stations, and flyovers if you have enough funds.</p>
+        <p>
+          If you press the <span class="key">?</span> key, the game will display the 'How to play' dialog box.</p>
+        <p>
+        <p>Keep in mind the following obvious information:</p>
+        <ul>
+          <li>Passenger trains earn you money based on the number of passengers they carry. Each passenger coach you
+            add
+            costs money. You pay for the maintenance cost of the track at the end of each period. based on the length
+            of
+            the track and stations on the route also
+            cost
+            money. Each coach has a capacity of <span id="coachCapacity"></span> passengers.
+          </li>
+          <li>Freight trains earn you money based on the amount of freight they carry from the source to the
+            destination.
+            They also cost you money based on the number of stations they stop at.</li>
+          <li>Adding a flyover costs you 20 million dollars but it allows you to avoid collisions which can cause
+            significant damage
+            to your trains and hence significant loss of money because the two trains involved in the collision are
+            out
+            of
+            commission for
+            a certain period of time. In addition to this, you have to compensate for the loss of life and property.
+          </li>
+          <li>Adding a station costs you 1 million dollars but it allows you to earn more revenue from passengers or
+            freight. Also if there
+            is a station at the intersection of two or more trains, they can cross each other without the need for a
+            flyover and hence you
+            can save money by not building a flyover.
+          </li>
+        </ul>
+        <div style="display:flex; align-items:center; justify-content:center;">
+          <button type="button" style="border-radius: 10px;" id="howToPlayStartBtn">Start/Pause</button>
         </div>
-      </div> <!-- End of buttonGroup5 -->
+      </div>
+    </div> <!-- End of buttonGroup5 -->
 
-      <div id="buttonGroup6" class="modal"
-        style="display:flex; position:fixed; top:10px;left:190px; flex-direction:row; gap:8px">
-        <!-- Touch-friendly replacements for keyboard hotkeys -->
-        <button type="button" class="mobile-hotkey" data-hotkey="?" title="Help" aria-label="Help">?</button>
-        <button type="button" class="mobile-hotkey" data-hotkey="P" title="Pause/Resume"
-          aria-label="Pause or resume">P</button>
-        <button type="button" class="mobile-hotkey" data-hotkey="T" title="Trains" aria-label="Trains">T</button>
-        <button type="button" class="mobile-hotkey" data-hotkey="S" title="Stations" aria-label="Stations">S</button>
-        <button type="button" class="mobile-hotkey" data-hotkey="F" title="Flyovers" aria-label="Flyovers">F</button>
-        <button type="button" class="mobile-hotkey" data-hotkey="R" title="Results" aria-label="Results">R</button>
-        <button type="button" class="mobile-hotkey" data-hotkey="I" title="Info on Train Operations" aria-label="Information">I</button>
-        <button type="button" class="mobile-hotkey" data-hotkey="X" title="Show Population Map"
-          aria-label="Show population map">X</button>
-        <button type="button" class="mobile-hotkey" data-hotkey="Y" title="Show Rawmaterials SupplyMap"
-          aria-label="Show raw materials supply map">Y</button>
-        <button type="button" class="mobile-hotkey" data-hotkey="Z" title="Show Rawmaterial Demand Map"
-          aria-label="Show raw material demand map">Z</button>
-      </div> <!-- End of buttonGroup6 -->
+    <div id="buttonGroup6" class="modal"
+      style="display:flex; position:fixed; top:10px;left:190px; flex-direction:row; gap:8px">
+      <!-- Touch-friendly replacements for keyboard hotkeys -->
+      <button type="button" class="mobile-hotkey" data-hotkey="?" title="Help" aria-label="Help">?</button>
+      <button type="button" class="mobile-hotkey" data-hotkey="P" title="Pause/Resume"
+        aria-label="Pause or resume">P</button>
+      <button type="button" class="mobile-hotkey" data-hotkey="T" title="Trains" aria-label="Trains">T</button>
+      <button type="button" class="mobile-hotkey" data-hotkey="S" title="Stations" aria-label="Stations">S</button>
+      <button type="button" class="mobile-hotkey" data-hotkey="F" title="Flyovers" aria-label="Flyovers">F</button>
+      <button type="button" class="mobile-hotkey" data-hotkey="R" title="Results" aria-label="Results">R</button>
+      <button type="button" class="mobile-hotkey" data-hotkey="I" title="Info on Train Operations"
+        aria-label="Information">I</button>
+      <button type="button" class="mobile-hotkey" data-hotkey="X" title="Show Population Map"
+        aria-label="Show population map">X</button>
+      <button type="button" class="mobile-hotkey" data-hotkey="Y" title="Show Rawmaterials SupplyMap"
+        aria-label="Show raw materials supply map">Y</button>
+      <button type="button" class="mobile-hotkey" data-hotkey="Z" title="Show Rawmaterial Demand Map"
+        aria-label="Show raw material demand map">Z</button>
+    </div> <!-- End of buttonGroup6 -->
 
-      <div id="buttonGroup7" class="modal" 
-        style="width:700px; display:none; position:fixed; top:100px;left:690px; flex-direction:column; gap:10px">
-        <div class="dialogHeader">
-          <span class="dialogTitle">Information on Train Operations</span>
-          <span class="dialogClose" onclick="document.getElementById('buttonGroup7').style.display='none';">
-            <i class="fas fa-times" title="Close"></i>
-          </span>
-        </div>
-        <div class="dialogContent">
-          <div id="infoForTrain">
-            
-          </div>
-          <div id="infotrainoperations1" class="infotrainoperations" style="display:block;"></div>
-          <div id="infotrainoperations2" class="infotrainoperations" style="display:none;"></div>
-          <div id="infotrainoperations3" class="infotrainoperations" style="display:none;"></div>
-          <div id="infotrainoperations4" class="infotrainoperations" style="display:none;"></div>
-          <div id="infotrainoperations5" class="infotrainoperations" style="display:none;"></div>
-          <div id="infotrainoperations6" class="infotrainoperations" style="display:none;"></div>
-          <div id="infotrainoperations7" class="infotrainoperations" style="display:none;"></div>
-          <div id="infotrainoperations8" class="infotrainoperations" style="display:none;"></div>
-          <div id="infotrainoperations9" class="infotrainoperations" style="display:none;"></div>
-        </div>
-      </div> <!-- End of buttonGroup7 -->
+    <div id="buttonGroup7" class="modal"
+      style="width:700px; display:none; position:fixed; top:100px;left:690px; flex-direction:column; gap:10px">
+      <div class="dialogHeader">
+        <span class="dialogTitle">Information on Train Operations</span>
+        <span class="dialogClose" onclick="document.getElementById('buttonGroup7').style.display='none';">
+          <i class="fas fa-times" title="Close"></i>
+        </span>
+      </div>
+      <div class="dialogContent">
+        <div id="infoForTrain">
 
-    </div> <!-- End of controls -->
-    <script type="module" src="script.js"></script>
+        </div>
+        <div id="infotrainoperations1" class="infotrainoperations" style="display:block;"></div>
+        <div id="infotrainoperations2" class="infotrainoperations" style="display:none;"></div>
+        <div id="infotrainoperations3" class="infotrainoperations" style="display:none;"></div>
+        <div id="infotrainoperations4" class="infotrainoperations" style="display:none;"></div>
+        <div id="infotrainoperations5" class="infotrainoperations" style="display:none;"></div>
+        <div id="infotrainoperations6" class="infotrainoperations" style="display:none;"></div>
+        <div id="infotrainoperations7" class="infotrainoperations" style="display:none;"></div>
+        <div id="infotrainoperations8" class="infotrainoperations" style="display:none;"></div>
+        <div id="infotrainoperations9" class="infotrainoperations" style="display:none;"></div>
+      </div>
+    </div> <!-- End of buttonGroup7 -->
+
+  </div> <!-- End of controls -->
+  <script type="module" src="script.js"></script>
 </body>
 
 </html>

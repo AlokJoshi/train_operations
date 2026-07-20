@@ -189,26 +189,32 @@ class Game {
 
   addTrain(positions, numCoaches, delayBeforeStart, intersections, options = {}) {
     const overlapMatches = []
+    let useParallelTrack = false
+    let numSegments = 0
+
     for (const train of this.trains) {
       if (train === null) continue
       const commonSegmentsMap = getCommonSegmentsMap(positions, train.track?.positions)
       if (commonSegmentsMap.size > 0) {
+        numSegments += commonSegmentsMap.size
         overlapMatches.push({
           trainNumber: train.trainNumber,
           commonSegmentsMap
         })
       }
     }
+    if(numSegments > 0) {
+      const overlappingTrains = overlapMatches.map(match => match.trainNumber).join(', ')
+      console.log(`The new train overlaps with existing train(s): ${overlappingTrains}.`)
+      const cost = numSegments * this.financials.parallelTrackCostPerSegment
+      console.log(`Parallel track cost for ${numSegments} segments: $${cost}`)
+      useParallelTrack = this.promptUserForParallelTrack(numSegments, overlappingTrains, cost)
 
-    let useParallelTrack = false
-    if (overlapMatches.length > 0 && !options.partOfInitialSetup) {
-      const commonTrainNumbers = overlapMatches.map((match) => match.trainNumber)
-      useParallelTrack = window.confirm(
-        `The new train overlaps with existing train(s): ${commonTrainNumbers.join(', ')}.\n\n` +
-        'Choose OK to enable parallel-track mode (these trains will not collide on shared grid points), ' +
-        'or Cancel to manage collisions manually.'
-      )
+      if (useParallelTrack) {
+          this.financials.incrementExpenses(this.getCurrentTimeIndex(), null, cost, 'Parallel Track Cost')
+      }
     }
+    
     // Apply freight train defaults automatically when trainType is 'freight'
     if (options.trainType === 'freight') {
       options = {
@@ -418,6 +424,25 @@ class Game {
       this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
     }
   }
+
+  promptUserForParallelTrack(numSegments, overlappingTrains, cost) {
+    if (numSegments == 0) {
+      return false
+    }
+    const response = window.prompt(
+      `The new train overlaps with existing train(s): ${overlappingTrains}.\n\n` +
+        `Type Y to enable parallel-track mode. Type N to manage collisions manually.\n` +
+        `If you choose parallel-track mode, an additional cost of $${cost} will be incurred for laying the parallel track segments.`,
+      'N'
+    )
+
+    if (!response) {
+      return false
+    }
+
+    return response.trim().toLowerCase().startsWith('y')
+  }
+
 }
 export {
   Game
