@@ -119,20 +119,18 @@ class Game {
     return this.getCurrentTimePeriod()
   }
 
-  addCoach(trainNumber) {
+  addCoach(trainNumber, numCoaches = 1) {
     const train = this.trains[trainNumber - 1]
     if (train) {
-      train.addCoach()
-      this.financials.buyCoach(this.getCurrentTimeIndex(), trainNumber, 1)
+      train.addCoach(numCoaches)
+      this.financials.buyCoach(this.getCurrentTimeIndex(), trainNumber, numCoaches)
     }
   }
 
-  removeCoach(trainNumber) {
+  removeCoach(trainNumber, numCoaches = 1) {
     const train = this.trains[trainNumber - 1]
     if (train) {
-      train.removeCoach()
-      // we do not refund the cost of the coach when it is removed to keep it simple. 
-      // This is a design choice and we can change it later if needed.
+      train.removeCoach(numCoaches)
     }
   }
 
@@ -140,6 +138,10 @@ class Game {
     const train = this.trains[trainNumber - 1]
     if (train) {
       train.upgradeEngine()
+      //after upgrading the engine we need to disable the icon for upgrading the engine for that train. 
+      // document.querySelector(`#upgradeEngineTrain${trainNumber}`).style.display = 'none'
+      // Optionally, you can also add a class to indicate that the engine has been upgraded
+      document.querySelector(`#upgradeEngine${trainNumber}`).classList.add('upgraded')
     }
   }
 

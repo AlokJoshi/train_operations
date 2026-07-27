@@ -1,4 +1,5 @@
 import { Game } from './Game.js'
+import { Track} from './Track.js'
 import { Intersections } from './Intersections.js'
 import { makeDraggable, alpha, getDetailedSegmentsMap, getCommonSegmentsMap } from './utility.js'
 
@@ -56,6 +57,84 @@ function setValidTrackPoints() {
 let intersections = new Intersections(CANVASWIDTH - OFFSET_X * 2, CANVASHEIGHT - OFFSET_Y * 2, gridSize, OFFSET_X, OFFSET_Y)
 
 const game = new Game(ctx, ctxTracks, ctxTemp, gridSize, OFFSET_X, OFFSET_Y)
+
+const controlsRoot = document.querySelector('#controls')
+
+function blurFocusedControlElement() {
+  const activeElement = document.activeElement
+  if (activeElement instanceof HTMLElement && controlsRoot?.contains(activeElement)) {
+    activeElement.blur()
+  }
+}
+
+if (typeof window.swal !== 'undefined' && typeof window.swal.fire === 'function') {
+  const originalSwalFire = window.swal.fire.bind(window.swal)
+  window.swal.fire = (...args) => {
+    blurFocusedControlElement()
+    return originalSwalFire(...args)
+  }
+}
+
+function initializeTrainControlWidgets(maxTrains = 9) {
+  const container = document.querySelector('#trainControlsContainer')
+  const template = document.querySelector('#trainControlTemplate')
+  if (!container || !template) {
+    return
+  }
+
+  container.innerHTML = ''
+  for (let trainNumber = 1; trainNumber <= maxTrains; trainNumber++) {
+    const fragment = template.content.cloneNode(true)
+    const trainControlEl = fragment.querySelector('.trainControl')
+    if (!trainControlEl) {
+      continue
+    }
+
+    trainControlEl.id = `train${trainNumber}`
+    trainControlEl.querySelector('[data-role="label"]').id = `lblTrain${trainNumber}`
+    trainControlEl.querySelector('[data-role="label"]').textContent = `T${trainNumber}`
+    // trainControlEl.querySelector('[data-role="num-coaches"]').id = `lblNumCoaches${trainNumber}`
+
+    const pauseEl = trainControlEl.querySelector('[data-role="pause"]')
+    pauseEl.id = `pauseTrain${trainNumber}`
+    pauseEl.setAttribute('onclick', `startStopTrain(${trainNumber})`)
+
+    const newCountEl = trainControlEl.querySelector('[data-role="new-count"]')
+    newCountEl.id = `newCount${trainNumber}`
+    newCountEl.setAttribute('onchange', `updateNewCount(${trainNumber},event)`)
+    newCountEl.setAttribute('onkeydown', `if(event.key==='Enter'||event.key==='Escape'){this.blur()}`)
+    
+    const upgradeEngineEl = trainControlEl.querySelector('[data-role="upgrade-engine"]')
+    upgradeEngineEl.id = `upgradeEngine${trainNumber}`
+    upgradeEngineEl.setAttribute('onclick', `upgradeEngine(${trainNumber})`)
+
+    const healthEl = trainControlEl.querySelector('[data-role="health"]')
+    healthEl.id = `health${trainNumber}`
+
+    const extendEl = trainControlEl.querySelector('[data-role="extend"]')
+    extendEl.id = `extendTrain${trainNumber}`
+    extendEl.setAttribute('onclick', `extendTrain(${trainNumber})`)
+
+    const removeEl = trainControlEl.querySelector('[data-role="remove"]')
+    removeEl.id = `removeTrain${trainNumber}`
+    removeEl.setAttribute('onclick', `removetrain(${trainNumber})`)
+
+    const extensionControlsEl = trainControlEl.querySelector('[data-role="extension-controls"]')
+    extensionControlsEl.id = `trainExtensionControls${trainNumber}`
+
+    const completeExtensionEl = trainControlEl.querySelector('[data-role="complete-extension"]')
+    completeExtensionEl.id = `completeTrainExtension${trainNumber}`
+    completeExtensionEl.setAttribute('onclick', `completeTrainExtension(${trainNumber})`)
+
+    const cancelExtensionEl = trainControlEl.querySelector('[data-role="cancel-extension"]')
+    cancelExtensionEl.id = `cancelTrainExtension${trainNumber}`
+    cancelExtensionEl.setAttribute('onclick', `cancelTrainExtension(${trainNumber})`)
+
+    container.appendChild(fragment)
+  }
+}
+
+initializeTrainControlWidgets(game.maxTrains)
 
 const collisionCostValueEl = document.querySelector('#collisionCostValue')
 if (collisionCostValueEl) {
@@ -223,6 +302,28 @@ window.addEventListener('load', () => {
     ctx.stroke()
   }
 
+  const drawFilledCircle = (ctx, x, y, radius, color) => {
+    ctx.save()
+    ctx.beginPath()
+    ctx.moveTo(x + radius, y)
+    ctx.arc(x, y, radius, 0, Math.PI * 2)
+    ctx.fillStyle = color
+    ctx.closePath()
+    ctx.fill()
+    ctx.restore()
+  }
+
+  const drawHollowCircle = (ctx, x, y, radius, color) => {
+    ctx.save()
+    ctx.beginPath()
+    ctx.moveTo(x + radius, y)
+    ctx.arc(x, y, radius, 0, Math.PI * 2)
+    ctx.strokeStyle = color
+    ctx.stroke()
+    ctx.closePath()
+    ctx.restore()
+  }
+
   const getActiveTrainExtensionTrainNumber = (fallbackTrainNumber = null) => {
     const resolvedTrainNumber = Number.isInteger(fallbackTrainNumber)
       ? fallbackTrainNumber
@@ -242,7 +343,7 @@ window.addEventListener('load', () => {
 
   const handleTrainHotkeys = (event) => {
 
-    if(!startTrack && !startExtendTrain && !startFlyover && event.key==='Escape') {
+    if (!startTrack && !startExtendTrain && !startFlyover && event.key === 'Escape') {
       ctxMaps.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       return;
     }
@@ -371,7 +472,7 @@ window.addEventListener('load', () => {
         span.textContent = `T${i}`
         const colorConfig = game.TRAINCONFIG[(i - 1) % game.TRAINCONFIG.length]
         span.style.backgroundColor = colorConfig.Color
-        span.style = 'background-color:' + colorConfig.Color + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
+        span.style = 'background-color:' + (game.trains[i - 1]?.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : colorConfig.Color) + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
         span.addEventListener('click', () => {
           //remove 'selected' class from all other spans
           const allSpans = div.querySelectorAll('span')
@@ -526,11 +627,11 @@ window.addEventListener('load', () => {
   const typeOfTrain = document.getElementById('typeoftrain')
   if (typeOfTrain) {
     typeOfTrain.addEventListener('change', (event) => {
-      if(event.target.value=='passenger'){
+      if (event.target.value == 'passenger') {
         //hide the freight train related controls
         document.querySelector('#freightTrainControls').style.display = 'none'
         document.querySelector('#passengerTrainControls').style.display = 'grid'
-      } else if(event.target.value=='freight'){
+      } else if (event.target.value == 'freight') {
         //hide the passenger train related controls
         document.querySelector('#passengerTrainControls').style.display = 'none'
         document.querySelector('#freightTrainControls').style.display = 'grid'
@@ -547,9 +648,37 @@ window.addEventListener('load', () => {
         // console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y}`)
         if ((positionsForExtendTrain.length === 0) && (!validStartingPoints.has(`${x},${y}`))) {
           console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y} but it's not a valid track point`)
+          swal.fire({
+            title: 'Invalid Starting Point',
+            text: `The point at (Row ${alpha((y / gridSize))}, Col ${alpha((x / gridSize))}) is not a valid starting point for track extension.`,
+            icon: 'error',
+            confirmButtonText: 'OK'
+          })
           return
         }
         console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y} and it's a valid starting point for track extension`)
+        // figure out if this point is in the same row or column as the previous point
+        // if it is then we remove the redundant previous point
+        if ((positionsForExtendTrain.length > 0) && !validTrackPoints.has(`${x},${y}`)) {
+          console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y} but it's not a valid starting point`)
+          swal.fire({
+            title: 'Invalid Point',
+            text: `The point at (Row ${alpha((y / gridSize))}, Col ${alpha((x / gridSize))}) is not a valid point for track extension.`,
+            icon: 'error',
+            confirmButtonText: 'OK'
+          })
+          return
+        }
+        if (positionsForExtendTrain.length > 1) {
+          const lastPosition = positionsForExtendTrain[positionsForExtendTrain.length - 1]
+          const secondLastPosition = positionsForExtendTrain[positionsForExtendTrain.length - 2]
+          if (lastPosition.x === secondLastPosition.x && x === lastPosition.x) {
+            positionsForExtendTrain.pop()
+          }
+          if (lastPosition.y === secondLastPosition.y && y === lastPosition.y) {
+            positionsForExtendTrain.pop()
+          }
+        }
         positionsForExtendTrain.push({ x, y })
         updateCanvasTempForExtendTrain()
       }
@@ -562,6 +691,18 @@ window.addEventListener('load', () => {
         if (!validTrackPoints.has(`${x},${y}`)) {
           // console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y} but it's not a valid track point`)
           return
+        }
+        // figure out if this point is in the same row or column as the previous point
+        // if it is then we remove the redundant previous point
+        if (positions.length > 1) {
+          const lastPosition = positions[positions.length - 1]
+          const secondLastPosition = positions[positions.length - 2]
+          if (lastPosition.x === secondLastPosition.x && x === lastPosition.x) {
+            positions.pop()
+          }
+          if (lastPosition.y === secondLastPosition.y && y === lastPosition.y) {
+            positions.pop()
+          }
         }
         positions.push({ x, y })
         updateCanvasTemp(x, y)
@@ -588,7 +729,7 @@ window.addEventListener('load', () => {
           // console.log(`Station added for Train ${selectedTrainNumber} at (${location.x},${location.y})`)
           swal.fire({
             title: `Add Station for Train ${selectedTrainNumber}`,
-            text: `Do you want to add a Station for Train ${selectedTrainNumber} at (Row ${(location.y / gridSize) + 1}, Col ${(location.x / gridSize) + 1})?`,
+            text: `Do you want to add a Station for Train ${selectedTrainNumber} at (Row ${alpha((location.y / gridSize))}, Col ${alpha((location.x / gridSize))})?`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Yes',
@@ -612,7 +753,7 @@ window.addEventListener('load', () => {
         // console.log(`Flyover added at (${(x / gridSize) + 1},${(y / gridSize) + 1})`)
         swal.fire({
           title: `Add Flyover`,
-          text: `Do you want to add a Flyover at (Row ${(y / gridSize) + 1}, Col ${(x / gridSize) + 1})?`,
+          text: `Do you want to add a Flyover at (Row ${alpha((y / gridSize))}, Col ${alpha((x / gridSize))})?`,
           icon: 'question',
           showCancelButton: true,
           confirmButtonText: 'Yes',
@@ -633,8 +774,8 @@ window.addEventListener('load', () => {
   document.querySelector('#canvas_temp').addEventListener('mousemove', (event) => {
     const point = getCanvasPoint(event)
     //console.log(`mouse move event listener added`)
-    if(!startTrack && !startExtendTrain && !startFlyover){
-      if ( (point.x<click_error || point.x>CANVASWIDTH-click_error || point.y<click_error || point.y>CANVASHEIGHT-click_error) && Math.abs(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize - point.x) < click_error && Math.abs(CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize - point.y) < click_error) {
+    if (!startTrack && !startExtendTrain && !startFlyover) {
+      if ((point.x < click_error || point.x > CANVASWIDTH - click_error || point.y < click_error || point.y > CANVASHEIGHT - click_error) && Math.abs(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize - point.x) < click_error && Math.abs(CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize - point.y) < click_error) {
         //draw a horizontal or vertical dashed line on the ctxTemp
         ctxMaps.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
         ctxMaps.save()
@@ -836,23 +977,18 @@ window.addEventListener('load', () => {
   drawGrid(ctxTracks)
 
   function updateCanvasTempForExtendTrain() {
-
     //find out the train number
     const el = document.querySelector('#buttonGroup1')
+    if (!el) {
+      return
+    }
     const trainNumber = Number.parseInt(el.dataset.extendingTrainNumber, 10)
 
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
     //for each of the positions for extend train draw a small circle on ctxTemp
     positionsForExtendTrain.forEach(position => {
       const { x, y } = position
-      ctxTemp.save()
-      ctxTemp.beginPath()
-      ctxTemp.moveTo(x, y)
-      ctxTemp.fillStyle = 'orange'
-      ctxTemp.arc(x, y, 7, 0, Math.PI * 2)
-      ctxTemp.closePath()
-      ctxTemp.fill()
-      ctxTemp.restore()
+      drawFilledCircle(ctxTemp, x, y, 7, 'orange')
     })
 
     //clear the set and set it again with new valid points
@@ -910,12 +1046,7 @@ window.addEventListener('load', () => {
         for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
           if ((decreasingRow && row < lastRow - 1) || (increasingRow && row > lastRow + 1)) {
             //drawCircle
-            ctxTemp.beginPath()
-            ctxTemp.moveTo(last_x + click_error, row * gridSize)
-            ctxTemp.arc(last_x, row * gridSize, click_error, 0, Math.PI * 2)
-            ctxTemp.strokeStyle = `rgb(9, 108, 2)`
-            ctxTemp.closePath()
-            ctxTemp.stroke()
+            drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
             validTrackPoints.add(`${last_x},${row * gridSize}`)
           }
         }
@@ -923,53 +1054,97 @@ window.addEventListener('load', () => {
         for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
           if ((decreasingCol && col < lastCol - 1) || (increasingCol && col > lastCol + 1)) {
             //drawCircle
-            ctxTemp.beginPath()
-            ctxTemp.moveTo(col * gridSize + click_error, last_y)
-            ctxTemp.arc(col * gridSize, last_y, click_error, 0, Math.PI * 2)
-            ctxTemp.strokeStyle = `rgb(9,108,2)`
-            ctxTemp.closePath()
-            ctxTemp.stroke()
+            drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
             validTrackPoints.add(`${col * gridSize},${last_y}`)
           }
         }
       }
+      // display the valid track points for debugging
+      console.log('Valid track points after first click:', Array.from(validTrackPoints))
       return
     }
 
+    if(increasingCol||decreasingCol) {
+      if(Math.abs(lastCol - (x_before_last_x / gridSize)) >= 4 || (positionsForExtendTrain.length <=2)) {
+        for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
+          // if (row >= lastRow - 2||row<=lastRow+2 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
+          if (Math.abs(row - lastRow) < 4) {
+            //go to next iteration since we want only gradual change in track direction and not sharp turns
+            continue
+          } else {
+            //drawCircle
+            drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
+            validTrackPoints.add(`${last_x},${row * gridSize}`)
+          }
+        }
+      }
+    
+      for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
+        if ((increasingCol && (col > lastCol)) || (decreasingCol && (col < lastCol))) {
+          drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
+          validTrackPoints.add(`${col * gridSize},${last_y}`)
+        }
+      }
+    }
 
-    for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
-      if (row == lastRow || row == lastRow - 1 || row == lastRow + 1 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
-        //go to next iteration since we want only gradual change in track direction and not sharp turns
-        continue
-      } else {
-        //drawCircle
-        ctxTemp.beginPath()
-        ctxTemp.moveTo(last_x + click_error, row * gridSize)
-        ctxTemp.arc(last_x, row * gridSize, click_error, 0, Math.PI * 2)
-        ctxTemp.lineWidth = 5
-        ctxTemp.strokeStyle = `rgb(9,108,2)`
-        ctxTemp.closePath()
-        ctxTemp.stroke()
+    if(increasingRow||decreasingRow) {
+      if(Math.abs(lastRow - (y_before_last_y / gridSize)) >= 4 || (positionsForExtendTrain.length <=2)) {
+        for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
+          // if (row >= lastRow - 2||row<=lastRow+2 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
+          if (Math.abs(col - lastCol) < 4) {
+            //go to next iteration since we want only gradual change in track direction and not sharp turns
+            continue
+          } else {
+            //drawCircle
+            drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
+            validTrackPoints.add(`${col * gridSize},${last_y}`)
+          }
+        }
+      }
+    
+      for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
+        if ((increasingRow && (row > lastRow)) || (decreasingRow && (row < lastRow))) {
+          drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
+          validTrackPoints.add(`${last_x},${row * gridSize}`)
+        }
+      }
+    }
+
+    // In case the user wants to shorten the last step so that atleast 2 grid segments remain, we might need to handle that logic here.
+    if(increasingRow){
+      for(let row = y_before_last_y / gridSize + 2; row < lastRow; row++) {
+        // color these poins red, since they imply finishing the track specification.
+        drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
         validTrackPoints.add(`${last_x},${row * gridSize}`)
       }
     }
-
-    for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
-      if (col == lastCol || col == lastCol - 1 || col == lastCol + 1 || (x_before_last_x !== null && ((increasingCol && col < lastCol) || (decreasingCol && col > lastCol)))) {
-        //go to next iteration since we want only gradual change in track direction and not sharp turns
-        continue
-      } else {
-        //drawCircle
-        ctxTemp.beginPath()
-        ctxTemp.moveTo(col * gridSize + click_error, last_y)
-        ctxTemp.arc(col * gridSize, last_y, click_error, 0, Math.PI * 2)
-        ctxTemp.lineWidth = 5
-        ctxTemp.strokeStyle = `rgb(9,108,2)`
-        ctxTemp.closePath()
-        ctxTemp.stroke()
+    if(decreasingRow){
+      for(let row = y_before_last_y / gridSize - 2; row > lastRow; row--) {
+        // color these poins red, since they imply finishing the track specification.
+        drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
+        validTrackPoints.add(`${last_x},${row * gridSize}`)
+      }
+    }
+    if(increasingCol){
+      for(let col = x_before_last_x / gridSize   + 2; col < lastCol; col++) {
+        // color these poins red, since they imply finishing the track specification.
+        drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
         validTrackPoints.add(`${col * gridSize},${last_y}`)
       }
     }
+    if(decreasingCol){
+      for(let col = x_before_last_x / gridSize - 2; col > lastCol; col--) {
+        // color these poins red, since they imply finishing the track specification.
+        drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
+        validTrackPoints.add(`${col * gridSize},${last_y}`)
+      }
+    }
+
+    // display the valid track points for debugging
+    console.log('Valid track points after subsequent click:', Array.from(validTrackPoints))
+
+    const tempTrack = new Track(ctxTemp,positionsForExtendTrain)
+    tempTrack.draw()
   }
 
   function updateCanvasTemp() {
@@ -1010,7 +1185,7 @@ window.addEventListener('load', () => {
     const decreasingCol = x_before_last_x !== null && last_x < x_before_last_x
 
     for (let row = 0; row <= CANVASHEIGHT / gridSize; row++) {
-      
+
       if (increasingRow && row > lastRow) {
         drawValidTrackPoint(ctxTemp, last_x, row * gridSize, click_error)
         validTrackPoints.add(`${last_x},${row * gridSize}`)
@@ -1025,23 +1200,23 @@ window.addEventListener('load', () => {
       }
 
     }
-    
+
 
     for (let col = 0; col <= CANVASWIDTH / gridSize; col++) {
 
       if (increasingCol && col > lastCol) {
-        drawValidTrackPoint(ctxTemp,col * gridSize, last_y, click_error)
+        drawValidTrackPoint(ctxTemp, col * gridSize, last_y, click_error)
         validTrackPoints.add(`${col * gridSize},${last_y}`)
       }
       else if (decreasingCol && col < lastCol) {
-        drawValidTrackPoint(ctxTemp,col * gridSize, last_y, click_error)
+        drawValidTrackPoint(ctxTemp, col * gridSize, last_y, click_error)
         validTrackPoints.add(`${col * gridSize},${last_y}`)
       }
       else if (!increasingCol && !decreasingCol && (col < lastCol - 3 || col > lastCol + 3)) {
-        drawValidTrackPoint(ctxTemp,col * gridSize, last_y, click_error)
+        drawValidTrackPoint(ctxTemp, col * gridSize, last_y, click_error)
         validTrackPoints.add(`${col * gridSize},${last_y}`)
       }
-      
+
     }
   }
 
@@ -1144,10 +1319,9 @@ window.addEventListener('load', () => {
   }
   window.removetrain = (trainnumber) => {
     const train = game.trains[trainnumber - 1]
-    const trainName = train ? train.name : `Train ${trainnumber}`
     swal.fire({
-      title: `Remove ${trainName}`,
-      text: `Are you sure you want to remove ${trainName}? This action cannot be undone. Also please note that 
+      title: `Remove Train T${trainnumber}`,
+      text: `Are you sure you want to remove Train T${trainnumber}? This action cannot be undone. Also please note that 
       you will only recover the deperciated cost of coaches and engine but not the track.`,
       icon: 'warning',
       showCancelButton: true,
@@ -1169,9 +1343,9 @@ window.addEventListener('load', () => {
     if (positions.length < 2) {
       startTrack = false
       if (positions.length === 1) {
-        new swal(`You have specified a starting point and no ending point. To create a track, you need to specify at least two points.`)
+        swal.fire(`You have specified a starting point and no ending point. To create a track, you need to specify at least two points.`)
       } else {
-        new swal(`You have not specified any points for the track. To create a track, you need to specify at least two points.`)
+        swal.fire(`You have not specified any points for the track. To create a track, you need to specify at least two points.`)
       }
       document.querySelector('#startTrack').style.display = 'block'
       ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
@@ -1180,12 +1354,15 @@ window.addEventListener('load', () => {
     if (positions[0].x === positions[positions.length - 1].x &&
       positions[0].y === positions[positions.length - 1].y) {
       startTrack = false
-      new swal(`The starting point and ending point of the track cannot be the same. Please specify different points for the track.`)
+      swal.fire(`The starting point and ending point of the track cannot be the same. Please specify different points for the track.`)
       document.querySelector('#startTrack').style.display = 'block'
       ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       return
     }
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+
+    
+
     // const speedEl = document.querySelector('#speed')
     const numCoachesEl = document.querySelector('#numcoaches')
     const numFreightWagonsEl = document.querySelector('#numfreightwagons')
@@ -1211,7 +1388,7 @@ window.addEventListener('load', () => {
     const trainCost = trackCost + numCoaches * (trainType === 'freight' ? game.getFreightWagonCost() : game.getCoachCost()) + game.getEngineCost()
       + 2 * game.getStationCost() // adding 2 stations by default for each train
     if (trainCost > game.getCashInHand()) {
-      new swal(`You do not have enough funds to add this train. You need $${trainCost.toLocaleString('en-US')} but you only have $${game.getCashInHand().toLocaleString('en-US')}.`)
+      swal.fire(`You do not have enough funds to add this train. You need $${trainCost.toLocaleString('en-US')} but you only have $${game.getCashInHand().toLocaleString('en-US')}.`)
       startTrack = false
       document.querySelector('#startTrack').style.display = 'block'
       return
@@ -1242,6 +1419,19 @@ window.addEventListener('load', () => {
     if (lblNumCoaches) {
       lblNumCoaches.textContent = numCoaches
     }
+
+    //we also update the options in the select box
+    const selectAddEl = document.querySelector(`#selectAdd${trainNumber}`)
+    if (selectAddEl) {
+      selectAddEl.innerHTML = ''
+      for(let i = 1; i<=Train.maxNumCoaches-numCoaches ; i++) {
+        const option = document.createElement('option')
+        option.value = i
+        option.textContent = i
+        selectAddEl.appendChild(option)
+      }
+      addSelect.value = trainType
+    }
   }
 
   const trainTypeSelect = document.querySelector('#typeoftrain')
@@ -1263,14 +1453,137 @@ window.addEventListener('load', () => {
   }
   syncTrainTypeInputs()
 
+  window.updateNewCount = (trainNumber, event) => {
+    const train = game.trains[trainNumber - 1]
+    if (!train || !event?.target) {
+      return
+    }
 
+    const countInput = event.target
+    const blurCountInput = () => {
+      if (countInput instanceof HTMLElement) {
+        countInput.blur()
+      }
+    }
 
-  window.addCoach = function (trainNumber) {
-    game.addCoach(trainNumber)
+    const oldValue = train.numCoaches
+    const newValue = Number.parseInt(countInput.value, 10)
+    const minAllowed = 2
+    const maxAllowed = train.trainType === 'freight'
+      ? game.getMaxNumFreightWagons()
+      : game.getMaxNumCoaches()
+
+    if (!Number.isInteger(newValue) || newValue < minAllowed || newValue > maxAllowed) {
+      countInput.value = oldValue
+      blurCountInput()
+      return
+    }
+
+    if (newValue === oldValue) {
+      blurCountInput()
+      return
+    }
+
+    if (newValue > oldValue) {
+      game.addCoach(trainNumber, newValue - oldValue)
+      blurCountInput()
+      return
+    }
+
+    game.removeCoach(trainNumber, oldValue - newValue)
+    blurCountInput()
   }
 
+  window.addCoach = function (trainNumber) {
+    const train = game.trains[trainNumber - 1]
+    if (!train) {
+      console.error(`Train with number ${trainNumber} not found`)
+      return
+    }
+    const additionalAddPassengerEl = document.querySelector(`#additionalAddPassenger${trainNumber}`)
+    const additionalAddFreightEl = document.querySelector(`#additionalAddFreight${trainNumber}`)
+    const additionalSubtractPassengerEl = document.querySelector(`#additionalSubtractPassenger${trainNumber}`)
+    const additionalSubtractFreightEl = document.querySelector(`#additionalSubtractFreight${trainNumber}`)
+    if (train.trainType === 'passenger') {
+      if (additionalAddPassengerEl) {
+        additionalAddPassengerEl.style.display = 'flex'
+        setTimeout(() => {
+          additionalAddPassengerEl.style.display = 'none'
+        }, 5000)
+      }
+      if (additionalAddFreightEl) {
+        additionalAddFreightEl.style.display = 'none'
+      }
+      if (additionalSubtractPassengerEl) {
+        additionalSubtractPassengerEl.style.display = 'none'
+      }
+      if (additionalSubtractFreightEl) {
+        additionalSubtractFreightEl.style.display = 'none'
+      }
+    } else if (train.trainType === 'freight') {
+      if (additionalAddPassengerEl) {
+        additionalAddPassengerEl.style.display = 'none'
+      }
+      if (additionalAddFreightEl) {
+        additionalAddFreightEl.style.display = 'flex'
+        setTimeout(() => {
+          additionalAddFreightEl.style.display = 'none'
+        }, 5000)
+      }
+      if (additionalSubtractPassengerEl) {
+        additionalSubtractPassengerEl.style.display = 'none'
+      }
+      if (additionalSubtractFreightEl) {
+        additionalSubtractFreightEl.style.display = 'none'
+      }
+    }
+    // game.addCoach(trainNumber)
+  }
+  
   window.removeCoach = function (trainNumber) {
-    game.removeCoach(trainNumber)
+    const train = game.trains[trainNumber - 1]
+    if (!train) {
+      console.error(`Train with number ${trainNumber} not found`)
+      return
+    }
+    const additionalAddPassengerEl = document.querySelector(`#additionalAddPassenger${trainNumber}`)
+    const additionalAddFreightEl = document.querySelector(`#additionalAddFreight${trainNumber}`)
+    const additionalSubtractPassengerEl = document.querySelector(`#additionalSubtractPassenger${trainNumber}`)
+    const additionalSubtractFreightEl = document.querySelector(`#additionalSubtractFreight${trainNumber}`)
+    if (train.trainType === 'passenger') {
+      if (additionalAddPassengerEl) {
+        additionalAddPassengerEl.style.display = 'none'
+      }
+      if (additionalAddFreightEl) {
+        additionalAddFreightEl.style.display = 'none'
+      }
+      if (additionalSubtractPassengerEl) {
+        additionalSubtractPassengerEl.style.display = 'flex'
+        setTimeout(() => {
+          additionalSubtractPassengerEl.style.display = 'none'
+        }, 5000)
+      }
+      if (additionalSubtractFreightEl) {
+        additionalSubtractFreightEl.style.display = 'none'
+      }
+    } else if (train.trainType === 'freight') {
+      if (additionalAddPassengerEl) {
+        additionalAddPassengerEl.style.display = 'none'
+      }
+      if (additionalAddFreightEl) {
+        additionalAddFreightEl.style.display = 'none'
+      }
+      if (additionalSubtractPassengerEl) {
+        additionalSubtractPassengerEl.style.display = 'none'
+      }
+      if (additionalSubtractFreightEl) {
+        additionalSubtractFreightEl.style.display = 'flex'
+        setTimeout(() => {
+          additionalSubtractFreightEl.style.display = 'none'
+        }, 5000)
+      }
+    }
+    // game.removeCoach(trainNumber)
   }
 
   window.upgradeEngine = function (trainNumber) {
@@ -1495,7 +1808,7 @@ function drawGrid(ctx) {
 }
 
 async function showCustomAlert(message) {
-  new swal({
+  swal.fire({
     title: 'Train Operations-Alert',
     text: message
   });
@@ -1519,7 +1832,7 @@ function displayFinancialResults() {
     if (revenue > 0 || financialSummary.totalExpenses[index] > 0) {
       const colorConfig = game.TRAINCONFIG[(index) % game.TRAINCONFIG.length]
       const row = document.createElement('tr')
-      row.style.backgroundColor = game.trains[index]?.typeOfTrain === 'freight' ? 'rgba(80,80,80,0.75)' : colorConfig.Color
+      row.style.backgroundColor = game.trains[index]?.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : colorConfig.Color
       // row.style.color = colorConfig.textColor
       const expenses = financialSummary.totalExpenses[index]
       const profit = financialSummary.profit[index]

@@ -34,281 +34,36 @@
           <label style="font-size: 1.2em;" for="startPauseBtn">Start/Pause All:</label>
           <i class="fas fa-play" id="startPauseBtn" title="Start/Pause All Trains" style="cursor:pointer"></i>
         </div>
-        <div id="train1" class="trainControl" style="display:grid">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-            <span id="lblTrain1">T1</span>
-            <i class="fas fa-pause" title="Pause Train" id="pauseTrain1" style="cursor:pointer"
-              onclick="startStopTrain(1)"></i>
-            <span style="width:15px;" id="lblNumCoaches1">00</span>
-            <i class="fas fa-plus" title="Add Coach" id="addCoach1" style="cursor:pointer" onclick="addCoach(1)"></i>
-            <i class="fas fa-minus" title="Remove Coach" id="removeCoach1" style="cursor:pointer"
-              onclick="removeCoach(1)"></i>
-            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine1" style="cursor:pointer"
-              onclick="upgradeEngine(1)"></i>
-            <div style="width:20px; height:20px; background-color:red;">
-              <div id="health1" class="health"></div>
+        <div id="trainControlsContainer"></div>
+        <!-- Template for individual train controls. It is intialized in initializeTrainControlWidgets function -->
+        <template id="trainControlTemplate">
+          <div class="trainControl">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span data-role="label"></span>
+              <i class="fas fa-pause" title="Pause Train" style="cursor:pointer" data-role="pause"></i>
+              <input data-role="new-count" 
+                style="font-size:0.8em; width:75px;" 
+                title="Type the revised coach/wagon count and press Enter or Escape"
+                type="number" />
+              
+              <i class="fas fa-bolt" title="Upgrade Engine" style="cursor:pointer" data-role="upgrade-engine"></i>
+              <div class="healthWrap" >
+                <div class="health" 
+                style="border:1px solid black;" 
+                title="If this train is damaged, the box will be red" data-role="health"></div>
+              </div>
+              <i class="fas fa-expand-alt" title="Extend Train" style="cursor:pointer" data-role="extend"></i>
+              <i class="fas fa-times" title="Remove Train" style="cursor:pointer" data-role="remove"></i>
             </div>
-            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain1" style="cursor:pointer"
-              onclick="extendTrain(1)"></i>
-            <i class="fas fa-times" title="Remove Train" id="removeTrain1" style="cursor:pointer"
-              onclick="removetrain(1)"></i>
-          </div>
-          <div id="trainExtensionControls1" style="display:none; justify-content:space-evenly;">
-            <span>Extend:</span>
-            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(1)"
-              id="completeTrainExtension1" style="cursor:pointer;"></i>
-            <span>Cancel:</span>
-            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(1)"
-              id="cancelTrainExtension1" style="cursor:pointer;"></i>
-          </div>
-        </div>
-        <div id="train2" class="trainControl">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-
-            <span id="lblTrain2">T2</span>
-            <i class="fas fa-pause" title="Pause Train" id="pauseTrain2" style="cursor:pointer"
-              onclick="startStopTrain(2)"></i>
-            <span style="width:15px;" id="lblNumCoaches2">00</span>
-
-            <i class="fas fa-plus" title="Add Coach" id="addCoach2" style="cursor:pointer" onclick="addCoach(2)"></i>
-            <i class="fas fa-minus" title="Remove Coach" id="removeCoach2" style="cursor:pointer"
-              onclick="removeCoach(2)"></i>
-            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine2" style="cursor:pointer"
-              onclick="upgradeEngine(2)"></i>
-            <div style="width:20px; height:20px; background-color:red;">
-
-              <div id="health2" class="health"></div>
+            
+            <div style="display:none; justify-content:space-evenly;" data-role="extension-controls">
+              <span>Extend:</span>
+              <i class="fas fa-check" title="Complete Train Extension" style="cursor:pointer;" data-role="complete-extension"></i>
+              <span>Cancel:</span>
+              <i class="fas fa-times" title="Cancel Train Extension" style="cursor:pointer;" data-role="cancel-extension"></i>
             </div>
-            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain2" style="cursor:pointer"
-              onclick="extendTrain(2)"></i>
-            <i class="fas fa-times" title="Remove Train" id="removeTrain2" style="cursor:pointer"
-              onclick="removetrain(2)"></i>
           </div>
-          <div id="trainExtensionControls2" style="display:none; justify-content:space-evenly;">
-            <span>Extend:</span>
-            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(2)"
-              id="completeTrainExtension2" style="cursor:pointer;"></i>
-            <span>Cancel:</span>
-            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(2)"
-              id="cancelTrainExtension2" style="cursor:pointer;"></i>
-          </div>
-        </div>
-        <div id="train3" class="trainControl">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-
-            <span id="lblTrain3">T3</span>
-            <i class="fas fa-pause" title="Pause Train" id="pauseTrain3" style="cursor:pointer"
-              onclick="startStopTrain(3)"></i>
-            <span style="width:15px;" id="lblNumCoaches3">00</span>
-
-            <i class="fas fa-plus" title="Add Coach" id="addCoach3" style="cursor:pointer" onclick="addCoach(3)"></i>
-            <i class="fas fa-minus" title="Remove Coach" id="removeCoach3" style="cursor:pointer"
-              onclick="removeCoach(3)"></i>
-            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine3" style="cursor:pointer"
-              onclick="upgradeEngine(3)"></i>
-
-            <div style="width:20px; height:20px; background-color:red;">
-
-              <div id="health3" class="health"></div>
-            </div>
-            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain3" style="cursor:pointer"
-              onclick="extendTrain(3)"></i>
-            <i class="fas fa-times" title="Remove Train" id="removeTrain3" style="cursor:pointer"
-              onclick="removetrain(3)"></i>
-          </div>
-          <div id="trainExtensionControls3" style="display:none; justify-content:space-evenly;">
-            <span>Extend:</span>
-            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(3)"
-              id="completeTrainExtension3" style="cursor:pointer;"></i>
-            <span>Cancel:</span>
-            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(3)"
-              id="cancelTrainExtension3" style="cursor:pointer;"></i>
-          </div>
-        </div>
-        <div id="train4" class="trainControl">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-
-            <span id="lblTrain4">T4</span>
-            <i class="fas fa-pause" title="Pause Train" id="pauseTrain4" style="cursor:pointer"
-              onclick="startStopTrain(4)"></i>
-            <span style="width:15px;" id="lblNumCoaches4">00</span>
-
-            <i class="fas fa-plus" title="Add Coach" id="addCoach4" style="cursor:pointer" onclick="addCoach(4)"></i>
-            <i class="fas fa-minus" title="Remove Coach" id="removeCoach4" style="cursor:pointer"
-              onclick="removeCoach(4)"></i>
-            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine4" style="cursor:pointer"
-              onclick="upgradeEngine(4)"></i>
-            <div style="width:20px; height:20px; background-color:red;">
-
-              <div id="health4" class="health"></div>
-            </div>
-            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain4" style="cursor:pointer"
-              onclick="extendTrain(4)"></i>
-            <i class="fas fa-times" title="Remove Train" id="removeTrain4" style="cursor:pointer"
-              onclick="removetrain(4)"></i>
-          </div>
-          <div id="trainExtensionControls4" style="display:none; justify-content:space-evenly;">
-            <span>Extend:</span>
-            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(4)"
-              id="completeTrainExtension4" style="cursor:pointer;"></i>
-            <span>Cancel:</span>
-            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(4)"
-              id="cancelTrainExtension4" style="cursor:pointer;"></i>
-          </div>
-        </div>
-        <div id="train5" class="trainControl">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-
-            <span id="lblTrain5">T5</span>
-            <i class="fas fa-pause" title="Pause Train" id="pauseTrain5" style="cursor:pointer"
-              onclick="startStopTrain(5)"></i>
-            <span style="width:15px;" id="lblNumCoaches5">00</span>
-
-            <i class="fas fa-plus" title="Add Coach" id="addCoach5" style="cursor:pointer" onclick="addCoach(5)"></i>
-            <i class="fas fa-minus" title="Remove Coach" id="removeCoach5" style="cursor:pointer"
-              onclick="removeCoach(5)"></i>
-            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine5" style="cursor:pointer"
-              onclick="upgradeEngine(5)"></i>
-            <div style="width:20px; height:20px; background-color:red;">
-
-              <div id="health5" class="health"></div>
-            </div>
-            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain5" style="cursor:pointer"
-              onclick="extendTrain(5)"></i>
-            <i class="fas fa-times" title="Remove Train" id="removeTrain5" style="cursor:pointer"
-              onclick="removetrain(5)"></i>
-          </div>
-          <div id="trainExtensionControls5" style="display:none; justify-content:space-evenly;">
-            <span>Extend:</span>
-            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(5)"
-              id="completeTrainExtension5" style="cursor:pointer;"></i>
-            <span>Cancel:</span>
-            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(5)"
-              id="cancelTrainExtension5" style="cursor:pointer;"></i>
-          </div>
-        </div>
-        <div id="train6" class="trainControl">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-
-            <span id="lblTrain6">T6</span>
-            <i class="fas fa-pause" title="Pause Train" id="pauseTrain6" style="cursor:pointer"
-              onclick="startStopTrain(6)"></i>
-            <span style="width:15px;" id="lblNumCoaches6">00</span>
-            <i class="fas fa-plus" title="Add Coach" id="addCoach6" style="cursor:pointer" onclick="addCoach(6)"></i>
-            <i class="fas fa-minus" title="Remove Coach" id="removeCoach6" style="cursor:pointer"
-              onclick="removeCoach(6)"></i>
-            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine6" style="cursor:pointer"
-              onclick="upgradeEngine(6)"></i>
-            <div style="width:20px; height:20px; background-color:red;">
-
-              <div id="health6" class="health"></div>
-            </div>
-            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain6" style="cursor:pointer"
-              onclick="extendTrain(6)"></i>
-            <i class="fas fa-times" title="Remove Train" id="removeTrain6" style="cursor:pointer"
-              onclick="removetrain(6)"></i>
-          </div>
-          <div id="trainExtensionControls6" style="display:none; justify-content:space-evenly;">
-            <span>Extend:</span>
-            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(6)"
-              id="completeTrainExtension6" style="cursor:pointer;"></i>
-            <span>Cancel:</span>
-            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(6)"
-              id="cancelTrainExtension6" style="cursor:pointer;"></i>
-          </div>
-        </div>
-        <div id="train7" class="trainControl">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-
-            <span id="lblTrain7">T7</span>
-            <i class="fas fa-pause" title="Pause Train" id="pauseTrain7" style="cursor:pointer"
-              onclick="startStopTrain(7)"></i>
-            <span style="width:15px;" id="lblNumCoaches7">00</span>
-
-            <i class="fas fa-plus" title="Add Coach" id="addCoach7" style="cursor:pointer" onclick="addCoach(7)"></i>
-            <i class="fas fa-minus" title="Remove Coach" id="removeCoach7" style="cursor:pointer"
-              onclick="removeCoach(7)"></i>
-            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine7" style="cursor:pointer"
-              onclick="upgradeEngine(7)"></i>
-            <div style="width:20px; height:20px; background-color:red;">
-
-              <div id="health7" class="health"></div>
-            </div>
-            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain7" style="cursor:pointer"
-              onclick="extendTrain(7)"></i>
-            <i class="fas fa-times" title="Remove Train" id="removeTrain7" style="cursor:pointer"
-              onclick="removetrain(7)"></i>
-          </div>
-          <div id="trainExtensionControls7" style="display:none; justify-content:space-evenly;">
-            <span>Extend:</span>
-            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(7)"
-              id="completeTrainExtension7" style="cursor:pointer;"></i>
-            <span>Cancel:</span>
-            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(7)"
-              id="cancelTrainExtension7" style="cursor:pointer;"></i>
-          </div>
-        </div>
-        <div id="train8" class="trainControl">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-
-            <span id="lblTrain8">T8</span>
-            <i class="fas fa-pause" title="Pause Train" id="pauseTrain8" style="cursor:pointer"
-              onclick="startStopTrain(8)"></i>
-            <span style="width:15px;" id="lblNumCoaches8">00</span>
-
-            <i class="fas fa-plus" title="Add Coach" id="addCoach8" style="cursor:pointer" onclick="addCoach(8)"></i>
-            <i class="fas fa-minus" title="Remove Coach" id="removeCoach8" style="cursor:pointer"
-              onclick="removeCoach(8)"></i>
-            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine8" style="cursor:pointer"
-              onclick="upgradeEngine(8)"></i>
-            <div style="width:20px; height:20px; background-color:red;">
-
-              <div id="health8" class="health"></div>
-            </div>
-            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain8" style="cursor:pointer"
-              onclick="extendTrain(8)"></i>
-            <i class="fas fa-times" title="Remove Train" id="removeTrain8" style="cursor:pointer"
-              onclick="removetrain(8)"></i>
-          </div>
-          <div id="trainExtensionControls8" style="display:none; justify-content:space-evenly;">
-            <span>Extend:</span>
-            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(8)"
-              id="completeTrainExtension8" style="cursor:pointer;"></i>
-            <span>Cancel:</span>
-            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(8)"
-              id="cancelTrainExtension8" style="cursor:pointer;"></i>
-          </div>
-        </div>
-        <div id="train9" class="trainControl">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-
-            <span id="lblTrain9">T9</span>
-            <i class="fas fa-pause" title="Pause Train" id="pauseTrain9" style="cursor:pointer"
-              onclick="startStopTrain(9)"></i>
-            <span style="width:15px;" id="lblNumCoaches9">00</span>
-
-            <i class="fas fa-plus" title="Add Coach" id="addCoach9" style="cursor:pointer" onclick="addCoach(9)"></i>
-            <i class="fas fa-minus" title="Remove Coach" id="removeCoach9" style="cursor:pointer"
-              onclick="removeCoach(9)"></i>
-            <i class="fas fa-bolt" title="Upgrade Engine" id="upgradeEngine9" style="cursor:pointer"
-              onclick="upgradeEngine(9)"></i>
-            <div style="width:20px; height:20px; background-color:red;">
-              <div id="health9" class="health"></div>
-            </div>
-            <i class="fas fa-expand-alt" title="Extend Train" id="extendTrain9" style="cursor:pointer"
-              onclick="extendTrain(9)"></i>
-            <i class="fas fa-times" title="Remove Train" id="removeTrain9" style="cursor:pointer"
-              onclick="removetrain(9)"></i>
-          </div>
-          <div id="trainExtensionControls9" style="display:none; justify-content:space-evenly;">
-            <span>Extend:</span>
-            <i class="fas fa-check" title="Complete Train Extension" onclick="completeTrainExtension(9)"
-              id="completeTrainExtension9" style="cursor:pointer;"></i>
-            <span>Cancel:</span>
-            <i class="fas fa-times" title="Cancel Train Extension" onclick="cancelTrainExtension(9)"
-              id="cancelTrainExtension9" style="cursor:pointer;"></i>
-          </div>
-        </div>
+        </template>
         <label for="newTrainSpecification">New Train Specification:</label>
         <div id="newTrainSpecification" style="padding:10px; border:1px solid #ccc; border-radius:5px;">
           <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">

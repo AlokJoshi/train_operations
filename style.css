@@ -3,6 +3,10 @@
   padding:0;
 }
 
+:root {
+  --train-control-size: 30px;
+}
+
 #gameStage{
   position: relative;
   width: 2448px;
@@ -58,6 +62,30 @@ button:hover{
   height:20px;
   background-color:green;
 } 
+
+#trainControlsContainer .trainControl i {
+  width: var(--train-control-size);
+  height: var(--train-control-size);
+  font-size: calc(var(--train-control-size) - 2px);
+  line-height: var(--train-control-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+#trainControlsContainer .healthWrap {
+  width: var(--train-control-size);
+  height: var(--train-control-size);
+  display: inline-flex;
+  align-items: stretch;
+  background-color: red;
+}
+
+#trainControlsContainer .health {
+  width: 100%;
+  height: 100%;
+}
 
 #controls {
   position: fixed; /* Or relative if it's a child of a fixed element */
@@ -229,7 +257,7 @@ p {
   margin-bottom: 10px;
 }
 .dialogContent div {
-  margin-bottom: 10px;
+  margin-bottom: 5px;
   font-size: 1.2em;
 }
 
@@ -264,6 +292,14 @@ ul li {
 #infoForTrain.selected {
   font-weight: bold;
   border: 2px solid #fff;
+}
+.upgraded {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.add-subtract-coaches {
+  cursor: pointer;
 }
 
 @media (max-width: 900px) {
