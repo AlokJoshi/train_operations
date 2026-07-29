@@ -42,7 +42,7 @@ class Station{
     this.ctx.stroke()
     this.ctx.font = 'bold 16px Arial'
     this.ctx.fillStyle = 'black'
-    let xOffset = 0
+    let xOffset = -10
     let yOffset = 0
     if(this.x==0){
       xOffset = 10

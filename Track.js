@@ -10,7 +10,7 @@ class Track {
     }
     return length
   }
-  constructor(ctxTracks, positions, trainName, gridSize = 100) {
+  constructor(ctxTracks, positions, trainName, gridSize = 100, overlapMatches = []) {
     //positions is an array of position objects
     //each position object is {x:?,y:?}
     this.positions = positions
@@ -22,6 +22,7 @@ class Track {
     this.trainName = trainName
     this.gridSize = gridSize
     this.stations = new Stations()
+    this.overlapMatches = overlapMatches
     this.possibleFlyoverLocations = []
     //this.draw()
     //this.updateSegments()
@@ -37,11 +38,11 @@ class Track {
     // check if the track is extended from starting point or ending point and add the new positions accordingly.
     const firstPosition = this.positions[0]
     const lastPosition = this.positions[this.positions.length - 1]
-    const firstExtendPosition = positionsForExtendTrain[0].x==firstPosition.x && positionsForExtendTrain[0].y==firstPosition.y
-    const lastExtendPosition = positionsForExtendTrain[0].x==lastPosition.x && positionsForExtendTrain[0].y==lastPosition.y
-    
+    const firstExtendPosition = positionsForExtendTrain[0].x == firstPosition.x && positionsForExtendTrain[0].y == firstPosition.y
+    const lastExtendPosition = positionsForExtendTrain[0].x == lastPosition.x && positionsForExtendTrain[0].y == lastPosition.y
+
     //the train does not have a station at this position currently but it will require a station at this position after extension. So we need to add a station at this position before extension.
-    const stationRequiredAt = positionsForExtendTrain[positionsForExtendTrain.length - 1] 
+    const stationRequiredAt = positionsForExtendTrain[positionsForExtendTrain.length - 1]
 
 
     if (!firstExtendPosition && !lastExtendPosition) {
@@ -161,34 +162,34 @@ class Track {
       this.newPositions.pop()
 
       //p1 and p2 are two additional points
-      const p0 = {x:p.x,y:p.y}
+      const p0 = { x: p.x, y: p.y }
       // const p1 = {x:p.x,y:p.y}
       // const p2 = {x:p.x,y:p.y}
-      const p3 = {x:p.x,y:p.y}
-      
+      const p3 = { x: p.x, y: p.y }
+
       let n = 10 //number of points to be added between two straight lines
       let deltax = new Array(n).fill(0)
       let deltay = new Array(n).fill(0)
       //check for left to right movement
-      let theta = Math.PI/(2*(n+1))
+      let theta = Math.PI / (2 * (n + 1))
       if (pp.x < p.x && p.x == c.x && pp.y == p.y) {
         //previousModifiedPosition x value is decreased by tr
         p0.x -= tr
         //check for right down
         if (p.y < c.y) {
-          
-          for(let i=0;i<n;i++){
-            deltax[i] = -tr * (1- Math.sin(theta * (i+1)))
-            deltay[i] = tr * (1- Math.cos(theta * (i+1)))
+
+          for (let i = 0; i < n; i++) {
+            deltax[i] = -tr * (1 - Math.sin(theta * (i + 1)))
+            deltay[i] = tr * (1 - Math.cos(theta * (i + 1)))
           }
           p3.y += tr
         }
         //check for right up
         if (p.y > c.y) {
-          
-          for(let i=0;i<n;i++){
-            deltax[i] = -tr * (1- Math.sin(theta * (i+1)))
-            deltay[i] = -tr * (1- Math.cos(theta * (i+1)))
+
+          for (let i = 0; i < n; i++) {
+            deltax[i] = -tr * (1 - Math.sin(theta * (i + 1)))
+            deltay[i] = -tr * (1 - Math.cos(theta * (i + 1)))
           }
           p3.y -= tr
         }
@@ -200,19 +201,19 @@ class Track {
         p0.x += tr
         //check for left down
         if (p.y < c.y) {
-          
-          for(let i=0;i<n;i++){
-            deltax[i] = tr * (1- Math.sin(theta * (i+1)))
-            deltay[i] = tr * (1- Math.cos(theta * (i+1)))
+
+          for (let i = 0; i < n; i++) {
+            deltax[i] = tr * (1 - Math.sin(theta * (i + 1)))
+            deltay[i] = tr * (1 - Math.cos(theta * (i + 1)))
           }
           p3.y += tr
         }
         //check for left up
         if (p.y > c.y) {
-          
-          for(let i=0;i<n;i++){
-            deltax[i] = tr * (1- Math.sin(theta * (i+1)))
-            deltay[i] = -tr * (1- Math.cos(theta * (i+1)))
+
+          for (let i = 0; i < n; i++) {
+            deltax[i] = tr * (1 - Math.sin(theta * (i + 1)))
+            deltay[i] = -tr * (1 - Math.cos(theta * (i + 1)))
           }
           p3.y -= tr
         }
@@ -224,19 +225,19 @@ class Track {
         p0.y += tr
         //check for up and left
         if (p.x > c.x) {
-          
-          for(let i=0;i<n;i++){
-            deltax[i] = -tr * (1- Math.cos(theta * (i+1)))
-            deltay[i] = tr * (1- Math.sin(theta * (i+1)))
+
+          for (let i = 0; i < n; i++) {
+            deltax[i] = -tr * (1 - Math.cos(theta * (i + 1)))
+            deltay[i] = tr * (1 - Math.sin(theta * (i + 1)))
           }
           p3.x -= tr
         }
         //check for up and right
         if (p.x < c.x) {
-          
-          for(let i=0;i<n;i++){
-            deltax[i] = tr * (1- Math.cos(theta * (i+1)))
-            deltay[i] = tr * (1- Math.sin(theta * (i+1)))
+
+          for (let i = 0; i < n; i++) {
+            deltax[i] = tr * (1 - Math.cos(theta * (i + 1)))
+            deltay[i] = tr * (1 - Math.sin(theta * (i + 1)))
           }
           p3.x += tr
         }
@@ -248,19 +249,19 @@ class Track {
         p0.y -= tr
         //check for down and left
         if (p.x > c.x) {
-          
-          for(let i=0;i<n;i++){
-            deltax[i] = -tr * (1- Math.cos(theta * (i+1)))
-            deltay[i] = -tr * (1- Math.sin(theta * (i+1)))
+
+          for (let i = 0; i < n; i++) {
+            deltax[i] = -tr * (1 - Math.cos(theta * (i + 1)))
+            deltay[i] = -tr * (1 - Math.sin(theta * (i + 1)))
           }
           p3.x -= tr
         }
         //check for down and right
         if (p.x < c.x) {
-          
-          for(let i=0;i<n;i++){
-            deltax[i] = tr * (1- Math.cos(theta * (i+1)))
-            deltay[i] = -tr * (1- Math.sin(theta * (i+1)))
+
+          for (let i = 0; i < n; i++) {
+            deltax[i] = tr * (1 - Math.cos(theta * (i + 1)))
+            deltay[i] = -tr * (1 - Math.sin(theta * (i + 1)))
           }
           p3.x += tr
         }
@@ -269,8 +270,8 @@ class Track {
 
 
       pushIfNotLast(p0)
-      for(let i=0;i<n;i++){
-        const newP = {x:p.x + deltax[i], y:p.y + deltay[i]}
+      for (let i = 0; i < n; i++) {
+        const newP = { x: p.x + deltax[i], y: p.y + deltay[i] }
         pushIfNotLast(newP)
       }
       pushIfNotLast(p3)
@@ -335,20 +336,20 @@ class Track {
     for (let i = 1; i < this.newPositions.length; i++) {
       const prev = this.newPositions[i - 1]
       const current = this.newPositions[i]
-      if ((prev.x !== current.x ) && (prev.y !== current.y )) {
+      if ((prev.x !== current.x) && (prev.y !== current.y)) {
         continue
       } else {
-        if (prev.x === current.x){
-          for(let n = 0; n <= Math.abs(current.y - prev.y)/this.gridSize; n ++){
-            this.possibleFlyoverLocations.push({x:current.x,y:current.y + n*this.gridSize * Math.sign(prev.y - current.y)})
+        if (prev.x === current.x) {
+          for (let n = 0; n <= Math.abs(current.y - prev.y) / this.gridSize; n++) {
+            this.possibleFlyoverLocations.push({ x: current.x, y: current.y + n * this.gridSize * Math.sign(prev.y - current.y) })
           }
         }
-        if (prev.y === current.y){
-          for(let n = 0; n <= Math.abs(current.x - prev.x)/this.gridSize; n ++){
-            this.possibleFlyoverLocations.push({x:current.x + n*this.gridSize * Math.sign(prev.x - current.x),y:current.y})
+        if (prev.y === current.y) {
+          for (let n = 0; n <= Math.abs(current.x - prev.x) / this.gridSize; n++) {
+            this.possibleFlyoverLocations.push({ x: current.x + n * this.gridSize * Math.sign(prev.x - current.x), y: current.y })
           }
         }
-      } 
+      }
     }
     return this.possibleFlyoverLocations
   }
@@ -376,7 +377,7 @@ class Track {
       segment
     }
   }
-  
+
   draw() {
     // this.drawGrid()
     this.ctxTracks.save()
@@ -392,16 +393,15 @@ class Track {
   }
 
   drawUsingNewPositions() {
-    // this.drawGrid()
-    
+
     //The name of the train
-    let name_x = this.newPositions[0].x==1200? this.newPositions[0].x-100 : this.newPositions[0].x
-    let name_y = this.newPositions[0].y==0? this.newPositions[0].y+100 :this.newPositions[0].y
-    
-    this.ctxTracks.moveTo(this.newPositions[0].x,this.newPositions[0].y-20)
-    this.ctxTracks.fillText(this.trainName,name_x,name_y)
-    
-    
+    // let name_x = this.newPositions[0].x==1200? this.newPositions[0].x-100 : this.newPositions[0].x
+    // let name_y = this.newPositions[0].y==0? this.newPositions[0].y+100 :this.newPositions[0].y
+
+    // this.ctxTracks.moveTo(this.newPositions[0].x,this.newPositions[0].y-20)
+    // this.ctxTracks.fillText(this.trainName,name_x,name_y)
+
+
     this.ctxTracks.save()
     //draw the thick single line as backdrop
     this.ctxTracks.strokeStyle = 'rgb(255,0,255)'
@@ -414,8 +414,9 @@ class Track {
     // this.ctxTracks.closePath()
     this.ctxTracks.stroke()
     this.ctxTracks.restore()
-    
+
     this.ctxTracks.save()
+
     //draw the thin single lline
     this.ctxTracks.strokeStyle = 'rgb(0,0,50)'
     this.ctxTracks.lineWidth = 1
@@ -424,9 +425,33 @@ class Track {
     for (let i = 1; i < this.newPositions.length; i++) {
       this.ctxTracks.lineTo(this.newPositions[i].x, this.newPositions[i].y)
     }
-    // this.ctxTracks.closePath()
     this.ctxTracks.stroke()
     this.ctxTracks.restore()
+    // this.ctxTracks.closePath()
+
+    //do a thick line for parallel tracks if any
+    //go through the overlapMatches and draw a line from startx,starty to endx,endy for each overlapping segment
+    this.overlapMatches.forEach(match => {
+      match.commonSegmentsMap.forEach((value, key) => {
+        const { startx, starty, endx, endy } = value
+        this.ctxTracks.save()
+        this.ctxTracks.strokeStyle = 'rgba(255, 0, 255, 0.26)'
+        this.ctxTracks.lineWidth = 6
+        this.ctxTracks.beginPath()
+        this.ctxTracks.moveTo(startx, starty)
+        this.ctxTracks.lineTo(endx, endy)
+        this.ctxTracks.stroke()
+
+        //draw thin single line
+        this.ctxTracks.strokeStyle = 'rgb(0,0,50)'
+        this.ctxTracks.lineWidth = 3
+        this.ctxTracks.beginPath()
+        this.ctxTracks.moveTo(startx, starty)
+        this.ctxTracks.lineTo(endx, endy)
+        this.ctxTracks.stroke()
+        this.ctxTracks.restore()
+      })
+    })
 
     // this.stations.forEach(station => station.draw())
   }
@@ -469,16 +494,16 @@ class Track {
       //if prev and current are in the same straight line horizontally or vertically then we can consider all the points
       //on that line at intervals of gridSize
       if (prev.x === current.x) {
-        for(let n = 0; n <= Math.abs(current.y - prev.y)/this.gridSize; n ++){
-          const pos = {x:current.x,y:current.y + n*this.gridSize * Math.sign(prev.y - current.y)}
+        for (let n = 0; n <= Math.abs(current.y - prev.y) / this.gridSize; n++) {
+          const pos = { x: current.x, y: current.y + n * this.gridSize * Math.sign(prev.y - current.y) }
           const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
           if (!hasStation) {
             locations.push(pos)
           }
         }
       } else if (prev.y === current.y) {
-        for(let n = 0; n <= Math.abs(current.x - prev.x)/this.gridSize; n ++){
-          const pos = {x:current.x + n*this.gridSize * Math.sign(prev.x - current.x),y:current.y}
+        for (let n = 0; n <= Math.abs(current.x - prev.x) / this.gridSize; n++) {
+          const pos = { x: current.x + n * this.gridSize * Math.sign(prev.x - current.x), y: current.y }
           const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
           if (!hasStation) {
             locations.push(pos)
@@ -490,16 +515,16 @@ class Track {
     for (let i = 1; i <= this.positions.length - 1; i++) {
       const prev = this.positions[i - 1]
       const current = this.positions[i]
-      if (prev.x === current.x && Math.abs((prev.y - current.y)/this.gridSize)==2) {
+      if (prev.x === current.x && Math.abs((prev.y - current.y) / this.gridSize) == 2) {
         //that means that there is a curved segment being added between two straight segments.
-        const pos = {x:prev.x,y:prev.y - this.gridSize * Math.sign(prev.y - current.y)}
+        const pos = { x: prev.x, y: prev.y - this.gridSize * Math.sign(prev.y - current.y) }
         const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
         if (!hasStation) {
           locations.push(pos)
         }
-      } else if (prev.y === current.y && Math.abs((prev.x - current.x)/this.gridSize)==2) {
+      } else if (prev.y === current.y && Math.abs((prev.x - current.x) / this.gridSize) == 2) {
         //that means that there is a curved segment being added between two straight segments.
-        const pos = {x:prev.x - this.gridSize * Math.sign(prev.x - current.x),y:prev.y}
+        const pos = { x: prev.x - this.gridSize * Math.sign(prev.x - current.x), y: prev.y }
         const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
         if (!hasStation) {
           locations.push(pos)
@@ -509,7 +534,7 @@ class Track {
 
     return locations
   }
-  getDetailedSegmentsMap(turningCircle=100) {
+  getDetailedSegmentsMap(turningCircle = 100) {
     const segmentsMap = new Map()
     const modifiedPositions = []
     let firstx = this.positions[0].x
@@ -518,21 +543,21 @@ class Track {
     let secondy = this.newPositions[i].y
     let thirdx = this.newPositions[i + 1]?.x
     let thirdy = this.newPositions[i + 1]?.y
-    modifiedPositions.push({x: firstx, y: firsty})
+    modifiedPositions.push({ x: firstx, y: firsty })
     for (let i = 1; i < this.positions.length; i++) {
       secondx = this.newPositions[i].x
       secondy = this.newPositions[i].y
       thirdx = this.newPositions[i + 1]?.x
       thirdy = this.newPositions[i + 1]?.y
-      if(firstx === secondx && secondx === thirdx) {
+      if (firstx === secondx && secondx === thirdx) {
         // vertical segment will collapse into a single vertical position in the modifiedPositions array
 
-      } else if(firsty === secondy && secondy === thirdy) {
+      } else if (firsty === secondy && secondy === thirdy) {
         // horizontal segment will collapse into a single horizontal position in the modifiedPositions array
-      
+
       } else {
         // neither vertical nor horizontal segment, keep the position as is
-        modifiedPositions.push({x: secondx, y: secondy})
+        modifiedPositions.push({ x: secondx, y: secondy })
         firstx = secondx
         firsty = secondy
       }

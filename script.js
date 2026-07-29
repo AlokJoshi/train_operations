@@ -464,35 +464,36 @@ window.addEventListener('load', () => {
     } else if (event.code === 'KeyI') {
       //if the code is I then show the info on train operations widget
       const modal = document.querySelector('#buttonGroup7')
-      const div = document.querySelector('#infoForTrain')
-      div.replaceChildren()
-      for (let i = 1; i <= game.trains.length; i++) {
-        const span = document.createElement('span')
-        span.dataset.value = String(i)
-        span.textContent = `T${i}`
-        const colorConfig = game.TRAINCONFIG[(i - 1) % game.TRAINCONFIG.length]
-        span.style.backgroundColor = colorConfig.Color
-        span.style = 'background-color:' + (game.trains[i - 1]?.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : colorConfig.Color) + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
-        span.addEventListener('click', () => {
-          //remove 'selected' class from all other spans
-          const allSpans = div.querySelectorAll('span')
-          allSpans.forEach(s => {
-            s.classList.remove('selected')
-          })
-          span.classList.add('selected')
-          // console.log(`Train ${i} clicked`)
-          //hide all
-          for (let j = 1; j <= game.trains.length; j++) {
-            const infoDiv = document.querySelector(`#infotrainoperations${j}`)
-            infoDiv.style.display = 'none'
-          }
-          const infoDiv = document.querySelector(`#infotrainoperations${i}`)
-          infoDiv.style.display = 'block'
+      // updateTrainOperations()
+      // const div = document.querySelector('#infoForTrain')
+      // div.replaceChildren()
+      // for (let i = 1; i <= game.trains.length; i++) {
+      //   const span = document.createElement('span')
+      //   span.dataset.value = String(i)
+      //   span.textContent = `T${i}`
+      //   const colorConfig = game.TRAINCONFIG[(i - 1) % game.TRAINCONFIG.length]
+      //   span.style.backgroundColor = colorConfig.Color
+      //   span.style = 'background-color:' + (game.trains[i - 1]?.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : colorConfig.Color) + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
+      //   span.addEventListener('click', () => {
+      //     //remove 'selected' class from all other spans
+      //     const allSpans = div.querySelectorAll('span')
+      //     allSpans.forEach(s => {
+      //       s.classList.remove('selected')
+      //     })
+      //     span.classList.add('selected')
+      //     // console.log(`Train ${i} clicked`)
+      //     //hide all
+      //     for (let j = 1; j <= game.trains.length; j++) {
+      //       const infoDiv = document.querySelector(`#infotrainoperations${j}`)
+      //       infoDiv.style.display = 'none'
+      //     }
+      //     const infoDiv = document.querySelector(`#infotrainoperations${i}`)
+      //     infoDiv.style.display = 'block'
 
-          //select all the elements
-        })
-        div.appendChild(span)
-      }
+      //     //select all the elements
+      //   })
+      //   div.appendChild(span)
+      // }
       if (!showingInfo) {
         modal.style.display = 'flex'
       } else {
@@ -1847,6 +1848,37 @@ function displayFinancialResults() {
   })
 }
 
+// function updateTrainOperations(){
+//   const div = document.querySelector('#infoForTrain')
+//   div.replaceChildren()
+//   for (let i = 1; i <= game.trains.length; i++) {
+//     const span = document.createElement('span')
+//     span.dataset.value = String(i)
+//     span.textContent = `T${i}`
+//     const colorConfig = game.TRAINCONFIG[(i - 1) % game.TRAINCONFIG.length]
+//     span.style.backgroundColor = colorConfig.Color
+//     span.style = 'background-color:' + (game.trains[i - 1]?.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : colorConfig.Color) + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
+//     span.addEventListener('click', () => {
+//       //remove 'selected' class from all other spans
+//       const allSpans = div.querySelectorAll('span')
+//       allSpans.forEach(s => {
+//         s.classList.remove('selected')
+//       })
+//       span.classList.add('selected')
+//       // console.log(`Train ${i} clicked`)
+//       //hide all
+//       for (let j = 1; j <= game.trains.length; j++) {
+//         const infoDiv = document.querySelector(`#infotrainoperations${j}`)
+//         infoDiv.style.display = 'none'
+//       }
+//       const infoDiv = document.querySelector(`#infotrainoperations${i}`)
+//       infoDiv.style.display = 'block'
+
+//       //select all the elements
+//     })
+//     div.appendChild(span)
+//   }
+// }
 
 /*
 console.log(getDetailedSegmentsMap([

@@ -125,6 +125,31 @@ class Train {
     newCountEl.value = this.numCoaches
     newCountEl.setAttribute("min", Train.minNumCoaches);
     newCountEl.setAttribute("max", this.trainType === "freight" ? Train.maxNumFreightWagons : Train.maxNumCoaches);
+
+    // add the T1, T2, ... labels for the trains in the UI
+    const div = document.querySelector('#infoForTrain')
+    // div.replaceChildren()
+  // for (let i = 1; i <= game.trains.length; i++) {
+    const span = document.createElement('span')
+    span.dataset.value = String(this.trainNumber)
+    span.textContent = `T${this.trainNumber}`
+    span.style = 'background-color:' + (this.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : this.color) + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
+    span.addEventListener('click', () => {
+      //remove 'selected' class from all other spans
+      const allSpans = div.querySelectorAll('span')
+      allSpans.forEach(s => {
+        s.classList.remove('selected')
+      })
+      span.classList.add('selected')
+      //hide all
+      const allDivs = document.querySelectorAll('[id^="infotrainoperations"]')
+      allDivs.forEach(div => {
+        div.style.display = 'none'
+      })
+      const infoDiv = document.querySelector(`#infotrainoperations${this.trainNumber}`)
+      infoDiv.style.display = 'block'
+    })
+    div.appendChild(span)
   }
   upgradeEngine() {
     if (this.upgradedEngine) return // already upgraded

@@ -13,7 +13,7 @@
 </head>
 
 <body>
-  <div id="gameStage" style="background-image: url('./engine.png'); background-size: 30px 30px;">
+  <div id="gameStage" style="background-image: url('./engine.png'); background-size: 50px 50px;">
     <canvas id="canvas_tracks"></canvas>
     <canvas id="canvas"></canvas>
     <canvas id="canvas_results"></canvas>
@@ -31,7 +31,7 @@
       </div>
       <div class="dialogContent">
         <div>
-          <label style="font-size: 1.2em;" for="startPauseBtn">Start/Pause All:</label>
+          <label style="font-size: 1.2em;" >Start/Pause All:</label>
           <i class="fas fa-play" id="startPauseBtn" title="Start/Pause All Trains" style="cursor:pointer"></i>
         </div>
         <div id="trainControlsContainer"></div>
@@ -64,7 +64,7 @@
             </div>
           </div>
         </template>
-        <label for="newTrainSpecification">New Train Specification:</label>
+        <label style="font-size: 1.2em;">New Train Specification:</label>
         <div id="newTrainSpecification" style="padding:10px; border:1px solid #ccc; border-radius:5px;">
           <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
             <label for="startTrack">Start Track Spec.:</label>
@@ -100,7 +100,7 @@
           </div>
         </div>
       </div> <!-- End of newTrainSpecification -->
-    </div> <!-- End of buttonGroup1 -->
+    </div> <!-- End of buttonGroup1: Train -->
 
     <div id="buttonGroup2" class="modal"
       style="width:300px; display:none; position:fixed; top:300px;left:150px; flex-direction:column; gap:10px">
@@ -119,7 +119,7 @@
         <!-- <label for="cancelFlyover">If you change your mind you can Cancel the flyover specification.</label>
         <i class="fas fa-times" id="cancelFlyover" title="Cancel Flyover" onclick="cancelFlyover()"></i> -->
       </div>
-    </div> <!-- End of buttonGroup2 -->
+    </div> <!-- End of buttonGroup2: Flyovers -->
 
     <div id="buttonGroup3" class="modal"
       style="width:400px; display:none; position:fixed; top:200px;left: 450px; flex-direction:column; gap:10px">
@@ -139,7 +139,7 @@
         </label>
         <div id="stationFortrain" style="margin-top:10px;"></div>
       </div>
-    </div> <!-- End of buttonGroup3 -->
+    </div> <!-- End of buttonGroup3: Stations -->
 
     <div id="buttonGroup4" class="modal"
       style="width:400px; display:none; position:fixed; top:450px;left:490px; flex-direction:column; gap:10px">
@@ -170,10 +170,10 @@
           </tbody>
         </table>
       </div>
-    </div> <!-- End of buttonGroup4 -->
+    </div> <!-- End of buttonGroup4: Results -->
 
     <div id="buttonGroup5" class="modal"
-      style="display:none; width:500px; height:900px; position:fixed; top:70px;left:400px; flex-direction:column; gap:10px">
+      style="display:none; width:600px; height:900px; position:fixed; top:70px;left:400px; flex-direction:column; gap:10px">
       <div class="dialogHeader">
         <span class="dialogTitle">How to play</span>
         <span class="dialogClose" onclick="document.getElementById('buttonGroup5').style.display='none';">
@@ -316,10 +316,17 @@
             a certain period of time. In addition to this, you have to compensate for the loss of life and property.
           </li>
           <li>Adding a station costs you 1 million dollars but it allows you to earn more revenue from passengers or
-            freight. Also if there
+            freight (if there are any passengers/freight available there). Also if there
             is a station at the intersection of two or more trains, they can cross each other without the need for a
             flyover and hence you
             can save money by not building a flyover.
+          </li>
+          <li>Sometimes, specially for freight trains, you may see trailing red dots. These indicate that the train is still
+            occupying that portion of the track (this is done for trains with a very large number of freight wagons.)
+            <img src="./Explain_RedDots.PNG" style="width:550px" alt="" srcset="">
+          </li>
+          <li>Note that collisions between trains take place only at grid intersections. If two trains cross each other at a point that does not fall
+            exactly on the grid intersection, a collision will not occur.
           </li>
         </ul>
         <div style="display:flex; align-items:center; justify-content:center;">

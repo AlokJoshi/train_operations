@@ -238,7 +238,7 @@ class Game {
     const firstPosition = positions[0]
     const lastPosition = positions[positions.length - 1]
 
-    const track = new Track(this.ctxTracks, positions, '', this.gridSize)
+    const track = new Track(this.ctxTracks, positions, '', this.gridSize,overlapMatches)
 
     if (firstPosition.x == lastPosition.x && firstPosition.y == lastPosition.y) {
       alert('The starting and ending positions are the same. Please choose different positions for the starting and ending points.')
