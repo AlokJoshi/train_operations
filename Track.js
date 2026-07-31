@@ -435,7 +435,7 @@ class Track {
       match.commonSegmentsMap.forEach((value, key) => {
         const { startx, starty, endx, endy } = value
         this.ctxTracks.save()
-        this.ctxTracks.strokeStyle = 'rgba(255, 0, 255, 0.26)'
+        this.ctxTracks.strokeStyle = 'rgb(255, 0, 255)'
         this.ctxTracks.lineWidth = 6
         this.ctxTracks.beginPath()
         this.ctxTracks.moveTo(startx, starty)

@@ -193,6 +193,7 @@ class Game {
     const overlapMatches = []
     let useParallelTrack = false
     let numSegments = 0
+    let autoAssignedLane = 0
 
     for (const train of this.trains) {
       if (train === null) continue
@@ -213,6 +214,18 @@ class Game {
       useParallelTrack = this.promptUserForParallelTrack(numSegments, overlappingTrains, cost)
 
       if (useParallelTrack) {
+          const overlapCountBySegment = new Map()
+          overlapMatches.forEach((match) => {
+            match.commonSegmentsMap.forEach((segment, key) => {
+              overlapCountBySegment.set(key, (overlapCountBySegment.get(key) ?? 0) + 1)
+            })
+          })
+          const maxExistingLinesOnAnySegment = overlapCountBySegment.size > 0
+            ? Math.max(...overlapCountBySegment.values())
+            : 0
+            // Lane cycles as overlap grows: 0 -> 1 -> 2 -> 0 -> ...
+            autoAssignedLane = maxExistingLinesOnAnySegment % 3
+          console.log(`[ParallelLane] overlapDepth=${maxExistingLinesOnAnySegment}, assignedLane=${autoAssignedLane}, trains=[${overlappingTrains}]`)
           this.financials.incrementExpenses(this.getCurrentTimeIndex(), null, cost, 'Parallel Track Cost')
       }
     }
@@ -279,7 +292,7 @@ class Game {
       rawMaterialSupply: this.rawmaterialSupply,
       getCurrentTimeIndex: () => this.getCurrentTimeIndex(),
       trainType: options.trainType,
-      lane: options.lane ?? 0,
+      lane: options.lane ?? autoAssignedLane,
       visualLengthScale: options.visualLengthScale,
       maxVisualCoaches: options.maxVisualCoaches,
       popups: this.popups,

@@ -1,5 +1,6 @@
 "use strict";
 import { makeDraggable, ck } from './utility.js'
+// import Track from './Track.js'
 class Train {
   static lengthEngine = 40
   static widthEngine = 14
@@ -18,7 +19,7 @@ class Train {
   static rawMaterialChargePerUnit = 100 // fixed charge per unit of raw material to keep it simple. Revenue is calculated based on the amount of raw material unloaded at the station.
   static ticketPriceMap = new Map() // key is from row,col to row,col and value is the ticket price for that route. 
   // We populate this as we go unless the ticket price is already in the map. 
-
+  
 
   constructor({
     ctx,
@@ -113,10 +114,62 @@ class Train {
     //when passenger train has an upgraded engine, its speed increases quickly from zero
     this.speed = this.trainType == 'passenger' ? 1 : 11
     this.upgradedEngine = false
+    this.debugLaneLogged = false
+    this.parallelSegmentCells = this.buildParallelSegmentCellSet()
 
     
     this.updateUI()
     
+  }
+
+  buildParallelSegmentCellSet() {
+    const cells = new Set()
+    if (!this.track?.overlapMatches?.length) {
+      return cells
+    }
+
+    const stepSize = Number.isFinite(this.intersections?.gridSize) && this.intersections.gridSize > 0
+      ? this.intersections.gridSize
+      : 1
+
+    this.track.overlapMatches.forEach((match) => {
+      if (!(match?.commonSegmentsMap instanceof Map)) {
+        return
+      }
+      match.commonSegmentsMap.forEach((segment) => {
+        if (!segment) {
+          return
+        }
+        const dx = segment.endx - segment.startx
+        const dy = segment.endy - segment.starty
+        const maxAxisDistance = Math.max(Math.abs(dx), Math.abs(dy))
+        const steps = Math.max(1, Math.round(maxAxisDistance / stepSize))
+
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps
+          const px = segment.startx + dx * t
+          const py = segment.starty + dy * t
+          const cell = this.intersections.getCellFromCanvasPoint(px, py)
+          if (!cell) {
+            continue
+          }
+          cells.add(`${cell.row},${cell.col}`)
+        }
+      })
+    })
+
+    return cells
+  }
+
+  isOnParallelSegment(x, y) {
+    if (!this.parallelSegmentCells || this.parallelSegmentCells.size === 0) {
+      return false
+    }
+    const cell = this.intersections.getCellFromCanvasPoint(x, y)
+    if (!cell) {
+      return false
+    }
+    return this.parallelSegmentCells.has(`${cell.row},${cell.col}`)
   }
   
   updateUI() {
@@ -126,31 +179,28 @@ class Train {
     newCountEl.setAttribute("min", Train.minNumCoaches);
     newCountEl.setAttribute("max", this.trainType === "freight" ? Train.maxNumFreightWagons : Train.maxNumCoaches);
 
-    // add the T1, T2, ... labels for the trains in the UI
-    const div = document.querySelector('#infoForTrain')
-    // div.replaceChildren()
-  // for (let i = 1; i <= game.trains.length; i++) {
-    const span = document.createElement('span')
-    span.dataset.value = String(this.trainNumber)
-    span.textContent = `T${this.trainNumber}`
-    span.style = 'background-color:' + (this.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : this.color) + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
-    span.addEventListener('click', () => {
-      //remove 'selected' class from all other spans
-      const allSpans = div.querySelectorAll('span')
-      allSpans.forEach(s => {
-        s.classList.remove('selected')
-      })
-      span.classList.add('selected')
-      //hide all
-      const allDivs = document.querySelectorAll('[id^="infotrainoperations"]')
-      allDivs.forEach(div => {
-        div.style.display = 'none'
-      })
-      const infoDiv = document.querySelector(`#infotrainoperations${this.trainNumber}`)
-      infoDiv.style.display = 'block'
-    })
-    div.appendChild(span)
+    // Add train label in info widget once.
+    const infoContainer = document.querySelector('#infoForTrain')
+    if (infoContainer && !infoContainer.querySelector(`span[data-value="${this.trainNumber}"]`)) {
+      const infoSpan = document.createElement('span')
+      infoSpan.dataset.value = String(this.trainNumber)
+      infoSpan.textContent = `T${this.trainNumber}`
+      infoSpan.style = 'background-color:' + (this.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : this.color) + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
+      infoContainer.appendChild(infoSpan)
+    }
+
+    // Add train label in station widget once; click behavior is delegated in script.js.
+    const stationContainer = document.querySelector('#stationFortrain')
+    if (stationContainer && !stationContainer.querySelector(`span[data-value="${this.trainNumber}"]`)) {
+      const stationSpan = document.createElement('span')
+      stationSpan.dataset.value = String(this.trainNumber)
+      stationSpan.dataset.role = 'station-train'
+      stationSpan.textContent = `T${this.trainNumber}`
+      stationSpan.style = 'background-color:' + (this.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : this.color) + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
+      stationContainer.appendChild(stationSpan)
+    }
   }
+  
   upgradeEngine() {
     if (this.upgradedEngine) return // already upgraded
     this.financials.upgradeEngine(this.getCurrentTimeIndex(), this.trainNumber)
@@ -556,10 +606,25 @@ class Train {
       this.lastProcessedStationNumber = null  // train has left the station, allow retriggering next visit
     }
 
+    const heading = Number.isFinite(direction) ? direction : 0
+    const laneToOffsetMultiplier = [0, -1, 1]
+    const normalizedLane = Number.isFinite(this.lane) ? ((this.lane % 3) + 3) % 3 : 0
+    const laneOffsetMagnitude = laneToOffsetMultiplier[normalizedLane] * Train.widthEngine*0.3
+    const engineOffsetMagnitude = this.isOnParallelSegment(x, y) ? laneOffsetMagnitude : 0
+    if (!this.debugLaneLogged) {
+      console.log(`[ParallelLaneVisual] train=${this.trainNumber}, lane=${this.lane}, normalizedLane=${normalizedLane}, offsetPx=${laneOffsetMagnitude}, parallelCells=${this.parallelSegmentCells?.size ?? 0}`)
+      this.debugLaneLogged = true
+    }
+    const laneOffsetX = -Math.sin(heading) * engineOffsetMagnitude
+    const laneOffsetY = Math.cos(heading) * engineOffsetMagnitude
+
+    const engineDrawX = x + laneOffsetX
+    const engineDrawY = y + laneOffsetY
+
     this.ctx.save()
     this.ctx.fillStyle = this.color
-    this.ctx.translate(x, y)
-    this.ctx.rotate(direction)
+    this.ctx.translate(engineDrawX, engineDrawY)
+    this.ctx.rotate(heading)
     this.ctx.translate(-1 * Train.lengthEngine * 0.5, -1 * Train.widthEngine * 0.5)
     this.drawEngine(0, 0)
     this.ctx.restore()
@@ -590,10 +655,17 @@ class Train {
       const gap = getCoachGap(simulatedCoachIndex, this.visualLengthScale)
       const { x: x2, y: y2, direction: direction2 } = this.getPosition(-1 * gap)
 
+      const coachHeading = Number.isFinite(direction2) ? direction2 : 0
+      const coachOffsetMagnitude = this.isOnParallelSegment(x2, y2) ? laneOffsetMagnitude : 0
+      const coachOffsetX = -Math.sin(coachHeading) * coachOffsetMagnitude
+      const coachOffsetY = Math.cos(coachHeading) * coachOffsetMagnitude
+      const coachDrawX = x2 + coachOffsetX
+      const coachDrawY = y2 + coachOffsetY
+
       this.ctx.save()
       this.ctx.fillStyle = this.color
-      this.ctx.translate(x2, y2)
-      this.ctx.rotate(direction2)
+      this.ctx.translate(coachDrawX, coachDrawY)
+      this.ctx.rotate(coachHeading)
       this.ctx.translate(-10, -1 * Train.widthCoach * 0.5)
       this.drawCoach()
 
@@ -758,6 +830,7 @@ class Train {
     // We pass these positions to the track to extend it and get the new station location
     const { track, stationLocation } = this.track.extendTrack(positionsForExtendTrain)
     this.track = track
+    this.parallelSegmentCells = this.buildParallelSegmentCellSet()
     return stationLocation
   }
 

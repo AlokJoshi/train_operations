@@ -33,6 +33,7 @@ let startTrack = false
 let startExtendTrain = false
 let startFlyover = false
 let startStation = false
+let selectedTrainNumberForStartStation = null
 let showingResults = false
 let showingInfo = false
 let showingHowToPlay = false
@@ -639,6 +640,70 @@ window.addEventListener('load', () => {
       }
     })
   }
+
+  const infoForTrainContainer = document.querySelector('#infoForTrain')
+  if(infoForTrainContainer){
+    infoForTrainContainer.addEventListener('click',(event) => {
+      const target = event.target
+      if(!(target instanceof HTMLElement) || target.tagName !== 'SPAN') {
+        return
+      }
+      const trainNumber = Number.parseInt(target.dataset.value, 10)
+      if (!Number.isInteger(trainNumber)) {
+        return
+      }
+      //hide all elements for all trains
+      document.querySelectorAll('[id^="infotrainoperations"]').forEach(el => el.style.display='none')
+      const infoTrainOperationsElement = document.querySelector(`#infotrainoperations${trainNumber}`)
+      if (infoTrainOperationsElement) {
+        infoTrainOperationsElement.style.display = 'block'
+      }
+      infoTrainContainer.style.display = 'block'
+    })
+  }
+
+  const stationForTrainContainer = document.querySelector('#stationFortrain')
+  if (stationForTrainContainer) {
+    stationForTrainContainer.addEventListener('click', (event) => {
+      const target = event.target
+      if (!(target instanceof HTMLElement) || target.tagName !== 'SPAN') {
+        return
+      }
+      const trainNumber = Number.parseInt(target.dataset.value, 10)
+      if (!Number.isInteger(trainNumber)) {
+        return
+      }
+      stationForTrainContainer.querySelectorAll('span').forEach(span => span.classList.remove('selected'))
+      target.classList.add('selected')
+
+      const train = game.trains[trainNumber - 1]
+      if (!train) {
+        console.log(`Train with number ${trainNumber} not found`)
+        return
+      }
+      if (trainNumber==selectedTrainNumberForStartStation){
+        startStation = false
+        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        selectedTrainNumberForStartStation = null
+        return
+      }
+
+      startStation = true
+      const possibleStationLocations = train.track.getPossibleStationLocations()
+      ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+      possibleStationLocations.forEach(location => {
+        ctxTemp.beginPath()
+        ctxTemp.moveTo(location.x, location.y)
+        ctxTemp.fillStyle = 'purple'
+        ctxTemp.arc(location.x, location.y, 10, 0, Math.PI * 2)
+        ctxTemp.closePath()
+        ctxTemp.fill()
+      })
+
+      selectedTrainNumberForStartStation = trainNumber
+    })
+  }
+
   document.querySelector('#canvas_temp').addEventListener('click', (event) => {
     const point = getCanvasPoint(event)
     if (startExtendTrain) {
@@ -882,45 +947,8 @@ window.addEventListener('load', () => {
     startFlyover = false
     startTrack = false
     // startStation = true
-    document.querySelector('#stationFortrain').style.display = 'block'
-    const div = document.querySelector('#stationFortrain')
-    div.replaceChildren()
-    div.onclick = (event) => {
-      if (event.target.tagName === 'SPAN') {
-        div.querySelectorAll('span').forEach(span => span.classList.remove('selected'))
-        event.target.classList.add('selected')
-
-        const trainNumber = Number.parseInt(event.target.dataset.value, 10)
-        // console.log(`Selected train number: ${trainNumber}`)
-        const train = game.trains[trainNumber - 1]
-        if (train) {
-          startStation = true
-          // highlight all the possible station locations along the track where a station does not already exist.
-          // get the track
-          const track = train.track
-          // get the possible station locations along the track
-          const possibleStationLocations = track.getPossibleStationLocations()
-          ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-          possibleStationLocations.forEach(location => {
-            ctxTemp.beginPath()
-            ctxTemp.moveTo(location.x, location.y)
-            ctxTemp.fillStyle = 'purple'
-            ctxTemp.arc(location.x, location.y, 10, 0, Math.PI * 2)
-            ctxTemp.closePath()
-            ctxTemp.fill()
-          })
-        } else {
-          console.log(`Train with number ${trainNumber} not found`)
-        }
-      }
-    }
-
-    for (let i = 1; i <= game.trains.length; i++) {
-      const span = document.createElement('span')
-      span.dataset.value = String(i)
-      span.textContent = `T${i}`
-      span.style = 'cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
-      div.appendChild(span)
+    if (stationForTrainContainer) {
+      stationForTrainContainer.style.display = 'block'
     }
     document.querySelector('#canvas_temp').style = 'cursor:crosshair'
   }
@@ -1410,10 +1438,11 @@ window.addEventListener('load', () => {
 
     startTrack = false
     // we close the Station popup if it is open
-    const stationModal = document.querySelector('#buttonGroup3')
-    if (stationModal) {
-      stationModal.style.display = 'none'
-    }
+    // no need for following code since stationModal is kept current in UpdateUI method of the train class
+    // const stationModal = document.querySelector('#buttonGroup3')
+    // if (stationModal) {
+    //   stationModal.style.display = 'none'
+    // }
 
     // update the UI with the right number of coaches or freight wagons based on the train type
     const lblNumCoaches = document.querySelector(`#lblNumCoaches${trainNumber}`)
@@ -1847,75 +1876,3 @@ function displayFinancialResults() {
     }
   })
 }
-
-// function updateTrainOperations(){
-//   const div = document.querySelector('#infoForTrain')
-//   div.replaceChildren()
-//   for (let i = 1; i <= game.trains.length; i++) {
-//     const span = document.createElement('span')
-//     span.dataset.value = String(i)
-//     span.textContent = `T${i}`
-//     const colorConfig = game.TRAINCONFIG[(i - 1) % game.TRAINCONFIG.length]
-//     span.style.backgroundColor = colorConfig.Color
-//     span.style = 'background-color:' + (game.trains[i - 1]?.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : colorConfig.Color) + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
-//     span.addEventListener('click', () => {
-//       //remove 'selected' class from all other spans
-//       const allSpans = div.querySelectorAll('span')
-//       allSpans.forEach(s => {
-//         s.classList.remove('selected')
-//       })
-//       span.classList.add('selected')
-//       // console.log(`Train ${i} clicked`)
-//       //hide all
-//       for (let j = 1; j <= game.trains.length; j++) {
-//         const infoDiv = document.querySelector(`#infotrainoperations${j}`)
-//         infoDiv.style.display = 'none'
-//       }
-//       const infoDiv = document.querySelector(`#infotrainoperations${i}`)
-//       infoDiv.style.display = 'block'
-
-//       //select all the elements
-//     })
-//     div.appendChild(span)
-//   }
-// }
-
-/*
-console.log(getDetailedSegmentsMap([
-  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 },
-  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 200 },
-  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 500 },
-  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
-  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 1000 },
-  { x: CANVASMARGIN + 700, y: CANVASMARGIN + 1000 }
-]))
-let commonSegmentsMap = getCommonSegmentsMap([
-  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 },
-  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 200 },
-  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 500 },
-  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
-  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 1000 },
-  { x: CANVASMARGIN + 700, y: CANVASMARGIN + 1000 }
-], [
-  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 500 },
-  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 200 },
-  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 }
-  // { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
-  // { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 1000 },
-  // { x: CANVASMARGIN + 700, y: CANVASMARGIN + 1000 }
-])
-//display the common segments on ctxTemp
-for (const key of commonSegmentsMap.keys()) {
-  const [startKey, endKey] = key.split('-')
-  const startx = parseInt(startKey.split(',')[0])
-  const starty = parseInt(startKey.split(',')[1])
-  const endx = parseInt(endKey.split(',')[0])
-  const endy = parseInt(endKey.split(',')[1])
-  ctxTemp.beginPath()
-  ctxTemp.moveTo(startx, starty)
-  ctxTemp.lineTo(endx, endy)
-  ctxTemp.strokeStyle = 'red'
-  ctxTemp.lineWidth = 2
-  ctxTemp.stroke()
-}
-  */
