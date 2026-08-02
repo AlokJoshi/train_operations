@@ -196,43 +196,46 @@ if (timeUnitDurationValueEl) {
 }
 
 
-let positions = [
-  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
-  { x: CANVASMARGIN + 1450, y: CANVASMARGIN + 500 },
-  { x: CANVASMARGIN + 1450, y: CANVASMARGIN + 1000 },
-  { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 1000 }
-]
+const initializeDefaultTrains = async () => {
+  let positions = [
+    { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
+    { x: CANVASMARGIN + 1450, y: CANVASMARGIN + 500 },
+    { x: CANVASMARGIN + 1450, y: CANVASMARGIN + 1000 },
+    { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 1000 }
+  ]
 
+  await game.addTrain(positions, 7, 0, intersections, { trainType: 'passenger', partOfInitialSetup: true })
 
-game.addTrain(positions, 7, 0, intersections, { trainType: 'passenger', partOfInitialSetup: true })
+  positions = [
+    { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 },
+    { x: CANVASMARGIN + 500, y: CANVASMARGIN + 200 },
+    { x: CANVASMARGIN + 500, y: CANVASMARGIN + 500 },
+    { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
+    { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 1000 },
+    { x: CANVASMARGIN + 700, y: CANVASMARGIN + 1000 }
+  ]
+  let trainNumber = await game.addTrain(positions, 1, 0, intersections,
+    { trainType: 'passenger', partOfInitialSetup: true })
+  game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, { partOfInitialSetup: true })
+  game.addStation(trainNumber, 1200, 900, `S${trainNumber}1310`, 30, { partOfInitialSetup: true })
 
+  positions = [
+    { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 200 },
+    { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 600 },
+    { x: CANVASMARGIN + 300, y: CANVASMARGIN + 600 }
+  ]
+  trainNumber = await game.addFreightTrain(positions, 50, 0, intersections,
+    { partOfInitialSetup: true })
+  game.addStation(trainNumber, 1800, 600, `S${trainNumber}1907`, 30, { partOfInitialSetup: true })
+}
 
-positions = [
-  { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 },
-  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 200 },
-  { x: CANVASMARGIN + 500, y: CANVASMARGIN + 500 },
-  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
-  { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 1000 },
-  { x: CANVASMARGIN + 700, y: CANVASMARGIN + 1000 }
-]
-let trainNumber = game.addTrain(positions, 1, 0, intersections,
-  { trainType: 'passenger', partOfInitialSetup: true })
-game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, { partOfInitialSetup: true })
-game.addStation(trainNumber, 1200, 900, `S${trainNumber}1310`, 30, { partOfInitialSetup: true })
-
-// check statically entered freight train
-positions = [
-  { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 200 },
-  { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 600 },
-  { x: CANVASMARGIN + 300, y: CANVASMARGIN + 600 }
-]
-trainNumber = game.addFreightTrain(positions, 50, 0, intersections,
-  { partOfInitialSetup: true })
-game.addStation(trainNumber, 1800, 600, `S${trainNumber}1907`, 30, { partOfInitialSetup: true })
+await initializeDefaultTrains()
 
 const drawScene = () => {
   if (!paused) {
-    globalThis.globalTicks++
+    // moved this to the end of the if statement to ensure 
+    // that the globalTicks are incremented after all other operations within the drawScene loop.
+    // globalThis.globalTicks++
     if (globalThis.globalTicks % game.ticksPerTimeUnit === 0) {
       //display the current time unit for one second on ctxResults
       // console.log(`Time: ${globalThis.globalTicks / game.ticksPerTimeUnit}`)
@@ -245,10 +248,7 @@ const drawScene = () => {
       const textMetrics = ctxResults.measureText(`${currentTimeUnit}`)
       ctxResults.fillText(`${currentTimeUnit}`, CANVASWIDTH / 2 - textMetrics.width / 2, CANVASHEIGHT / 2 - textMetrics.actualBoundingBoxDescent / 2)
       ctxResults.restore()
-      //do not clear the ctxResults at all
-      // window.setTimeout(() => {
-      //   ctxResults.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
-      // }, 10000)
+
       if (currentTimeUnit === 100) {
         paused = true
         swal.fire({
@@ -279,6 +279,8 @@ const drawScene = () => {
     ctx.font = '14px Arial'
     ctx.fillStyle = 'black'
     ctx.fillText(`Ticks: ${globalThis.globalTicks}`, CANVASWIDTH - 150, 20)
+
+    globalThis.globalTicks++
   }
   requestAnimationFrame(drawScene)
 }
@@ -465,36 +467,7 @@ window.addEventListener('load', () => {
     } else if (event.code === 'KeyI') {
       //if the code is I then show the info on train operations widget
       const modal = document.querySelector('#buttonGroup7')
-      // updateTrainOperations()
-      // const div = document.querySelector('#infoForTrain')
-      // div.replaceChildren()
-      // for (let i = 1; i <= game.trains.length; i++) {
-      //   const span = document.createElement('span')
-      //   span.dataset.value = String(i)
-      //   span.textContent = `T${i}`
-      //   const colorConfig = game.TRAINCONFIG[(i - 1) % game.TRAINCONFIG.length]
-      //   span.style.backgroundColor = colorConfig.Color
-      //   span.style = 'background-color:' + (game.trains[i - 1]?.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : colorConfig.Color) + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
-      //   span.addEventListener('click', () => {
-      //     //remove 'selected' class from all other spans
-      //     const allSpans = div.querySelectorAll('span')
-      //     allSpans.forEach(s => {
-      //       s.classList.remove('selected')
-      //     })
-      //     span.classList.add('selected')
-      //     // console.log(`Train ${i} clicked`)
-      //     //hide all
-      //     for (let j = 1; j <= game.trains.length; j++) {
-      //       const infoDiv = document.querySelector(`#infotrainoperations${j}`)
-      //       infoDiv.style.display = 'none'
-      //     }
-      //     const infoDiv = document.querySelector(`#infotrainoperations${i}`)
-      //     infoDiv.style.display = 'block'
-
-      //     //select all the elements
-      //   })
-      //   div.appendChild(span)
-      // }
+      
       if (!showingInfo) {
         modal.style.display = 'flex'
       } else {
@@ -658,7 +631,6 @@ window.addEventListener('load', () => {
       if (infoTrainOperationsElement) {
         infoTrainOperationsElement.style.display = 'block'
       }
-      infoTrainContainer.style.display = 'block'
     })
   }
 
@@ -1005,61 +977,34 @@ window.addEventListener('load', () => {
   //set up the grid
   drawGrid(ctxTracks)
 
-  function updateCanvasTempForExtendTrain() {
-    //find out the train number
-    const el = document.querySelector('#buttonGroup1')
-    if (!el) {
-      return
-    }
-    const trainNumber = Number.parseInt(el.dataset.extendingTrainNumber, 10)
+  const updateValidTrackPreview = (pathPositions, options = {}) => {
+    const {
+      pointColor = 'blue',
+      firstStepAnchor = null,
+      drawTrackPreview = false
+    } = options
 
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-    //for each of the positions for extend train draw a small circle on ctxTemp
-    positionsForExtendTrain.forEach(position => {
+    pathPositions.forEach(position => {
       const { x, y } = position
-      drawFilledCircle(ctxTemp, x, y, 7, 'orange')
+      drawFilledCircle(ctxTemp, x, y, 7, pointColor)
     })
 
-    //clear the set and set it again with new valid points
     validTrackPoints.clear()
-
-    if (positionsForExtendTrain.length === 0) {
+    if (pathPositions.length === 0) {
       return
     }
 
-    const { x: last_x, y: last_y } = positionsForExtendTrain[positionsForExtendTrain.length - 1]
-    //when extending the train we want to allow the user to extend the train in the same 
-    // direction as the last track segment or make a gradual turn but we do not want to allow sharp turns. 
-    // Since if the user makes a sharp turn, we will lose the station as it will no longer be on the track.
-    // So we will calculate the direction of the last track segment and then only show valid track points in the same direction 
-    // for the first segment. The later logic will remain the same.
-
-    // if there is only one position in the positionsForExtendTrain then we will get the 
-    // x-before_last_x from the train object
+    const { x: last_x, y: last_y } = pathPositions[pathPositions.length - 1]
     let x_before_last_x = null
     let y_before_last_y = null
-    if (positionsForExtendTrain.length === 1) {
-      const train = game.trains[trainNumber - 1]
-      if (train) {
-        // in the train's positions array, match the positioinsForExtendTrain[0].x and positionsForExtendTrain[0}.y
-        if (train.track.positions[0].x === positionsForExtendTrain[0].x &&
-          train.track.positions[0].y === positionsForExtendTrain[0].y) {
-          //the train is being extended from the starting station
-          x_before_last_x = train.track.positions[1].x
-          y_before_last_y = train.track.positions[1].y
-        } else if (train.track.positions[train.track.positions.length - 1].x === positionsForExtendTrain[0].x &&
-          train.track.positions[train.track.positions.length - 1].y === positionsForExtendTrain[0].y) {
-          //the train is being extended from the terminal station   
-          x_before_last_x = train.track.positions[train.track.positions.length - 2].x
-          y_before_last_y = train.track.positions[train.track.positions.length - 2].y
-        }
-      }
-    }
 
-
-    if (positionsForExtendTrain.length > 1) {
-      x_before_last_x = positionsForExtendTrain[positionsForExtendTrain.length - 2].x
-      y_before_last_y = positionsForExtendTrain[positionsForExtendTrain.length - 2].y
+    if (pathPositions.length > 1) {
+      x_before_last_x = pathPositions[pathPositions.length - 2].x
+      y_before_last_y = pathPositions[pathPositions.length - 2].y
+    } else if (firstStepAnchor) {
+      x_before_last_x = firstStepAnchor.x
+      y_before_last_y = firstStepAnchor.y
     }
 
     const lastRow = last_y / gridSize
@@ -1069,12 +1014,10 @@ window.addEventListener('load', () => {
     const increasingCol = x_before_last_x !== null && last_x > x_before_last_x
     const decreasingCol = x_before_last_x !== null && last_x < x_before_last_x
 
-    // special logic only for the first point after selecting the starting point
-    if (positionsForExtendTrain.length === 1) {
+    if (pathPositions.length === 1) {
       if (increasingRow || decreasingRow) {
         for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
           if ((decreasingRow && row < lastRow - 1) || (increasingRow && row > lastRow + 1)) {
-            //drawCircle
             drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
             validTrackPoints.add(`${last_x},${row * gridSize}`)
           }
@@ -1082,171 +1025,135 @@ window.addEventListener('load', () => {
       } else if (increasingCol || decreasingCol) {
         for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
           if ((decreasingCol && col < lastCol - 1) || (increasingCol && col > lastCol + 1)) {
-            //drawCircle
+            drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
+            validTrackPoints.add(`${col * gridSize},${last_y}`)
+          }
+        }
+      } else {
+        for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
+          if (Math.abs(row - lastRow) >= 4) {
+            drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
+            validTrackPoints.add(`${last_x},${row * gridSize}`)
+          }
+        }
+        for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
+          if (Math.abs(col - lastCol) >= 4) {
             drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
             validTrackPoints.add(`${col * gridSize},${last_y}`)
           }
         }
       }
-      // display the valid track points for debugging
-      console.log('Valid track points after first click:', Array.from(validTrackPoints))
       return
     }
 
-    if(increasingCol||decreasingCol) {
-      if(Math.abs(lastCol - (x_before_last_x / gridSize)) >= 4 || (positionsForExtendTrain.length <=2)) {
+    if (increasingCol || decreasingCol) {
+      if (Math.abs(lastCol - (x_before_last_x / gridSize)) >= 4 || pathPositions.length <= 2) {
         for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
-          // if (row >= lastRow - 2||row<=lastRow+2 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
           if (Math.abs(row - lastRow) < 4) {
-            //go to next iteration since we want only gradual change in track direction and not sharp turns
             continue
-          } else {
-            //drawCircle
-            drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
-            validTrackPoints.add(`${last_x},${row * gridSize}`)
           }
+          drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
+          validTrackPoints.add(`${last_x},${row * gridSize}`)
         }
       }
-    
+
       for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
-        if ((increasingCol && (col > lastCol)) || (decreasingCol && (col < lastCol))) {
+        if ((increasingCol && col > lastCol) || (decreasingCol && col < lastCol)) {
           drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
           validTrackPoints.add(`${col * gridSize},${last_y}`)
         }
       }
     }
 
-    if(increasingRow||decreasingRow) {
-      if(Math.abs(lastRow - (y_before_last_y / gridSize)) >= 4 || (positionsForExtendTrain.length <=2)) {
+    if (increasingRow || decreasingRow) {
+      if (Math.abs(lastRow - (y_before_last_y / gridSize)) >= 4 || pathPositions.length <= 2) {
         for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
-          // if (row >= lastRow - 2||row<=lastRow+2 || (y_before_last_y !== null && ((increasingRow && row < lastRow) || (decreasingRow && row > lastRow)))) {
           if (Math.abs(col - lastCol) < 4) {
-            //go to next iteration since we want only gradual change in track direction and not sharp turns
             continue
-          } else {
-            //drawCircle
-            drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
-            validTrackPoints.add(`${col * gridSize},${last_y}`)
           }
+          drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
+          validTrackPoints.add(`${col * gridSize},${last_y}`)
         }
       }
-    
+
       for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
-        if ((increasingRow && (row > lastRow)) || (decreasingRow && (row < lastRow))) {
+        if ((increasingRow && row > lastRow) || (decreasingRow && row < lastRow)) {
           drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
           validTrackPoints.add(`${last_x},${row * gridSize}`)
         }
       }
     }
 
-    // In case the user wants to shorten the last step so that atleast 2 grid segments remain, we might need to handle that logic here.
-    if(increasingRow){
-      for(let row = y_before_last_y / gridSize + 2; row < lastRow; row++) {
-        // color these poins red, since they imply finishing the track specification.
+    if (increasingRow) {
+      for (let row = y_before_last_y / gridSize + 2; row < lastRow; row++) {
         drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
         validTrackPoints.add(`${last_x},${row * gridSize}`)
       }
     }
-    if(decreasingRow){
-      for(let row = y_before_last_y / gridSize - 2; row > lastRow; row--) {
-        // color these poins red, since they imply finishing the track specification.
+    if (decreasingRow) {
+      for (let row = y_before_last_y / gridSize - 2; row > lastRow; row--) {
         drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
         validTrackPoints.add(`${last_x},${row * gridSize}`)
       }
     }
-    if(increasingCol){
-      for(let col = x_before_last_x / gridSize   + 2; col < lastCol; col++) {
-        // color these poins red, since they imply finishing the track specification.
+    if (increasingCol) {
+      for (let col = x_before_last_x / gridSize + 2; col < lastCol; col++) {
         drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
         validTrackPoints.add(`${col * gridSize},${last_y}`)
       }
     }
-    if(decreasingCol){
-      for(let col = x_before_last_x / gridSize - 2; col > lastCol; col--) {
-        // color these poins red, since they imply finishing the track specification.
+    if (decreasingCol) {
+      for (let col = x_before_last_x / gridSize - 2; col > lastCol; col--) {
         drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
         validTrackPoints.add(`${col * gridSize},${last_y}`)
       }
     }
 
-    // display the valid track points for debugging
-    console.log('Valid track points after subsequent click:', Array.from(validTrackPoints))
+    if (drawTrackPreview) {
+      const tempTrack = new Track(ctxTemp, pathPositions)
+      tempTrack.draw()
+    }
+  }
 
-    const tempTrack = new Track(ctxTemp,positionsForExtendTrain)
-    tempTrack.draw()
+  function updateCanvasTempForExtendTrain() {
+    const el = document.querySelector('#buttonGroup1')
+    if (!el) {
+      return
+    }
+    const trainNumber = Number.parseInt(el.dataset.extendingTrainNumber, 10)
+    let firstStepAnchor = null
+
+    if (positionsForExtendTrain.length === 1) {
+      const train = game.trains[trainNumber - 1]
+      if (train) {
+        if (train.track.positions[0].x === positionsForExtendTrain[0].x &&
+          train.track.positions[0].y === positionsForExtendTrain[0].y) {
+          firstStepAnchor = {
+            x: train.track.positions[1].x,
+            y: train.track.positions[1].y
+          }
+        } else if (train.track.positions[train.track.positions.length - 1].x === positionsForExtendTrain[0].x &&
+          train.track.positions[train.track.positions.length - 1].y === positionsForExtendTrain[0].y) {
+          firstStepAnchor = {
+            x: train.track.positions[train.track.positions.length - 2].x,
+            y: train.track.positions[train.track.positions.length - 2].y
+          }
+        }
+      }
+    }
+
+    updateValidTrackPreview(positionsForExtendTrain, {
+      pointColor: 'orange',
+      firstStepAnchor,
+      drawTrackPreview: true
+    })
   }
 
   function updateCanvasTemp() {
-    ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-    //for each of the positions draw a small circle on ctxTemp
-    positions.forEach(position => {
-      const { x, y } = position
-      ctxTemp.save()
-      ctxTemp.beginPath()
-      ctxTemp.moveTo(x, y)
-      ctxTemp.fillStyle = 'blue'
-      ctxTemp.arc(x, y, 7, 0, Math.PI * 2)
-      ctxTemp.closePath()
-      ctxTemp.fill()
-      ctxTemp.restore()
+    updateValidTrackPreview(positions, {
+      pointColor: 'blue',
+      drawTrackPreview: false
     })
-
-    //clear the set and set it again with new valid points
-    validTrackPoints.clear()
-
-    if (positions.length === 0) {
-      return
-    }
-
-    const { x: last_x, y: last_y } = positions[positions.length - 1]
-    let x_before_last_x = null
-    let y_before_last_y = null
-    if (positions.length > 1) {
-      x_before_last_x = positions[positions.length - 2].x
-      y_before_last_y = positions[positions.length - 2].y
-    }
-
-    const lastRow = last_y / gridSize
-    const lastCol = last_x / gridSize
-    const increasingRow = y_before_last_y !== null && last_y > y_before_last_y
-    const decreasingRow = y_before_last_y !== null && last_y < y_before_last_y
-    const increasingCol = x_before_last_x !== null && last_x > x_before_last_x
-    const decreasingCol = x_before_last_x !== null && last_x < x_before_last_x
-
-    for (let row = 0; row <= CANVASHEIGHT / gridSize; row++) {
-
-      if (increasingRow && row > lastRow) {
-        drawValidTrackPoint(ctxTemp, last_x, row * gridSize, click_error)
-        validTrackPoints.add(`${last_x},${row * gridSize}`)
-      }
-      else if (decreasingRow && row < lastRow) {
-        drawValidTrackPoint(ctxTemp, last_x, row * gridSize, click_error)
-        validTrackPoints.add(`${last_x},${row * gridSize}`)
-      }
-      else if (!increasingRow && !decreasingRow && (row < lastRow - 3 || row > lastRow + 3)) {
-        drawValidTrackPoint(ctxTemp, last_x, row * gridSize, click_error)
-        validTrackPoints.add(`${last_x},${row * gridSize}`)
-      }
-
-    }
-
-
-    for (let col = 0; col <= CANVASWIDTH / gridSize; col++) {
-
-      if (increasingCol && col > lastCol) {
-        drawValidTrackPoint(ctxTemp, col * gridSize, last_y, click_error)
-        validTrackPoints.add(`${col * gridSize},${last_y}`)
-      }
-      else if (decreasingCol && col < lastCol) {
-        drawValidTrackPoint(ctxTemp, col * gridSize, last_y, click_error)
-        validTrackPoints.add(`${col * gridSize},${last_y}`)
-      }
-      else if (!increasingCol && !decreasingCol && (col < lastCol - 3 || col > lastCol + 3)) {
-        drawValidTrackPoint(ctxTemp, col * gridSize, last_y, click_error)
-        validTrackPoints.add(`${col * gridSize},${last_y}`)
-      }
-
-    }
   }
 
   window.addEventListener('collision', (event) => {
@@ -1367,7 +1274,7 @@ window.addEventListener('load', () => {
       }
     })
   }
-  window.newtrain = () => {
+  window.newtrain = async () => {
 
     if (positions.length < 2) {
       startTrack = false
@@ -1423,7 +1330,10 @@ window.addEventListener('load', () => {
       return
     }
     // game.addTrain(positions, speed, numCoaches, 0, intersections, { trainType })
-    game.addTrain(positions, numCoaches, 0, intersections, { trainType })
+    const createdTrainNumber = await game.addTrain(positions, numCoaches, 0, intersections, { trainType })
+    if (!createdTrainNumber) {
+      return
+    }
     game.setPossibleFlyoverLocations()
 
     //set the icon to play
@@ -1445,13 +1355,13 @@ window.addEventListener('load', () => {
     // }
 
     // update the UI with the right number of coaches or freight wagons based on the train type
-    const lblNumCoaches = document.querySelector(`#lblNumCoaches${trainNumber}`)
+    const lblNumCoaches = document.querySelector(`#lblNumCoaches${createdTrainNumber}`)
     if (lblNumCoaches) {
       lblNumCoaches.textContent = numCoaches
     }
 
     //we also update the options in the select box
-    const selectAddEl = document.querySelector(`#selectAdd${trainNumber}`)
+    const selectAddEl = document.querySelector(`#selectAdd${createdTrainNumber}`)
     if (selectAddEl) {
       selectAddEl.innerHTML = ''
       for(let i = 1; i<=Train.maxNumCoaches-numCoaches ; i++) {
@@ -1460,7 +1370,7 @@ window.addEventListener('load', () => {
         option.textContent = i
         selectAddEl.appendChild(option)
       }
-      addSelect.value = trainType
+      selectAddEl.value = trainType
     }
   }
 

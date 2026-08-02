@@ -112,7 +112,8 @@ class Game {
   }
 
   getCurrentTimePeriod() {
-    return Math.min(Math.floor(globalThis.globalTicks / this.ticksPerTimeUnit), this.totalTimeUnits - 1)
+    // return Math.min(Math.floor(globalThis.globalTicks / this.ticksPerTimeUnit), this.totalTimeUnits - 1)
+    return Math.floor(globalThis.globalTicks / this.ticksPerTimeUnit)
   }
 
   getCurrentTimeIndex() {
@@ -189,7 +190,7 @@ class Game {
     }
   }
 
-  addTrain(positions, numCoaches, delayBeforeStart, intersections, options = {}) {
+  async addTrain(positions, numCoaches, delayBeforeStart, intersections, options = {}) {
     const overlapMatches = []
     let useParallelTrack = false
     let numSegments = 0
@@ -211,7 +212,7 @@ class Game {
       console.log(`The new train overlaps with existing train(s): ${overlappingTrains}.`)
       const cost = numSegments * this.financials.parallelTrackCostPerSegment
       console.log(`Parallel track cost for ${numSegments} segments: $${cost}`)
-      useParallelTrack = this.promptUserForParallelTrack(numSegments, overlappingTrains, cost)
+      useParallelTrack = await this.promptUserForParallelTrack(numSegments, overlappingTrains, cost)
 
       if (useParallelTrack) {
           const overlapCountBySegment = new Map()
@@ -338,7 +339,7 @@ class Game {
     return trainNumber
   }
 
-  addFreightTrain(positions, numCoaches, delayBeforeStart, intersections, options = {}) {
+  async addFreightTrain(positions, numCoaches, delayBeforeStart, intersections, options = {}) {
     return this.addTrain(positions, numCoaches, delayBeforeStart, intersections, {
       trainType: 'freight',
       visualLengthScale: 0.35,
@@ -348,7 +349,7 @@ class Game {
     })
   }
 
-  addPassengerTrain(positions, numCoaches, delayBeforeStart, intersections, options = {}) {
+  async addPassengerTrain(positions, numCoaches, delayBeforeStart, intersections, options = {}) {
     return this.addTrain(positions, numCoaches, delayBeforeStart, intersections, {
       trainType: 'passenger',
       ...options
@@ -440,22 +441,25 @@ class Game {
     }
   }
 
-  promptUserForParallelTrack(numSegments, overlappingTrains, cost) {
+  async promptUserForParallelTrack(numSegments, overlappingTrains, cost) {
     if (numSegments == 0) {
       return false
     }
-    const response = window.prompt(
-      `The new train overlaps with existing train(s): ${overlappingTrains}.\n\n` +
-        `Type Y to enable parallel-track mode. Type N to manage collisions manually.\n` +
-        `If you choose parallel-track mode, an additional cost of $${cost} will be incurred for laying the parallel track segments.`,
-      'N'
-    )
-
-    if (!response) {
+    if (typeof window.swal === 'undefined' || typeof window.swal.fire !== 'function') {
       return false
     }
 
-    return response.trim().toLowerCase().startsWith('y')
+    const result = await window.swal.fire({
+      title: 'Enable Parallel Track?',
+      text: `The new train overlaps with existing train(s): ${overlappingTrains}. ${numSegments} segments overlap. Enabling parallel-track mode will add $${cost.toLocaleString('en-US')} to track costs. If you do not
+      add parallel tracks, you will have to manually manage collisions.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Enable Parallel Track',
+      cancelButtonText: 'Manage Collisions Manually'
+    })
+
+    return result.isConfirmed === true
   }
 
 }

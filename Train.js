@@ -116,6 +116,7 @@ class Train {
     this.upgradedEngine = false
     this.debugLaneLogged = false
     this.parallelSegmentCells = this.buildParallelSegmentCellSet()
+    this.awaitingTurnaround = false
 
     
     this.updateUI()
@@ -251,6 +252,7 @@ class Train {
   setDysfunctional(state) {
     this.dysfunctional = state
     if (state) {
+      this.awaitingTurnaround = false
       this.activeIntersections.forEach((intersection, key) => {
         this.clearIntersection(intersection.row, intersection.col)
         this.intersections.updateIntersection(intersection.row, intersection.col, null, this.lane)
@@ -264,6 +266,7 @@ class Train {
       this.isReturning = false
       this.paused = false
       this.userPaused = false
+      this.awaitingTurnaround = false
     }
   }
 
@@ -357,14 +360,14 @@ class Train {
       //this controls the overall speed of the train. The lower the engineSpeed, the faster the train moves. The train moves one step after every engineSpeed number of frames
       const previousCount = this.count
       const distanceStep = 3
-      this.count += distanceStep
+      const nextCount = this.count + distanceStep
       let distanceMoved = distanceStep
-      if (this.track.totalLength > 0 && this.count >= this.track.totalLength) {
+      if (this.track.totalLength > 0 && nextCount >= this.track.totalLength) {
         distanceMoved = Math.max(0, this.track.totalLength - previousCount)
-        this.count = 0
-        this.ticks = 0
-        this.isReturning = !this.isReturning
-        this.tripNumber++
+        this.count = this.track.totalLength
+        this.awaitingTurnaround = true
+      } else {
+        this.count = nextCount
       }
       this.distanceTraveledInTimeUnit += distanceMoved
     }
@@ -604,6 +607,16 @@ class Train {
         this.stationVisitContext = null
       }
       this.lastProcessedStationNumber = null  // train has left the station, allow retriggering next visit
+    }
+
+    if (this.awaitingTurnaround && atAStation) {
+      // Delay direction flip until terminal station processing is complete,
+      // otherwise terminal deboarding/arrival metrics can be skipped.
+      this.count = 0
+      this.ticks = 0
+      this.isReturning = !this.isReturning
+      this.tripNumber++
+      this.awaitingTurnaround = false
     }
 
     const heading = Number.isFinite(direction) ? direction : 0
