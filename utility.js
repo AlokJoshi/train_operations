@@ -162,6 +162,88 @@ function getDetailedSegmentsMap(positions, turningCircle=100, gridSize=50) {
     // console.log(commonSegmentsMap)
     return commonSegmentsMap
   }
+
+function createAudioManager(audioSources = {}, { enabled = true } = {}) {
+  const sounds = new Map()
+  let audioUnlocked = false
+  let audioEnabled = !!enabled
+
+  Object.entries(audioSources).forEach(([key, source]) => {
+    if (!key || !source) {
+      return
+    }
+    const audio = new Audio(source)
+    audio.preload = 'auto'
+    sounds.set(key, audio)
+  })
+
+  const unlockAudio = async () => {
+    if (!audioEnabled || audioUnlocked || sounds.size === 0) {
+      return audioUnlocked
+    }
+    const firstAudio = sounds.values().next().value
+    if (!firstAudio) {
+      return false
+    }
+
+    try {
+      firstAudio.muted = true
+      firstAudio.currentTime = 0
+      await firstAudio.play()
+      firstAudio.pause()
+      firstAudio.currentTime = 0
+      firstAudio.muted = false
+      audioUnlocked = true
+    } catch {
+      return false
+    }
+
+    return true
+  }
+
+  const safePlay = async (soundKey, { volume = 1, loop = false, restart = true } = {}) => {
+    const audio = sounds.get(soundKey)
+    if (!audioEnabled || !audio || !audioUnlocked) {
+      return false
+    }
+
+    try {
+      audio.volume = volume
+      audio.loop = loop
+      if (restart) {
+        audio.currentTime = 0
+      }
+      await audio.play()
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const setEnabled = (nextEnabled) => {
+    audioEnabled = !!nextEnabled
+    if (!audioEnabled) {
+      sounds.forEach((audio) => {
+        try {
+          audio.pause()
+          audio.currentTime = 0
+        } catch {
+          // Ignore media state errors while force-stopping sounds.
+        }
+      })
+    }
+    return audioEnabled
+  }
+
+  return {
+    unlockAudio,
+    safePlay,
+    setEnabled,
+    isEnabled: () => audioEnabled,
+    isUnlocked: () => audioUnlocked,
+    getAudio: (soundKey) => sounds.get(soundKey) ?? null
+  }
+}
   
 export {
   makeDraggable,
@@ -169,5 +251,6 @@ export {
   rowAndColumnName,
   alpha,
   getDetailedSegmentsMap,
-  getCommonSegmentsMap
+  getCommonSegmentsMap,
+  createAudioManager
 }

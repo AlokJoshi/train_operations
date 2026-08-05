@@ -182,7 +182,7 @@
       </div>
       <div class="dialogContent">
         <div style="display:flex; align-items:center; justify-content:center;">
-          <button type="button" style="border-radius: 10px;"
+          <button type="button" style="border-radius: 10px;padding:10px"
             onclick="document.getElementById('startPauseBtn').click();">Start/Pause</button>
         </div>
         <!-- Instructions for how to use the game will be displayed here -->
@@ -333,12 +333,18 @@
             other train is occupying the intersection. See below:
             <img src="./possible_collision.PNG" style="width:550px" alt="" srcset="">
           </li>
+          <li>Note that the big zero that you see in grey
+            in the middle of the screen is the time period. It will
+            keep increasing till 99. When it reaches 100 the game
+            will end.
+            <img src="bigzero.PNG" style="width:550px" alt="" srcset="">
+          </li>
         </ul>
         <div style="display:flex; align-items:center; justify-content:center;">
-          <button type="button" style="border-radius: 10px;" id="howToPlayStartBtn">Start/Pause</button>
+          <button type="button" style="border-radius: 10px;padding:10px;" id="howToPlayStartBtn">Start/Pause</button>
         </div>
       </div>
-    </div> <!-- End of buttonGroup5 -->
+    </div> <!-- End of buttonGroup5: Instructions -->
 
     <div id="buttonGroup6" class="modal"
       style="display:flex; position:fixed; top:10px;left:190px; flex-direction:row; gap:8px">
@@ -358,7 +364,7 @@
         aria-label="Show raw materials supply map">Y</button>
       <button type="button" class="mobile-hotkey" data-hotkey="Z" title="Show Rawmaterial Demand Map"
         aria-label="Show raw material demand map">Z</button>
-    </div> <!-- End of buttonGroup6 -->
+    </div> <!-- End of buttonGroup6: Touch-friendly replacements for keyboard hotkeys -->
 
     <div id="buttonGroup7" class="modal"
       style="width:700px; display:none; position:fixed; top:100px;left:690px; flex-direction:column; gap:10px">
@@ -369,6 +375,9 @@
         </span>
       </div>
       <div class="dialogContent">
+        <span style="font-size:1em">Note that passenger revenue is generated when passengers board the train. However
+          the freight revenue is generated when the freight is delivered.
+        </span>
         <div id="infoForTrain">
 
         </div>
@@ -382,8 +391,12 @@
         <div id="infotrainoperations8" class="infotrainoperations" style="display:none;"></div>
         <div id="infotrainoperations9" class="infotrainoperations" style="display:none;"></div>
       </div>
-    </div> <!-- End of buttonGroup7 -->
+    </div> <!-- End of buttonGroup7: Train Information -->
 
+    <div id="buttonGroup8" style="display: none; position:fixed;">
+      <span></span>
+    </div><!-- End of buttonGroup8: Tooltip -->
+  
   </div> <!-- End of controls -->
   <script type="module" src="script.js"></script>
 </body>

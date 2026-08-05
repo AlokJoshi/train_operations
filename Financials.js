@@ -1,3 +1,5 @@
+
+import { audioManager } from './audioManager.js'
 class Financials {
   // track maintenance cost is calculated based on the distance traveled by the train on the track. 
   // We can have a fixed cost per unit distance traveled on the track. This way, the user will have 
@@ -57,8 +59,14 @@ class Financials {
       this.cumProfitByTrain[trainIndex] += amount
       // this.updateProfit(timeIndex, trainIndex)
       this.profit[timeIndex][trainIndex] += amount
+      const prevCashInHand = this.cashInHand
       this.cashInHand += amount
-      // console.log(`Revenue incremented by $${amount.toLocaleString('en-US')} Train ${trainIndex + 1} Reason: ${reason} | Cash in Hand: $${this.cashInHand.toLocaleString('en-US')}`)
+      if(Math.floor(this.cashInHand/1000000) > Math.floor(prevCashInHand/1000000)) {
+        audioManager.safePlay('money',1,3)
+      }
+      if(Math.floor(this.cashInHand/100000000) > Math.floor(prevCashInHand/100000000)) {
+        audioManager.safePlay('drumroll',1,3)
+      }
     }
   }
   incrementExpenses(timeIndex, trainIndex, amount, reason = '') {

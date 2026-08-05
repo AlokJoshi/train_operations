@@ -1,3 +1,6 @@
+
+import { audioManager } from './audioManager.js'
+
 class Intersections {
   constructor(canvasWidth, canvasHeight, gridSize, offsetX = 0, offsetY = 0) {
     this.canvasWidth = canvasWidth
@@ -139,6 +142,8 @@ class Intersections {
       } else {
         this.laneOccupancy.set(key, lanes)
       }
+
+      audioManager.safePlay('traincollide',1)
       window.dispatchEvent(event)
       // console.warn(`Collision detected at intersection ${row},${col} between train ${currentTrain} and train ${trainNumber}`)
     } else {

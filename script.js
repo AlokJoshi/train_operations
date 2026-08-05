@@ -1,7 +1,8 @@
 import { Game } from './Game.js'
 import { Track} from './Track.js'
 import { Intersections } from './Intersections.js'
-import { makeDraggable, alpha, getDetailedSegmentsMap, getCommonSegmentsMap } from './utility.js'
+import { makeDraggable, alpha, getDetailedSegmentsMap, getCommonSegmentsMap, createAudioManager } from './utility.js'
+import { audioManager } from './audioManager.js'
 
 globalThis.globalTicks = 0
 
@@ -58,6 +59,17 @@ function setValidTrackPoints() {
 let intersections = new Intersections(CANVASWIDTH - OFFSET_X * 2, CANVASHEIGHT - OFFSET_Y * 2, gridSize, OFFSET_X, OFFSET_Y)
 
 const game = new Game(ctx, ctxTracks, ctxTemp, gridSize, OFFSET_X, OFFSET_Y)
+// const ENABLE_SFX = true
+// const audioManager = createAudioManager({
+//   beep: './beep.mp3',
+//   train: './train.wav',
+//   whistle: './steam_engine_whistle.mp3',
+//   money: './money.mp3',
+//   pop: './pop.mp3',
+//   chugging: './chugging_sound.mp3'
+// }, { enabled: ENABLE_SFX })
+
+window.setGameSoundEnabled = (enabled) => audioManager.setEnabled(enabled)
 
 const controlsRoot = document.querySelector('#controls')
 
@@ -677,6 +689,7 @@ window.addEventListener('load', () => {
   }
 
   document.querySelector('#canvas_temp').addEventListener('click', (event) => {
+    // audioManager.safePlay('beep')
     const point = getCanvasPoint(event)
     if (startExtendTrain) {
       //check which train is selected for extension
@@ -811,7 +824,14 @@ window.addEventListener('load', () => {
   })
   document.querySelector('#canvas_temp').addEventListener('mousemove', (event) => {
     const point = getCanvasPoint(event)
-    //console.log(`mouse move event listener added`)
+    const row = alpha(Math.round((point.y - CANVASMARGIN) / gridSize))
+    const col = alpha(Math.round((point.x - CANVASMARGIN) / gridSize))
+    // console.log(`mouse move event listener added at row ${row}, col ${col}`)
+    const buttonGroup8el=document.querySelector('#buttonGroup8')
+    buttonGroup8el.style.display='block'
+    buttonGroup8el.style.left=`${point.x+2}px`
+    buttonGroup8el.style.top=`${point.y-5}px`
+    buttonGroup8el.querySelector('span').textContent = `${col},${row}`
     if (!startTrack && !startExtendTrain && !startFlyover) {
       if ((point.x < click_error || point.x > CANVASWIDTH - click_error || point.y < click_error || point.y > CANVASHEIGHT - click_error) && Math.abs(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize - point.x) < click_error && Math.abs(CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize - point.y) < click_error) {
         //draw a horizontal or vertical dashed line on the ctxTemp
@@ -1157,6 +1177,7 @@ window.addEventListener('load', () => {
   }
 
   window.addEventListener('collision', (event) => {
+    audioManager.safePlay('beep')
     // console.log(`Collision between train ${event.train1} and train ${event.train2}`)
     // count total collisions
     collisionCount++
@@ -1786,3 +1807,13 @@ function displayFinancialResults() {
     }
   })
 }
+
+
+// Unlock audio after user gestures to satisfy browser autoplay policy.
+document.addEventListener('click', () => {
+  audioManager.unlockAudio()
+}, { once: false })
+document.addEventListener('keydown', () => {
+  audioManager.unlockAudio()
+}, { once: false })
+
