@@ -32,7 +32,7 @@ class RawmaterialDemand {
       const unfulfilledDemand = Number.isFinite(demand) ? demand : 0
       const baseDemand = this.singlePeriodDemand.find(d => this.getKey(d.x, d.y) === key)?.demand ?? 0
       const newDemand = baseDemand * 1.01 // increase demand by 1% each time unit, adjust as needed
-      console.log(`Updating demand at ${key}: unfulfilledDemand = ${unfulfilledDemand}, newDemand = ${newDemand}, total = ${unfulfilledDemand + newDemand}`)
+      // console.log(`Updating demand at ${key}: unfulfilledDemand = ${unfulfilledDemand}, newDemand = ${newDemand}, total = ${unfulfilledDemand + newDemand}`)
       this.values.set(key, unfulfilledDemand + newDemand)
     }
   }

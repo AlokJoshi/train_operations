@@ -1,7 +1,7 @@
 import { Game } from './Game.js'
-import { Track} from './Track.js'
+import { Track } from './Track.js'
 import { Intersections } from './Intersections.js'
-import { makeDraggable, alpha, getDetailedSegmentsMap, getCommonSegmentsMap, createAudioManager } from './utility.js'
+import { makeDraggable, alpha, getDetailedSegmentsMap, getCommonSegmentsMap } from './utility.js'
 import { audioManager } from './audioManager.js'
 
 globalThis.globalTicks = 0
@@ -59,15 +59,6 @@ function setValidTrackPoints() {
 let intersections = new Intersections(CANVASWIDTH - OFFSET_X * 2, CANVASHEIGHT - OFFSET_Y * 2, gridSize, OFFSET_X, OFFSET_Y)
 
 const game = new Game(ctx, ctxTracks, ctxTemp, gridSize, OFFSET_X, OFFSET_Y)
-// const ENABLE_SFX = true
-// const audioManager = createAudioManager({
-//   beep: './beep.mp3',
-//   train: './train.wav',
-//   whistle: './steam_engine_whistle.mp3',
-//   money: './money.mp3',
-//   pop: './pop.mp3',
-//   chugging: './chugging_sound.mp3'
-// }, { enabled: ENABLE_SFX })
 
 window.setGameSoundEnabled = (enabled) => audioManager.setEnabled(enabled)
 
@@ -116,7 +107,7 @@ function initializeTrainControlWidgets(maxTrains = 9) {
     newCountEl.id = `newCount${trainNumber}`
     newCountEl.setAttribute('onchange', `updateNewCount(${trainNumber},event)`)
     newCountEl.setAttribute('onkeydown', `if(event.key==='Enter'||event.key==='Escape'){this.blur()}`)
-    
+
     const upgradeEngineEl = trainControlEl.querySelector('[data-role="upgrade-engine"]')
     upgradeEngineEl.id = `upgradeEngine${trainNumber}`
     upgradeEngineEl.setAttribute('onclick', `upgradeEngine(${trainNumber})`)
@@ -358,6 +349,14 @@ window.addEventListener('load', () => {
 
   const handleTrainHotkeys = (event) => {
 
+    if (event.repeat || !event.code) return
+
+    if (event.code === 'KeyN') {
+      // Allow toggling sound even when focus is inside an input.
+      toggleSound()
+      return
+    }
+
     if (!startTrack && !startExtendTrain && !startFlyover && event.key === 'Escape') {
       ctxMaps.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       return;
@@ -368,7 +367,6 @@ window.addEventListener('load', () => {
       return;
     }
 
-    if (event.repeat || !event.code) return
     const isDigitKey = event.code.startsWith('Digit') || event.code.startsWith('Numpad')
     if (isDigitKey) {
       const trainNumber = Number.parseInt(event.key, 10)
@@ -479,7 +477,7 @@ window.addEventListener('load', () => {
     } else if (event.code === 'KeyI') {
       //if the code is I then show the info on train operations widget
       const modal = document.querySelector('#buttonGroup7')
-      
+
       if (!showingInfo) {
         modal.style.display = 'flex'
       } else {
@@ -498,12 +496,22 @@ window.addEventListener('load', () => {
     } else if (event.code === 'KeyP') {
       //if the code is P then Start/Pause the game
       startPauseGame()
+    } else if (event.code === 'KeyN') {
+      //if the code is N then toggle sound
+      toggleSound()
     }
   }
 
   startPausebutton.addEventListener('click', () => {
     startPauseGame()
   })
+
+  const toggleSound = async () => {
+    const enabled = audioManager.toggleSound()
+    if (enabled && !audioManager.isUnlocked()) {
+      await audioManager.unlockAudio()
+    }
+  }
 
   const startPauseGame = () => {
     //switch the play button to pause
@@ -530,7 +538,8 @@ window.addEventListener('load', () => {
     'I': 'KeyI',
     'X': 'KeyX',
     'Y': 'KeyY',
-    'Z': 'KeyZ'
+    'Z': 'KeyZ',
+    'N': 'KeyN'
   }
 
   const sendHotkeyToDocument = (hotkey) => {
@@ -553,55 +562,6 @@ window.addEventListener('load', () => {
       sendHotkeyToDocument(normalizedHotkey)
     })
   })
-
-  const pauseHotkeyButton = document.getElementById('P')
-  if (pauseHotkeyButton) {
-    pauseHotkeyButton.addEventListener('click', () => {
-      sendHotkeyToDocument('P')
-    })
-  }
-  const trainHotkeyButton = document.getElementById('T')
-  if (trainHotkeyButton) {
-    trainHotkeyButton.addEventListener('click', () => {
-      sendHotkeyToDocument('T')
-    })
-  }
-  const stationHotkeyButton = document.getElementById('S')
-  if (stationHotkeyButton) {
-    stationHotkeyButton.addEventListener('click', () => {
-      sendHotkeyToDocument('S')
-    })
-  }
-  const flyoverHotkeyButton = document.getElementById('F')
-  if (flyoverHotkeyButton) {
-    flyoverHotkeyButton.addEventListener('click', () => {
-      sendHotkeyToDocument('F')
-    })
-  }
-  const xHotkeyButton = document.getElementById('X')
-  if (xHotkeyButton) {
-    xHotkeyButton.addEventListener('click', () => {
-      sendHotkeyToDocument('X')
-    })
-  }
-  const yHotkeyButton = document.getElementById('Y')
-  if (yHotkeyButton) {
-    yHotkeyButton.addEventListener('click', () => {
-      sendHotkeyToDocument('Y')
-    })
-  }
-  const zHotkeyButton = document.getElementById('Z')
-  if (zHotkeyButton) {
-    zHotkeyButton.addEventListener('click', () => {
-      sendHotkeyToDocument('Z')
-    })
-  }
-  const infoHotkeyButton = document.getElementById('I')
-  if (infoHotkeyButton) {
-    infoHotkeyButton.addEventListener('click', () => {
-      sendHotkeyToDocument('I')
-    })
-  }
 
   const getCanvasPoint = (event) => {
     const rect = event.currentTarget.getBoundingClientRect()
@@ -627,10 +587,10 @@ window.addEventListener('load', () => {
   }
 
   const infoForTrainContainer = document.querySelector('#infoForTrain')
-  if(infoForTrainContainer){
-    infoForTrainContainer.addEventListener('click',(event) => {
+  if (infoForTrainContainer) {
+    infoForTrainContainer.addEventListener('click', (event) => {
       const target = event.target
-      if(!(target instanceof HTMLElement) || target.tagName !== 'SPAN') {
+      if (!(target instanceof HTMLElement) || target.tagName !== 'SPAN') {
         return
       }
       const trainNumber = Number.parseInt(target.dataset.value, 10)
@@ -638,7 +598,7 @@ window.addEventListener('load', () => {
         return
       }
       //hide all elements for all trains
-      document.querySelectorAll('[id^="infotrainoperations"]').forEach(el => el.style.display='none')
+      document.querySelectorAll('[id^="infotrainoperations"]').forEach(el => el.style.display = 'none')
       const infoTrainOperationsElement = document.querySelector(`#infotrainoperations${trainNumber}`)
       if (infoTrainOperationsElement) {
         infoTrainOperationsElement.style.display = 'block'
@@ -665,7 +625,7 @@ window.addEventListener('load', () => {
         console.log(`Train with number ${trainNumber} not found`)
         return
       }
-      if (trainNumber==selectedTrainNumberForStartStation){
+      if (trainNumber == selectedTrainNumberForStartStation) {
         startStation = false
         ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
         selectedTrainNumberForStartStation = null
@@ -827,10 +787,10 @@ window.addEventListener('load', () => {
     const row = alpha(Math.round((point.y - CANVASMARGIN) / gridSize))
     const col = alpha(Math.round((point.x - CANVASMARGIN) / gridSize))
     // console.log(`mouse move event listener added at row ${row}, col ${col}`)
-    const buttonGroup8el=document.querySelector('#buttonGroup8')
-    buttonGroup8el.style.display='block'
-    buttonGroup8el.style.left=`${point.x+2}px`
-    buttonGroup8el.style.top=`${point.y-5}px`
+    const buttonGroup8el = document.querySelector('#buttonGroup8')
+    buttonGroup8el.style.display = 'block'
+    buttonGroup8el.style.left = `${point.x + 2}px`
+    buttonGroup8el.style.top = `${point.y - 5}px`
     buttonGroup8el.querySelector('span').textContent = `${col},${row}`
     if (!startTrack && !startExtendTrain && !startFlyover) {
       if ((point.x < click_error || point.x > CANVASWIDTH - click_error || point.y < click_error || point.y > CANVASHEIGHT - click_error) && Math.abs(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize - point.x) < click_error && Math.abs(CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize - point.y) < click_error) {
@@ -1263,6 +1223,14 @@ window.addEventListener('load', () => {
       ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
     }
   }
+
+  window.turnSoundOn = async () => {
+    audioManager.setEnabled(true)
+    if (!audioManager.isUnlocked()) {
+      await audioManager.unlockAudio()
+    }
+  }
+
   window.cancelTrainExtension = (trainnumber) => {
     const selectedTrainNumber = getActiveTrainExtensionTrainNumber(trainnumber)
     if (selectedTrainNumber) {
@@ -1318,7 +1286,7 @@ window.addEventListener('load', () => {
     }
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
 
-    
+
 
     // const speedEl = document.querySelector('#speed')
     const numCoachesEl = document.querySelector('#numcoaches')
@@ -1385,7 +1353,7 @@ window.addEventListener('load', () => {
     const selectAddEl = document.querySelector(`#selectAdd${createdTrainNumber}`)
     if (selectAddEl) {
       selectAddEl.innerHTML = ''
-      for(let i = 1; i<=Train.maxNumCoaches-numCoaches ; i++) {
+      for (let i = 1; i <= Train.maxNumCoaches - numCoaches; i++) {
         const option = document.createElement('option')
         option.value = i
         option.textContent = i
@@ -1500,7 +1468,7 @@ window.addEventListener('load', () => {
     }
     // game.addCoach(trainNumber)
   }
-  
+
   window.removeCoach = function (trainNumber) {
     const train = game.trains[trainNumber - 1]
     if (!train) {
@@ -1810,10 +1778,10 @@ function displayFinancialResults() {
 
 
 // Unlock audio after user gestures to satisfy browser autoplay policy.
-document.addEventListener('click', () => {
-  audioManager.unlockAudio()
-}, { once: false })
-document.addEventListener('keydown', () => {
-  audioManager.unlockAudio()
-}, { once: false })
+// document.addEventListener('click', () => {
+//   audioManager.unlockAudio()
+// }, { once: false })
+// document.addEventListener('keydown', () => {
+//   audioManager.unlockAudio()
+// }, { once: false })
 

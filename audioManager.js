@@ -14,5 +14,13 @@ export const audioManager = createAudioManager(
     traincollide: './traincollide.mp3',
     drumroll: './drumroll.mp3'
   },
-  { enabled: ENABLE_SFX }
+  {
+    enabled: ENABLE_SFX,
+    hornDefaults: {
+      baseFrequency: 280,
+      duration: 0.75,
+      volume: 0.12,
+      detune: 0
+    }
+  }
 );
