@@ -62,6 +62,21 @@ const game = new Game(ctx, ctxTracks, ctxTemp, gridSize, OFFSET_X, OFFSET_Y)
 
 window.setGameSoundEnabled = (enabled) => audioManager.setEnabled(enabled)
 
+let allowPageUnload = false
+
+window.allowGamePageUnload = (allowed = true) => {
+  allowPageUnload = !!allowed
+  return allowPageUnload
+}
+
+window.addEventListener('beforeunload', (event) => {
+  if (allowPageUnload) {
+    return
+  }
+  event.preventDefault()
+  event.returnValue = ''
+})
+
 const controlsRoot = document.querySelector('#controls')
 
 function blurFocusedControlElement() {
@@ -350,6 +365,19 @@ window.addEventListener('load', () => {
   const handleTrainHotkeys = (event) => {
 
     if (event.repeat || !event.code) return
+
+    const isKeyboardRefresh = event.code === 'F5' || ((event.ctrlKey || event.metaKey) && event.code === 'KeyR')
+    if (isKeyboardRefresh) {
+      event.preventDefault()
+      if (typeof window.swal !== 'undefined' && typeof window.swal.fire === 'function') {
+        window.swal.fire({
+          icon: 'info',
+          title: 'Refresh blocked',
+          text: 'Use in-game controls to continue. Browser refresh restarts the game.'
+        })
+      }
+      return
+    }
 
     if (event.code === 'KeyN') {
       // Allow toggling sound even when focus is inside an input.

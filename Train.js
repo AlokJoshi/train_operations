@@ -500,7 +500,7 @@ class Train {
         if (isTerminalForCurrentDirection) {
           audioManager.playTrainHorn({
             trainNumber: this.trainNumber,
-            baseFrequency: 320,
+            baseFrequency: 320+10*this.trainNumber,
             duration: 0.62,
             volume: 0.11
           })

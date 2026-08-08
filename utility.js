@@ -171,7 +171,7 @@ function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = 
 
   const resolvedHornDefaults = {
     baseFrequency: 280,
-    duration: 0.7,
+    duration: 1.7,//0.7
     volume: 0.12,
     detune: 0,
     ...hornDefaults

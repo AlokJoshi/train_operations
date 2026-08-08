@@ -18,7 +18,7 @@ export const audioManager = createAudioManager(
     enabled: ENABLE_SFX,
     hornDefaults: {
       baseFrequency: 280,
-      duration: 0.75,
+      duration: 1.75, //0.75
       volume: 0.12,
       detune: 0
     }
