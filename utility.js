@@ -163,6 +163,10 @@ function getCommonSegmentsMap(positions1, positions2, turningCircle = 100, gridS
   return commonSegmentsMap
 }
 
+async function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = {} } = {}) {
   const sounds = new Map()
   let mediaUnlocked = false
@@ -400,5 +404,6 @@ export {
   alpha,
   getDetailedSegmentsMap,
   getCommonSegmentsMap,
-  createAudioManager
+  createAudioManager,
+  delay
 }

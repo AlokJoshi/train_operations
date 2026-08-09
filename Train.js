@@ -498,12 +498,6 @@ class Train {
         }
 
         if (isTerminalForCurrentDirection) {
-          audioManager.playTrainHorn({
-            trainNumber: this.trainNumber,
-            baseFrequency: 320+10*this.trainNumber,
-            duration: 0.62,
-            volume: 0.11
-          })
           this.logStationOperation('arrival', this.stationVisitContext)
         }
 
@@ -582,12 +576,12 @@ class Train {
         }
 
         if (isTerminalForCurrentDirection) {
-          audioManager.playTrainHorn({
-            trainNumber: this.trainNumber,
-            baseFrequency: 230,
-            duration: 0.9,
-            volume: 0.13
-          })
+          // audioManager.playTrainHorn({
+          //   trainNumber: this.trainNumber,
+          //   baseFrequency: 230,
+          //   duration: 0.9,
+          //   volume: 0.13
+          // })
           this.logStationOperation('arrival', this.stationVisitContext)
         }
         const existingPopupInfo = this.popups.getPopupInfo(station.x, station.y)

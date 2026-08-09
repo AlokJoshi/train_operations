@@ -1,7 +1,7 @@
 import { Game } from './Game.js'
 import { Track } from './Track.js'
 import { Intersections } from './Intersections.js'
-import { makeDraggable, alpha, getDetailedSegmentsMap, getCommonSegmentsMap } from './utility.js'
+import { makeDraggable, alpha, getDetailedSegmentsMap, getCommonSegmentsMap, delay } from './utility.js'
 import { audioManager } from './audioManager.js'
 
 globalThis.globalTicks = 0
@@ -267,6 +267,28 @@ const drawScene = () => {
       ctxResults.fillText(`${currentTimeUnit}`, CANVASWIDTH / 2 - textMetrics.width / 2, CANVASHEIGHT / 2 - textMetrics.actualBoundingBoxDescent / 2)
       ctxResults.restore()
 
+      // all existing trains sound their horn at the beginning of each time period..
+      game.trains.forEach(train => {
+        if (train) {
+          const startDelayMs = Math.random() * 20000
+          setTimeout(() => {
+            audioManager.playTrainHorn({
+              trainNumber: train.trainNumber,
+              baseFrequency: 320 + 10 * train.trainNumber,
+              duration: 0.2,
+              volume: 0.11
+            })
+            setTimeout(() => {
+              audioManager.playTrainHorn({
+                trainNumber: train.trainNumber,
+                baseFrequency: 320 + 10 * train.trainNumber,
+                duration: 2.0,
+                volume: 0.11
+              })
+            }, 200)
+          }, startDelayMs)
+        }
+      })
       if (currentTimeUnit === 100) {
         paused = true
         swal.fire({
@@ -677,7 +699,6 @@ window.addEventListener('load', () => {
   }
 
   document.querySelector('#canvas_temp').addEventListener('click', (event) => {
-    // audioManager.safePlay('beep')
     const point = getCanvasPoint(event)
     if (startExtendTrain) {
       //check which train is selected for extension
@@ -816,10 +837,18 @@ window.addEventListener('load', () => {
     const col = alpha(Math.round((point.x - CANVASMARGIN) / gridSize))
     // console.log(`mouse move event listener added at row ${row}, col ${col}`)
     const buttonGroup8el = document.querySelector('#buttonGroup8')
+    if (!buttonGroup8el) {
+      return
+    }
+    const label = buttonGroup8el.querySelector('span')
+    if (!label) {
+      return
+    }
     buttonGroup8el.style.display = 'block'
-    buttonGroup8el.style.left = `${point.x + 2}px`
-    buttonGroup8el.style.top = `${point.y - 5}px`
-    buttonGroup8el.querySelector('span').textContent = `${col},${row}`
+    // buttonGroup8 is fixed-position, so place it in viewport coordinates.
+    buttonGroup8el.style.left = `${event.clientX + 2}px`
+    buttonGroup8el.style.top = `${event.clientY - 5}px`
+    label.textContent = `${col}--${row}`
     if (!startTrack && !startExtendTrain && !startFlyover) {
       if ((point.x < click_error || point.x > CANVASWIDTH - click_error || point.y < click_error || point.y > CANVASHEIGHT - click_error) && Math.abs(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize - point.x) < click_error && Math.abs(CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize - point.y) < click_error) {
         //draw a horizontal or vertical dashed line on the ctxTemp
@@ -1160,7 +1189,7 @@ window.addEventListener('load', () => {
   function updateCanvasTemp() {
     updateValidTrackPreview(positions, {
       pointColor: 'blue',
-      drawTrackPreview: false
+      drawTrackPreview: true
     })
   }
 
@@ -1230,6 +1259,8 @@ window.addEventListener('load', () => {
     if (cancelTrackBtn) {
       cancelTrackBtn.style.display = 'block'
     }
+    swal.fire(`Click on the grid to set the starting point of the track. After that, you can continue to add more points to define the track. Since the train cannot make sharp turns you will be guided and you will
+      only be able to add points (shown by green circles) that do not create sharp turns. When you are done, click on the check icon in the train control. If you want to cancel, click on the cross icon in the train control.`)
     document.querySelector('#canvas_temp').style = 'cursor:crosshair'
   }
 
@@ -1237,7 +1268,7 @@ window.addEventListener('load', () => {
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
     if (startTrack) {
       startTrack = false
-      document.querySelector('#canvas').style = 'cursor:default'
+      document.querySelector('#canvas_temp').style = 'cursor:default'
       positions = []
       setValidTrackPoints()
       const startTrackBtn = document.querySelector('#startTrack')
