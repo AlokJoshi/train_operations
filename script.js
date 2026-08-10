@@ -1259,8 +1259,11 @@ window.addEventListener('load', () => {
     if (cancelTrackBtn) {
       cancelTrackBtn.style.display = 'block'
     }
-    swal.fire(`Click on the grid to set the starting point of the track. After that, you can continue to add more points to define the track. Since the train cannot make sharp turns you will be guided and you will
-      only be able to add points (shown by green circles) that do not create sharp turns. When you are done, click on the check icon in the train control. If you want to cancel, click on the cross icon in the train control.`)
+    swal.fire({
+      title: 'Set Starting Point',
+      text: `Click on the grid to set the starting point of the track. After that, you can continue to add more points to define the track. Since the train cannot make sharp turns you will be guided and you will
+      only be able to add points (shown by green circles) that do not create sharp turns. When you are done, click on the check icon in the train control. If you want to cancel, click on the cross icon in the train control.`
+    })
     document.querySelector('#canvas_temp').style = 'cursor:crosshair'
   }
 
