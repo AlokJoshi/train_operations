@@ -8,6 +8,7 @@ class Train {
   static lengthCoach = 20
   static widthCoach = 12
   static chimney_r = 30
+  static maxSmokePuffs = 60
   static smokeColor = `#222`
   static coachColor = `#00ff00`
   static intersectionDist = 10
@@ -97,8 +98,6 @@ class Train {
     this.lastProcessedStationNumber = null  // prevents boarding/deboarding from firing on every frame while at a station
     this.stationVisitContext = null
     this.remainingDwellTime = 0
-    this.infoText = ''
-    // this.infoTextTicks = 0
     this.freightTrainDwellTime = 200 // fixed dwell time for freight trains at each station for loading and unloading. This can be adjusted as needed.
     this.rawMaterialDemand = rawMaterialDemand
     this.rawMaterialSupply = rawMaterialSupply
@@ -117,10 +116,29 @@ class Train {
     this.debugLaneLogged = false
     this.parallelSegmentCells = this.buildParallelSegmentCellSet()
     this.awaitingTurnaround = false
+    this.smokePuffs = []
+    this.lastSmokeEmitTick = 0
+    this.smokeSetting = 'high'
 
     
     this.updateUI()
     
+  }
+
+  normalizeSmokeSetting(level) {
+    const value = typeof level === 'string' ? level.toLowerCase() : 'high'
+    if (value === 'off' || value === 'low' || value === 'high') {
+      return value
+    }
+    return 'high'
+  }
+
+  setSmokeSetting(level) {
+    this.smokeSetting = this.normalizeSmokeSetting(level)
+    if (this.smokeSetting === 'off') {
+      this.smokePuffs.length = 0
+    }
+    return this.smokeSetting
   }
 
   buildParallelSegmentCellSet() {
@@ -337,7 +355,7 @@ class Train {
 
 
     //draw is called on each frame from the game loop
-    const d = 2 //distance between one coach and the next
+    const d = 4 //distance between one coach and the next
 
     // Only increment ticks and dwell time when game is not paused
     if (!this.userPaused) {
@@ -576,16 +594,9 @@ class Train {
         }
 
         if (isTerminalForCurrentDirection) {
-          // audioManager.playTrainHorn({
-          //   trainNumber: this.trainNumber,
-          //   baseFrequency: 230,
-          //   duration: 0.9,
-          //   volume: 0.13
-          // })
           this.logStationOperation('arrival', this.stationVisitContext)
         }
         const existingPopupInfo = this.popups.getPopupInfo(station.x, station.y)
-        // this.displayInfo(existingPopupInfo, station.x, station.y)
       }
     }
 
@@ -604,6 +615,7 @@ class Train {
       this.ticks = 0
       this.isReturning = !this.isReturning
       this.tripNumber++
+      this.lastSmokeEmitTick = 0
       this.awaitingTurnaround = false
     }
 
@@ -670,17 +682,94 @@ class Train {
       this.ctx.translate(-10, -1 * Train.widthCoach * 0.5)
       this.drawCoach()
 
-      //no need to write the number since font is too small to read
-      // if (visualIndex === visibleCoachCount - 1) {
-      //   this.ctx.fillStyle = '#000'
-      //   this.ctx.font = '10px Arial'
-      //   this.ctx.fillText(`${this.numCoaches}`, 2, Train.widthCoach * 0.5 + 4)
-      // }
       this.ctx.restore()
     }
 
+    this.maybeEmitSmoke(engineDrawX, engineDrawY, heading, currSpeed)
+    this.drawSmokePuffs()
+
     this.syncIntersections(occupiedIntersections)
     return { x, y, width: Train.lengthEngine + Train.lengthCoach * this.numCoaches + 5 }
+  }
+
+  maybeEmitSmoke(engineX, engineY, heading, currSpeed) {
+    
+    if (this.userPaused || this.dwellPaused) {
+      return
+    }
+    
+    const smokeSetting = this.normalizeSmokeSetting(this.smokeSetting)
+    if (smokeSetting === 'off') {
+      return
+    }
+    
+    const emitScale = smokeSetting === 'low' ? 1.6 : 0.7
+    // const emitEveryTicks = Math.max(4, Math.min(28, Math.round((Number(currSpeed) || 20) * 1.2 * emitScale)))
+    const emitEveryTicks = this.trainType === 'passenger' ? 14 : 40
+    console.log(`Train ${this.trainNumber} smoke emit every ${emitEveryTicks} ticks (currSpeed=${currSpeed}, smokeSetting=${smokeSetting})`)
+    if (this.ticks - this.lastSmokeEmitTick < emitEveryTicks) {
+      return
+    }
+    
+    this.lastSmokeEmitTick = this.ticks
+    const chimneyRadius = Train.widthEngine * Train.chimney_r / 100
+    const frontOffset = -0.5 * Train.lengthEngine * 0.42 + chimneyRadius * 0.9
+    const chimneyX = engineX + Math.cos(heading) * frontOffset
+    const chimneyY = engineY + Math.sin(heading) * frontOffset
+    const lateralJitterX = -Math.sin(heading) * ((Math.random() - 0.5) * 1.6)
+    const lateralJitterY = Math.cos(heading) * ((Math.random() - 0.5) * 1.6)
+    
+    const puffCount = smokeSetting === 'low' ? 1 : 2
+    for (let i = 0; i < puffCount; i++) {
+      const puff = {
+        x: chimneyX + lateralJitterX + (-Math.sin(heading) * (i * 1.4)),
+        y: chimneyY + lateralJitterY + (Math.cos(heading) * (i * 1.4)),
+        r: 3.5 + Math.random() * 3.1,
+        grow: 0.16 + Math.random() * 0.12,
+        vx: -Math.cos(heading) * (0.1 + Math.random() * 0.08) + (Math.random() - 0.5) * 0.07,
+        vy: -Math.sin(heading) * (0.1 + Math.random() * 0.08) + (Math.random() - 0.5) * 0.07 - 0.06,
+        life: 85 + Math.floor(Math.random() * 55),
+        maxLife: 85 + Math.floor(Math.random() * 55),
+        alphaMax: smokeSetting === 'low' ? 0.24 : 0.5
+      }
+      
+      this.smokePuffs.push(puff)
+    }
+    const maxPuffs = smokeSetting === 'low' ? 24 : Train.maxSmokePuffs
+    if (this.smokePuffs.length > maxPuffs) {
+      this.smokePuffs.splice(0, this.smokePuffs.length - maxPuffs)
+    }
+  }
+  
+  drawSmokePuffs() {
+
+    if (!this.smokePuffs.length) {
+      return
+    }
+    
+    // if(this.trainNumber===1) debugger
+    this.ctx.save()
+    for (let i = this.smokePuffs.length - 1; i >= 0; i--) {
+      const puff = this.smokePuffs[i]
+      puff.x += puff.vx
+      puff.y += puff.vy
+      puff.r += puff.grow
+      puff.life -= 1
+
+      const t = puff.maxLife > 0 ? (puff.life / puff.maxLife) : 0
+      const alphaLimit = Number.isFinite(puff.alphaMax) ? puff.alphaMax : 0.28
+      const alpha = Math.max(0, Math.min(alphaLimit, t * alphaLimit))
+      if (puff.life <= 0 || alpha <= 0) {
+        this.smokePuffs.splice(i, 1)
+        continue
+      }
+
+      this.ctx.beginPath()
+      this.ctx.fillStyle = `rgba(160,160,160,${alpha})`
+      this.ctx.arc(puff.x, puff.y, puff.r, 0, Math.PI * 2)
+      this.ctx.fill()
+    }
+    this.ctx.restore()
   }
 
   drawEngine(x, y) {
@@ -724,7 +813,27 @@ class Train {
 
     this.ctx.save()
     this.ctx.beginPath()
-    this.ctx.fillStyle = Train.coachColor
+    this.ctx.fillStyle = '#000'
+    if (this.trainType === 'passenger') {
+      //draw the gangway between the engine and the first coach
+      //and each coach and next.
+      this.ctx.fillRect(Train.lengthCoach,3, 4, Train.widthCoach-6)
+      // this.ctx.closePath()
+    } else if (this.trainType === 'freight') {
+      //draw 2 couplings between the engine and the first freight wagon   
+      //and each coach and next.
+      const couplingWidth = 2
+      const couplingHeight = 2
+      this.ctx.fillRect(Train.lengthCoach, 3, couplingWidth, couplingHeight)
+      this.ctx.fillRect(Train.lengthCoach, Train.widthCoach - 3 - couplingHeight, couplingWidth, couplingHeight)
+      // this.ctx.closePath()
+    }
+    this.ctx.closePath()
+    this.ctx.beginPath()
+    const gradient = this.ctx.createLinearGradient(0, 0, Train.lengthCoach, Train.widthCoach)
+    gradient.addColorStop(0, Train.coachColor)
+    gradient.addColorStop(1, '#333')
+    this.ctx.fillStyle = gradient
     this.ctx.strokeStyle = '#333'
     this.ctx.rect(0, 0, Train.lengthCoach, Train.widthCoach)
     this.ctx.fill()

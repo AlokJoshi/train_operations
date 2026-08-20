@@ -62,10 +62,10 @@ class Financials {
       const prevCashInHand = this.cashInHand
       this.cashInHand += amount
       if(Math.floor(this.cashInHand/1000000) > Math.floor(prevCashInHand/1000000)) {
-        audioManager.safePlay('money',1,3)
+        audioManager.safePlay('money', { volume: 1, restart: true })
       }
       if(Math.floor(this.cashInHand/100000000) > Math.floor(prevCashInHand/100000000)) {
-        audioManager.safePlay('drumroll',1,3)
+        audioManager.safePlay('drumroll', { volume: 1, restart: true })
       }
     }
   }

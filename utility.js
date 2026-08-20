@@ -343,8 +343,15 @@ function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = 
 
   const safePlay = async (soundKey, { volume = 1, loop = false, restart = true } = {}) => {
     const audio = sounds.get(soundKey)
-    if (!audioEnabled || !audio || !mediaUnlocked) {
+    if (!audioEnabled || !audio) {
       return false
+    }
+
+    if (!mediaUnlocked) {
+      await unlockAudio()
+      if (!mediaUnlocked) {
+        return false
+      }
     }
 
     try {

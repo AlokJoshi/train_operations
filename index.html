@@ -180,7 +180,14 @@
           <i class="fas fa-times" title="Close"></i>
         </span>
       </div>
-      <div>Turn on Sound: <i class="fas fa-volume-up" onclick="turnSoundOn()"></i></div>
+      <div id="soundControl" onclick="turnSoundOn()"><span id="soundControlLabel">Sound: On</span> <i class="fas fa-volume-up" title="Sound On (press N to mute)"></i></div>
+      <div id="smokeControl" style="margin-top:6px;">Steam Smoke:
+        <select id="smokeLevelControl" aria-label="Steam smoke level">
+          <option value="off">Off</option>
+          <option value="low">Low</option>
+          <option value="high" selected>High</option>
+        </select>
+      </div>
       <div class="dialogContent">
         <div style="display:flex; align-items:center; justify-content:center;">
           <button type="button" style="border-radius: 10px;padding:10px"

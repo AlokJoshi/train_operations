@@ -556,12 +556,80 @@ window.addEventListener('load', () => {
     startPauseGame()
   })
 
+  const soundControlEl = document.querySelector('#soundControl')
+  const soundControlLabelEl = document.querySelector('#soundControlLabel')
+  const soundControlIconEl = soundControlEl?.querySelector('i')
+
+  const updateSoundControlUI = (enabled = audioManager.isEnabled()) => {
+    if (soundControlLabelEl) {
+      soundControlLabelEl.textContent = enabled ? 'Sound: On' : 'Sound: Off'
+    }
+    if (soundControlIconEl) {
+      soundControlIconEl.classList.toggle('fa-volume-up', enabled)
+      soundControlIconEl.classList.toggle('fa-volume-mute', !enabled)
+      soundControlIconEl.title = enabled ? 'Sound On (press N to mute)' : 'Sound Off (press N to unmute)'
+    }
+    if (soundControlEl) {
+      soundControlEl.setAttribute('aria-pressed', String(enabled))
+    }
+  }
+
+  updateSoundControlUI()
+
   const toggleSound = async () => {
     const enabled = audioManager.toggleSound()
     if (enabled && !audioManager.isUnlocked()) {
       await audioManager.unlockAudio()
     }
+    updateSoundControlUI(enabled)
+    return enabled
   }
+
+  const normalizeSmokeLevel = (level) => {
+    const value = typeof level === 'string' ? level.toLowerCase() : 'high'
+    if (value === 'off' || value === 'low' || value === 'high') {
+      return value
+    }
+    return 'high'
+  }
+
+  let currentSmokeLevel = 'high'
+  const smokeLevelControlEl = document.querySelector('#smokeLevelControl')
+
+  const applySmokeLevelToTrains = (level) => {
+    const normalized = normalizeSmokeLevel(level)
+    game.trains.forEach((train) => {
+      if (!train) {
+        return
+      }
+      if (typeof train.setSmokeSetting === 'function') {
+        train.setSmokeSetting(normalized)
+      } else {
+        train.smokeSetting = normalized
+      }
+    })
+    return normalized
+  }
+
+  const updateSmokeControlUI = (level = currentSmokeLevel) => {
+    if (smokeLevelControlEl) {
+      smokeLevelControlEl.value = normalizeSmokeLevel(level)
+    }
+  }
+
+  window.setTrainSmokeLevel = (level) => {
+    currentSmokeLevel = applySmokeLevelToTrains(level)
+    updateSmokeControlUI(currentSmokeLevel)
+    return currentSmokeLevel
+  }
+
+  if (smokeLevelControlEl) {
+    smokeLevelControlEl.addEventListener('change', (event) => {
+      window.setTrainSmokeLevel(event.target.value)
+    })
+  }
+
+  window.setTrainSmokeLevel(currentSmokeLevel)
 
   const startPauseGame = () => {
     //switch the play button to pause
@@ -1287,10 +1355,15 @@ window.addEventListener('load', () => {
   }
 
   window.turnSoundOn = async () => {
+    if (audioManager.isEnabled()) {
+      await toggleSound()
+      return
+    }
     audioManager.setEnabled(true)
     if (!audioManager.isUnlocked()) {
       await audioManager.unlockAudio()
     }
+    updateSoundControlUI(true)
   }
 
   window.cancelTrainExtension = (trainnumber) => {
@@ -1385,6 +1458,7 @@ window.addEventListener('load', () => {
     if (!createdTrainNumber) {
       return
     }
+    applySmokeLevelToTrains(currentSmokeLevel)
     game.setPossibleFlyoverLocations()
 
     //set the icon to play
