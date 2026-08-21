@@ -234,7 +234,9 @@ class Game {
     // Apply freight train defaults automatically when trainType is 'freight'
     if (options.trainType === 'freight') {
       options = {
-        visualLengthScale: 0.35,
+        //checking how the game looks without the visual length scale for freight trains. 
+        // visualLengthScale: 0.35,
+        visualLengthScale: 1,
         maxVisualCoaches: 18,
         color: 'rgba(80,80,80,0.75)',
         ...options
@@ -342,7 +344,8 @@ class Game {
   async addFreightTrain(positions, numCoaches, delayBeforeStart, intersections, options = {}) {
     return this.addTrain(positions, numCoaches, delayBeforeStart, intersections, {
       trainType: 'freight',
-      visualLengthScale: 0.35,
+      // visualLengthScale: 0.35,
+      visualLengthScale: 1,
       maxVisualCoaches: 18,
       color: 'rgba(80,80,80,0.75)',
       ...options

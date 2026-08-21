@@ -1,5 +1,7 @@
 class TrainInfo {
 
+  static MAX_ENTRIES_PER_PERIOD = 200
+
   constructor(numTrains,numPeriods) {
     this.numTrains = numTrains;
     this.numPeriods = numPeriods;
@@ -34,7 +36,12 @@ class TrainInfo {
     if(this.trainInfo[trainNumber - 1][timeIndex] == null) {
       this.trainInfo[trainNumber - 1][timeIndex] = []
     }
-    this.trainInfo[trainNumber - 1][timeIndex].push(info)
+    const entries = this.trainInfo[trainNumber - 1][timeIndex]
+    entries.push(info)
+    if (entries.length > TrainInfo.MAX_ENTRIES_PER_PERIOD) {
+      // Keep only the most recent events to avoid unbounded growth.
+      entries.splice(0, entries.length - TrainInfo.MAX_ENTRIES_PER_PERIOD)
+    }
   }
 
 }

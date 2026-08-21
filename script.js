@@ -19,15 +19,19 @@ const ctx = canvas.getContext('2d')
 
 const canvasTracks = document.querySelector('#canvas_tracks')
 const canvasResults = document.querySelector('#canvas_results')
-const canvasMaps = document.querySelector('#canvas_maps')
+const canvasMaps1 = document.querySelector('#canvas_maps1')
+const canvasMaps2 = document.querySelector('#canvas_maps2')
+const canvasMaps3 = document.querySelector('#canvas_maps3')
 const canvasTemp = document.querySelector('#canvas_temp')
 const ctxTracks = canvasTracks.getContext('2d')
 const ctxResults = canvasResults.getContext('2d')
-const ctxMaps = canvasMaps.getContext('2d')
+const ctxMaps1 = canvasMaps1.getContext('2d')
+const ctxMaps2 = canvasMaps2.getContext('2d')
+const ctxMaps3 = canvasMaps3.getContext('2d')
 const ctxTemp = canvasTemp.getContext('2d')
 
-canvas.height = canvasTracks.height = canvasTemp.height = canvasResults.height = canvasMaps.height = CANVASHEIGHT + CANVASMARGIN
-canvas.width = canvasTracks.width = canvasTemp.width = canvasResults.width = canvasMaps.width = CANVASWIDTH + CANVASMARGIN
+canvas.height = canvasTracks.height = canvasTemp.height = canvasResults.height = canvasMaps1.height = canvasMaps2.height = canvasMaps3.height = CANVASHEIGHT + CANVASMARGIN
+canvas.width = canvasTracks.width = canvasTemp.width = canvasResults.width = canvasMaps1.width = canvasMaps2.width = canvasMaps3.width = CANVASWIDTH + CANVASMARGIN
 
 let paused = true
 let startTrack = false
@@ -242,7 +246,7 @@ const initializeDefaultTrains = async () => {
     { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 600 },
     { x: CANVASMARGIN + 300, y: CANVASMARGIN + 600 }
   ]
-  trainNumber = await game.addFreightTrain(positions, 50, 0, intersections,
+  trainNumber = await game.addFreightTrain(positions, 30, 0, intersections,
     { partOfInitialSetup: true })
   game.addStation(trainNumber, 1800, 600, `S${trainNumber}1907`, 30, { partOfInitialSetup: true })
 }
@@ -382,6 +386,7 @@ window.addEventListener('load', () => {
     document.querySelectorAll('[id^="trainExtensionControls"]').forEach(control => {
       control.style.display = 'none'
     })
+    ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
   }
 
   const handleTrainHotkeys = (event) => {
@@ -408,7 +413,9 @@ window.addEventListener('load', () => {
     }
 
     if (!startTrack && !startExtendTrain && !startFlyover && event.key === 'Escape') {
-      ctxMaps.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+      ctxMaps1.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+      ctxMaps2.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+      ctxMaps3.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       return;
     }
 
@@ -450,46 +457,43 @@ window.addEventListener('load', () => {
     } else if (event.code === 'KeyX') {
       //if the code is X then show the population Map
       if (!showingPopulationMap) {
-        // ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
         const populationMap = game.population.getAll()
         const maxPopulation = Math.max(...populationMap.map(p => p.population))
         const rMaxSquare = (gridSize / 2) ** 2
         populationMap.forEach(p => {
           const radiusSquare = rMaxSquare * (p.population / maxPopulation)
           const radius = 2 * Math.sqrt(radiusSquare)
-          ctxTemp.beginPath()
-          ctxTemp.arc(p.x, p.y, radius, 0, 2 * Math.PI)
-          ctxTemp.fillStyle = 'rgba(0,255,0,0.5)'
-          ctxTemp.fill()
+          ctxMaps1.beginPath()
+          ctxMaps1.arc(p.x, p.y, radius, 0, 2 * Math.PI)
+          ctxMaps1.fillStyle = 'rgba(0,255,0,0.5)'
+          ctxMaps1.fill()
         })
       } else {
-        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        ctxMaps1.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       }
       showingPopulationMap = !showingPopulationMap
 
     } else if (event.code === 'KeyY') {
       //if the code is Y then show the rawmaterials Map
       if (!showingRawmaterialsMap) {
-        // ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
         const rawmaterialsMap = game.rawmaterials.getAll()
         const maxRawmaterial = Math.max(...rawmaterialsMap.map(p => p.rawmaterial))
         const rMaxSquare = (gridSize / 2) ** 2
         rawmaterialsMap.forEach(p => {
           const radiusSquare = rMaxSquare * (p.rawmaterial / maxRawmaterial)
           const radius = Math.sqrt(radiusSquare)
-          ctxMaps.beginPath()
-          ctxMaps.arc(p.x, p.y, radius, 0, 2 * Math.PI)
-          ctxMaps.fillStyle = 'rgba(255,255,0,0.5)'
-          ctxMaps.fill()
+          ctxMaps2.beginPath()
+          ctxMaps2.arc(p.x, p.y, radius, 0, 2 * Math.PI)
+          ctxMaps2.fillStyle = 'rgba(255,255,0,0.5)'
+          ctxMaps2.fill()
         })
       } else {
-        ctxMaps.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        ctxMaps2.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       }
       showingRawmaterialsMap = !showingRawmaterialsMap
     } else if (event.code === 'KeyZ') {
       //if the code is Z then show the rawmaterial demand Map
       if (!showingRawmaterialDemandMap) {
-        // ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
         const rawmaterialDemandMap = game.rawmaterialDemand.getAll()
         const maxRawmaterialDemand = Math.max(...rawmaterialDemandMap.map(p => p.rawmaterial))
 
@@ -499,19 +503,19 @@ window.addEventListener('load', () => {
 
             const radiusSquare = rMaxSquare * (p.rawmaterial / maxRawmaterialDemand)
             const radius = Math.sqrt(radiusSquare)
-            ctxMaps.beginPath()
-            ctxMaps.arc(p.x, p.y, radius, 0, 2 * Math.PI)
-            ctxMaps.fillStyle = 'rgba(0,0,255,0.5)'
-            ctxMaps.fill()
+            ctxMaps3.beginPath()
+            ctxMaps3.arc(p.x, p.y, radius, 0, 2 * Math.PI)
+            ctxMaps3.fillStyle = 'rgba(0,0,255,0.5)'
+            ctxMaps3.fill()
 
-            ctxMaps.font = '20px Arial'
-            ctxMaps.fillStyle = 'black'
-            const textMetrics = ctxMaps.measureText(`${Math.floor(p.rawmaterial)}`)
-            ctxMaps.fillText(`${Math.floor(p.rawmaterial)}`, p.x - textMetrics.width / 2, p.y + 10)
+            ctxMaps3.font = '20px Arial'
+            ctxMaps3.fillStyle = 'black'
+            const textMetrics = ctxMaps3.measureText(`${Math.floor(p.rawmaterial)}`)
+            ctxMaps3.fillText(`${Math.floor(p.rawmaterial)}`, p.x - textMetrics.width / 2, p.y + 10)
           }
         })
       } else {
-        ctxMaps.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        ctxMaps3.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       }
       showingRawmaterialDemandMap = !showingRawmaterialDemandMap
     } else if (event.code === 'KeyR') {
@@ -903,7 +907,6 @@ window.addEventListener('load', () => {
     const point = getCanvasPoint(event)
     const row = alpha(Math.round((point.y - CANVASMARGIN) / gridSize))
     const col = alpha(Math.round((point.x - CANVASMARGIN) / gridSize))
-    // console.log(`mouse move event listener added at row ${row}, col ${col}`)
     const buttonGroup8el = document.querySelector('#buttonGroup8')
     if (!buttonGroup8el) {
       return
@@ -914,31 +917,13 @@ window.addEventListener('load', () => {
     }
     buttonGroup8el.style.display = 'block'
     // buttonGroup8 is fixed-position, so place it in viewport coordinates.
-    buttonGroup8el.style.left = `${event.clientX + 2}px`
-    buttonGroup8el.style.top = `${event.clientY - 5}px`
-    label.textContent = `${col}--${row}`
-    if (!startTrack && !startExtendTrain && !startFlyover) {
-      if ((point.x < click_error || point.x > CANVASWIDTH - click_error || point.y < click_error || point.y > CANVASHEIGHT - click_error) && Math.abs(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize - point.x) < click_error && Math.abs(CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize - point.y) < click_error) {
-        //draw a horizontal or vertical dashed line on the ctxTemp
-        ctxMaps.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
-        ctxMaps.save()
-        ctxMaps.beginPath()
-        ctxMaps.strokeStyle = 'black'
-        ctxMaps.setLineDash([5, 5])
-        ctxMaps.moveTo(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize, CANVASMARGIN)
-        ctxMaps.lineTo(CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize, CANVASHEIGHT - CANVASMARGIN)
-        ctxMaps.moveTo(CANVASMARGIN, CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize)
-        ctxMaps.lineTo(CANVASWIDTH - CANVASMARGIN, CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize)
-        ctxMaps.stroke()
-        ctxMaps.setLineDash([])
-        ctxMaps.restore()
-      }
-    }
+    buttonGroup8el.style.left = `${event.clientX + 7}px`
+    buttonGroup8el.style.top = `${event.clientY + 7}px`
+    label.textContent = `${col},${row}`
+    
     if (startTrack) {
-      //console.log(`mouse movin inside startTrack`)
       const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
       const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
-      // console.log(`Mouse moved at Page(${event.pageX},${event.pageY}), x and y (${x},${y})`)
       if (Math.abs(x - point.x) < click_error && Math.abs(y - point.y) < click_error) {
         if (!validTrackPoints.has(`${x},${y}`)) {
           event.target.style = "cursor:default"

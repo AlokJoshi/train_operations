@@ -15,7 +15,7 @@
   box-sizing: content-box;
 }
 
-#canvas,#canvas_tracks,#canvas_results,#canvas_maps,#canvas_temp{
+#canvas,#canvas_tracks,#canvas_results,#canvas_maps1,#canvas_maps2,#canvas_maps3,#canvas_temp{
   width:2400px;
   height:1600px;
   position:absolute;
@@ -34,7 +34,7 @@
   background-size:cover;
   pointer-events: none;
 }
-#canvas_results,#canvas_maps{
+#canvas_results,#canvas_maps1,#canvas_maps2,#canvas_maps3{
   background-color:rgba(0,0,0,0);
   color:#eee;
   pointer-events: none;

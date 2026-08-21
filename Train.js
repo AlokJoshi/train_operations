@@ -10,15 +10,17 @@ class Train {
   static chimney_r = 30
   static maxSmokePuffs = 60
   static smokeColor = `#222`
-  static coachColor = `#00ff00`
+  static coachColor = `#4444ff`
+  static freightWagonColor = `#ff4444`
   static intersectionDist = 10
   static maxNumCoaches = 15
-  static maxNumFreightWagons = 100
+  static maxNumFreightWagons = 50
   static minNumCoaches = 2
   static coachPassengerCapacity = 100
   static baseTicketPrice = 400
-  static rawMaterialCapacityPerFreightCoach = 10000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
+  static rawMaterialCapacityPerFreightCoach = 20000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
   static rawMaterialChargePerUnit = 100 // fixed charge per unit of raw material to keep it simple. Revenue is calculated based on the amount of raw material unloaded at the station.
+  static MAX_RENDERED_OPERATION_ROWS = 60
   static ticketPriceMap = new Map() // key is from row,col to row,col and value is the ticket price for that route. 
   // We populate this as we go unless the ticket price is already in the map. 
   
@@ -657,10 +659,15 @@ class Train {
       this.setIntersection(occupiedIntersections, x2, y2)
     }
 
-    const visibleCoachCount = Math.min(this.numCoaches, this.maxVisualCoaches)
-    const simulatedCoachRangeMax = this.hasExplicitVisualCoachCap
-      ? Math.max(0, Math.min(this.numCoaches, this.maxVisualCoaches) - 1)
-      : Math.max(0, this.numCoaches - 1)
+    // removing earlier logic to show on maxVisualCoaches only, instead of showing all coaches and then hiding some of them. 
+    // const visibleCoachCount = Math.min(this.numCoaches, this.maxVisualCoaches)
+    // const simulatedCoachRangeMax = this.hasExplicitVisualCoachCap
+    // ? Math.max(0, Math.min(this.numCoaches, this.maxVisualCoaches) - 1)
+    // : Math.max(0, this.numCoaches - 1)
+    const visibleCoachCount = this.numCoaches
+    const simulatedCoachRangeMax = Math.max(0, this.numCoaches - 1)
+    let remainingPayload = this.trainType === 'passenger' ? this.passengersOnBoard : this.rawMaterialOnBoard
+    let payload = 0
     for (let visualIndex = 0; visualIndex < visibleCoachCount; visualIndex++) {
       const simulatedCoachIndex = visibleCoachCount === 1
         ? 0
@@ -680,7 +687,15 @@ class Train {
       this.ctx.translate(coachDrawX, coachDrawY)
       this.ctx.rotate(coachHeading)
       this.ctx.translate(-10, -1 * Train.widthCoach * 0.5)
-      this.drawCoach()
+      if (this.trainType === 'freight') {
+        payload = Math.min(remainingPayload, Train.rawMaterialCapacityPerFreightCoach)
+        remainingPayload -= payload
+      }else if (this.trainType === 'passenger') {
+        payload = Math.min(remainingPayload, Train.coachPassengerCapacity)
+        remainingPayload -= payload
+      }
+      // debugger
+      this.drawCoach(payload)
 
       this.ctx.restore()
     }
@@ -705,8 +720,8 @@ class Train {
     
     const emitScale = smokeSetting === 'low' ? 1.6 : 0.7
     // const emitEveryTicks = Math.max(4, Math.min(28, Math.round((Number(currSpeed) || 20) * 1.2 * emitScale)))
-    const emitEveryTicks = this.trainType === 'passenger' ? 14 : 40
-    console.log(`Train ${this.trainNumber} smoke emit every ${emitEveryTicks} ticks (currSpeed=${currSpeed}, smokeSetting=${smokeSetting})`)
+    const emitEveryTicks = this.trainType === 'passenger' ? 10 : 40
+    // console.log(`Train ${this.trainNumber} smoke emit every ${emitEveryTicks} ticks (currSpeed=${currSpeed}, smokeSetting=${smokeSetting})`)
     if (this.ticks - this.lastSmokeEmitTick < emitEveryTicks) {
       return
     }
@@ -809,7 +824,7 @@ class Train {
 
   }
 
-  drawCoach() {
+  drawCoach(payload) {
 
     this.ctx.save()
     this.ctx.beginPath()
@@ -824,15 +839,22 @@ class Train {
       //and each coach and next.
       const couplingWidth = 2
       const couplingHeight = 2
-      this.ctx.fillRect(Train.lengthCoach, 3, couplingWidth, couplingHeight)
-      this.ctx.fillRect(Train.lengthCoach, Train.widthCoach - 3 - couplingHeight, couplingWidth, couplingHeight)
+      const couplingOffset = 2
+      this.ctx.fillRect(Train.lengthCoach, couplingOffset, couplingWidth, couplingHeight)
+      this.ctx.fillRect(Train.lengthCoach, Train.widthCoach - couplingOffset - couplingHeight, couplingWidth, couplingHeight)
       // this.ctx.closePath()
     }
     this.ctx.closePath()
+
     this.ctx.beginPath()
     const gradient = this.ctx.createLinearGradient(0, 0, Train.lengthCoach, Train.widthCoach)
-    gradient.addColorStop(0, Train.coachColor)
-    gradient.addColorStop(1, '#333')
+    if (this.trainType === 'passenger') {
+      gradient.addColorStop(0, Train.coachColor)
+      gradient.addColorStop(1, '#8888ff')
+    }else if (this.trainType === 'freight') {
+      gradient.addColorStop(0, Train.freightWagonColor)
+      gradient.addColorStop(1, '#ff8888')
+    }
     this.ctx.fillStyle = gradient
     this.ctx.strokeStyle = '#333'
     this.ctx.rect(0, 0, Train.lengthCoach, Train.widthCoach)
@@ -841,6 +863,20 @@ class Train {
     this.ctx.closePath()
     this.ctx.restore()
 
+    if (this.trainType === 'passenger' && payload < Train.coachPassengerCapacity ||
+      this.trainType === 'freight' && payload < Train.rawMaterialCapacityPerFreightCoach) {
+      const radius = this.trainType === 'passenger'
+        ? (Train.coachPassengerCapacity - payload) * 5 / Train.coachPassengerCapacity
+        : (Train.rawMaterialCapacityPerFreightCoach - payload) * 5 / Train.rawMaterialCapacityPerFreightCoach
+      //draw a white circle on the coach to indicate that the coach/wagon is not full.
+      this.ctx.save()
+      this.ctx.beginPath()
+      this.ctx.fillStyle = '#ffffff'
+      this.ctx.arc(Train.lengthCoach * 0.5, Train.widthCoach * 0.5, radius, 0, Math.PI * 2)
+      this.ctx.fill()
+      this.ctx.closePath()
+      this.ctx.restore()
+    }
   }
 
   getPosition(offset) {
@@ -890,11 +926,12 @@ class Train {
   }
 
   displayIntersection(row, col) {
-    const { x, y } = this.intersections.getCanvasPoint(row, col)
-    this.ctxTemp.fillStyle = 'red'
-    this.ctxTemp.beginPath()
-    this.ctxTemp.arc(x, y, 5, 0, Math.PI * 2)
-    this.ctxTemp.fill()
+    // commented out for now since we are displaying 
+    // const { x, y } = this.intersections.getCanvasPoint(row, col)
+    // this.ctxTemp.fillStyle = 'red'
+    // this.ctxTemp.beginPath()
+    // this.ctxTemp.arc(x, y, 5, 0, Math.PI * 2)
+    // this.ctxTemp.fill()
   }
 
   clearIntersection(row, col) {
@@ -984,7 +1021,9 @@ class Train {
       table.appendChild(thead)
       const tbody = document.createElement('tbody')
       const trainEntries = this.trainInfo.getTrainInfoForTrainAndTimeIndex(this.trainNumber, currentTimeIndex) ?? []
-      trainEntries.forEach(obj => {
+      const startIndex = Math.max(0, trainEntries.length - Train.MAX_RENDERED_OPERATION_ROWS)
+      const visibleEntries = trainEntries.slice(startIndex)
+      visibleEntries.forEach(obj => {
         const row = document.createElement('tr')
         const td1 = document.createElement('td')
         td1.textContent = currentTimeIndex
