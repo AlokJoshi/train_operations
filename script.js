@@ -744,15 +744,23 @@ window.addEventListener('load', () => {
 
       const train = game.trains[trainNumber - 1]
       if (!train) {
-        console.log(`Train with number ${trainNumber} not found`)
+        console.error(`Train with number ${trainNumber} not found`)
         return
       }
-      if (trainNumber == selectedTrainNumberForStartStation) {
+      // AJ 08/21/26 added the following.
+      if(startStation && selectedTrainNumberForStartStation === trainNumber) {
         startStation = false
         ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
         selectedTrainNumberForStartStation = null
         return
       }
+      // AJ 08/21/26 removed the following.
+      // if (trainNumber == selectedTrainNumberForStartStation) {
+      //   startStation = false
+      //   ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+      //   selectedTrainNumberForStartStation = null
+      //   return
+      // }
 
       startStation = true
       const possibleStationLocations = train.track.getPossibleStationLocations()
@@ -842,7 +850,6 @@ window.addEventListener('load', () => {
     }
     if (startStation) {
       // user is selecting one of the locations highlighted for station placement. So we will check if the click is within the click_error range of any of the highlighted locations and if it is then we will add a station at that location for the selected train.
-
       const selectedTrainNumber = Number.parseInt(document.querySelector('#stationFortrain span.selected')?.dataset.value, 10)
 
       if (!selectedTrainNumber) {
@@ -870,9 +877,11 @@ window.addEventListener('load', () => {
             if (result.isConfirmed) {
               game.addStation(selectedTrainNumber, location.x, location.y, `S${selectedTrainNumber}${String((location.x / gridSize) + 1).padStart(2, '0')}${String((location.y / gridSize) + 1).padStart(2, '0')}`, 30)
               //clear the canvasTemp after adding the station
-              ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+              // AJ 08/21/26 removed the following line so that more than one station can be added.
+              // ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
             }
-            startStation = false
+            // AJ 08/21/26 removed the following line so that more than one station can be added.
+            // startStation = false
           })
         }
       })
@@ -1481,6 +1490,12 @@ window.addEventListener('load', () => {
         selectAddEl.appendChild(option)
       }
       selectAddEl.value = trainType
+    }
+    // we also update the UI so that the user is not able to click
+    // on flag-off icon a second time.
+    const flagOffIcon = document.querySelector('#flagOff')
+    if (flagOffIcon) {
+      flagOffIcon.style.pointerEvents = 'none'
     }
   }
 

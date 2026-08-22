@@ -499,6 +499,7 @@ class Track {
           const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
           if (!hasStation) {
             locations.push(pos)
+            console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code1`)
           }
         }
       } else if (prev.y === current.y) {
@@ -507,30 +508,48 @@ class Track {
           const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
           if (!hasStation) {
             locations.push(pos)
+            console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code2`)
+          }
+        }
+      } else {
+        // AJ 08/21/26 added handling for curved track segments
+        // this is where the track is curved
+        if (Math.abs(current.x - Math.round(current.x / this.gridSize) * this.gridSize) < 1
+          && Math.abs(current.y - Math.round(current.y / this.gridSize) * this.gridSize) < 1) {
+          const x = Math.round(current.x / this.gridSize) * this.gridSize
+          const y = Math.round(current.y / this.gridSize) * this.gridSize
+          const pos = { x: x, y: y }
+          const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
+          if (!hasStation) {
+            locations.push(pos)
+            console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code3`)
           }
         }
       }
     }
     //another loop to add locations that have been missed.
-    for (let i = 1; i <= this.positions.length - 1; i++) {
-      const prev = this.positions[i - 1]
-      const current = this.positions[i]
-      if (prev.x === current.x && Math.abs((prev.y - current.y) / this.gridSize) == 2) {
-        //that means that there is a curved segment being added between two straight segments.
-        const pos = { x: prev.x, y: prev.y - this.gridSize * Math.sign(prev.y - current.y) }
-        const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
-        if (!hasStation) {
-          locations.push(pos)
-        }
-      } else if (prev.y === current.y && Math.abs((prev.x - current.x) / this.gridSize) == 2) {
-        //that means that there is a curved segment being added between two straight segments.
-        const pos = { x: prev.x - this.gridSize * Math.sign(prev.x - current.x), y: prev.y }
-        const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
-        if (!hasStation) {
-          locations.push(pos)
-        }
-      }
-    }
+    // AJ 08/21/26 commented out the following code because it was adding duplicate locations that were already added in the previous loop.
+    // for (let i = 1; i <= this.positions.length - 1; i++) {
+    //   const prev = this.positions[i - 1]
+    //   const current = this.positions[i]
+    //   if (prev.x === current.x && Math.abs((prev.y - current.y) / this.gridSize) == 2) {
+    //     //that means that there is a curved segment being added between two straight segments.
+    //     const pos = { x: prev.x, y: prev.y - this.gridSize * Math.sign(prev.y - current.y) }
+    //     const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
+    //     if (!hasStation) {
+    //       locations.push(pos)
+    //       console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code4`)
+    //     }
+    //   } else if (prev.y === current.y && Math.abs((prev.x - current.x) / this.gridSize) == 2) {
+    //     //that means that there is a curved segment being added between two straight segments.
+    //     const pos = { x: prev.x - this.gridSize * Math.sign(prev.x - current.x), y: prev.y }
+    //     const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
+    //     if (!hasStation) {
+    //       locations.push(pos)
+    //       console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code5`)
+    //     }
+    //   }
+    // }
 
     return locations
   }
