@@ -39,6 +39,7 @@ let startExtendTrain = false
 let startFlyover = false
 let startStation = false
 let selectedTrainNumberForStartStation = null
+let selectedTrainNumberForStartFlyover = null
 let showingResults = false
 let showingInfo = false
 let showingHowToPlay = false
@@ -116,7 +117,8 @@ function initializeTrainControlWidgets(maxTrains = 9) {
     trainControlEl.id = `train${trainNumber}`
     trainControlEl.querySelector('[data-role="label"]').id = `lblTrain${trainNumber}`
     trainControlEl.querySelector('[data-role="label"]').textContent = `T${trainNumber}`
-    // trainControlEl.querySelector('[data-role="num-coaches"]').id = `lblNumCoaches${trainNumber}`
+    trainControlEl.querySelector('[data-role="train-type"]').id = `lblTrainType${trainNumber}`
+    trainControlEl.querySelector('[data-role="train-type"]').textContent = `P`
 
     const pauseEl = trainControlEl.querySelector('[data-role="pause"]')
     pauseEl.id = `pauseTrain${trainNumber}`
@@ -229,17 +231,14 @@ const initializeDefaultTrains = async () => {
   await game.addTrain(positions, 7, 0, intersections, { trainType: 'passenger', partOfInitialSetup: true })
 
   positions = [
-    { x: CANVASMARGIN + 800, y: CANVASMARGIN + 200 },
-    { x: CANVASMARGIN + 500, y: CANVASMARGIN + 200 },
-    { x: CANVASMARGIN + 500, y: CANVASMARGIN + 500 },
-    { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
-    { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 1000 },
-    { x: CANVASMARGIN + 700, y: CANVASMARGIN + 1000 }
+    { x: CANVASMARGIN + 250, y: CANVASMARGIN + 250 },
+    { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 250 },
+    { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 }
   ]
   let trainNumber = await game.addTrain(positions, 1, 0, intersections,
     { trainType: 'passenger', partOfInitialSetup: true })
-  game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, { partOfInitialSetup: true })
-  game.addStation(trainNumber, 1200, 900, `S${trainNumber}1310`, 30, { partOfInitialSetup: true })
+  // game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, { partOfInitialSetup: true })
+  // game.addStation(trainNumber, 1200, 900, `S${trainNumber}1310`, 30, { partOfInitialSetup: true })
 
   positions = [
     { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 200 },
@@ -339,16 +338,6 @@ window.addEventListener('load', () => {
   let positionsForExtendTrain = []
   let activeTrainExtensionTrainNumber = null
 
-  const drawValidTrackPoint = (ctx, x, y, click_error) => {
-    ctx.beginPath()
-    ctx.moveTo(x + click_error, y)
-    ctx.arc(x, y, click_error, 0, Math.PI * 2)
-    ctx.lineWidth = 5
-    ctx.strokeStyle = `rgba(0,255,0,0.3)`
-    ctx.closePath()
-    ctx.stroke()
-  }
-
   const drawFilledCircle = (ctx, x, y, radius, color) => {
     ctx.save()
     ctx.beginPath()
@@ -359,7 +348,7 @@ window.addEventListener('load', () => {
     ctx.fill()
     ctx.restore()
   }
-
+  
   const drawHollowCircle = (ctx, x, y, radius, color) => {
     ctx.save()
     ctx.beginPath()
@@ -445,6 +434,7 @@ window.addEventListener('load', () => {
       } else {
         FlyoverControls.style.display = 'none'
       }
+      startFlyoverSelection()
     } else if (event.code === 'KeyS') {
       //if the code is S then show the possible Station related controls
       const StationControls = document.querySelector('#buttonGroup3')
@@ -729,6 +719,19 @@ window.addEventListener('load', () => {
   }
 
   const stationForTrainContainer = document.querySelector('#stationFortrain')
+
+  const clearStationHoverPreview = (force = false) => {
+    if (force || !startStation) {
+      ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+    }
+  }
+
+  const clearFlyoverPreview = (force=false) => {
+    if (force || !startFlyover) {
+      ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+    }
+  }
+
   if (stationForTrainContainer) {
     stationForTrainContainer.addEventListener('click', (event) => {
       const target = event.target
@@ -748,19 +751,12 @@ window.addEventListener('load', () => {
         return
       }
       // AJ 08/21/26 added the following.
-      if(startStation && selectedTrainNumberForStartStation === trainNumber) {
+      if (startStation && selectedTrainNumberForStartStation === trainNumber) {
         startStation = false
         ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
         selectedTrainNumberForStartStation = null
         return
       }
-      // AJ 08/21/26 removed the following.
-      // if (trainNumber == selectedTrainNumberForStartStation) {
-      //   startStation = false
-      //   ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-      //   selectedTrainNumberForStartStation = null
-      //   return
-      // }
 
       startStation = true
       const possibleStationLocations = train.track.getPossibleStationLocations()
@@ -776,6 +772,101 @@ window.addEventListener('load', () => {
 
       selectedTrainNumberForStartStation = trainNumber
     })
+
+    stationForTrainContainer.addEventListener('mousemove', (event) => {
+      const target = event.target
+      if (!(target instanceof HTMLElement) || target.tagName !== 'SPAN') {
+        return
+      }
+      const trainNumber = Number.parseInt(target.dataset.value, 10)
+      if (!Number.isInteger(trainNumber)) {
+        return
+      }
+
+      const train = game.trains[trainNumber - 1]
+      if (!train) {
+        console.error(`Train with number ${trainNumber} not found`)
+        return
+      }
+
+      if (!startStation) {
+        //clear the temporary canvas before drawing
+        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        train.track.drawUsingNewPositions(ctxTemp, 'rgb(255, 255, 0)', 10)
+      }
+    })
+
+    stationForTrainContainer.addEventListener('mouseleave', () => {
+      clearStationHoverPreview()
+    })
+  }
+
+  const flyoverForTrainContainer = document.querySelector('#flyoverForTrain')
+
+  if (flyoverForTrainContainer) {
+    flyoverForTrainContainer.addEventListener('click', (event) => {
+      startFlyover = true
+      const target = event.target
+      if (!(target instanceof HTMLElement) || target.tagName !== 'SPAN') {
+        return
+      }
+      const trainNumber = Number.parseInt(target.dataset.value, 10)
+      if (!Number.isInteger(trainNumber)) {
+        return
+      }
+      const train = game.trains[trainNumber - 1]
+      if (!train) {
+        console.error(`Train with number ${trainNumber} not found`)
+        return
+      }
+
+      flyoverForTrainContainer.querySelectorAll('span').forEach(span => span.classList.remove('selected'))
+      target.classList.add('selected')
+
+      if (startFlyover && selectedTrainNumberForStartFlyover === trainNumber) {
+        startFlyover = false
+        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        selectedTrainNumberForStartFlyover = null
+        return
+      }
+
+      selectedTrainNumberForStartFlyover = trainNumber
+      // const possibleFlyoverLocations = getPossibleFlyoverLocations(trainNumber)
+      // ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+      // possibleFlyoverLocations.forEach(location => {
+      //   drawFilledCircle(ctxTemp, location.x, location.y, 20, 'orange')
+      // })
+      
+    })
+    flyoverForTrainContainer.addEventListener('mousemove', (event) => {
+      const target = event.target
+      if (!(target instanceof HTMLElement) || target.tagName !== 'SPAN') {
+        return
+      }
+      const trainNumber = Number.parseInt(target.dataset.value, 10)
+      if (!Number.isInteger(trainNumber)) {
+        return
+      }
+      const train = game.trains[trainNumber - 1]
+      if (!train) {
+        console.error(`Train with number ${trainNumber} not found`)
+        return
+      }
+      if (!startFlyover ) {
+        //clear the temporary canvas before drawing
+        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        train.track.drawUsingNewPositions(ctxTemp, 'rgb(255, 255, 0)', 10)
+        const flyoverLocations = getPossibleFlyoverLocations(trainNumber)
+        flyoverLocations.forEach(location => {
+          drawFilledCircle(ctxTemp, location.x, location.y, 20, 'rgb(255, 255, 0)')
+          drawHollowCircle(ctxTemp, location.x, location.y, 20, 'black')
+        })
+      }
+    })
+
+    // flyoverForTrainContainer.addEventListener('mouseleave', () => {
+    //   clearFlyoverPreview()
+    // })
   }
 
   document.querySelector('#canvas_temp').addEventListener('click', (event) => {
@@ -846,6 +937,9 @@ window.addEventListener('load', () => {
         }
         positions.push({ x, y })
         updateCanvasTemp(x, y)
+
+        //once a new track is under construction, we can reset the pointer events on the #flagOff
+        document.querySelector('#flagOff').style.pointerEvents = 'auto'
       }
     }
     if (startStation) {
@@ -890,7 +984,34 @@ window.addEventListener('load', () => {
       const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
       const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
       if ((Math.abs(x - point.x) < click_error) && (Math.abs(y - point.y) < click_error)) {
-        // console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y}`)
+        // check if the clicked point is a valid flyover location for the selected train
+        const selectedTrainNumber = Number.parseInt(document.querySelector('#flyoverForTrain span.selected')?.dataset.value, 10)
+        if (!selectedTrainNumber) { 
+          return
+        }
+        const possibleFlyoverLocations = getPossibleFlyoverLocations(selectedTrainNumber)
+        const isValidFlyoverLocation = possibleFlyoverLocations.some(location => location.x === x && location.y === y)
+        if (!isValidFlyoverLocation) {
+          swal.fire({
+            title: 'Invalid Flyover Location',
+            text: 'The selected location is not a valid flyover location for the selected train.',
+            icon: 'error',
+            confirmButtonText: 'OK'
+          })
+          return
+        }
+        // ensure that flyover does not already exist at this location
+        const flyovers = game.getFlyovers()
+        const flyoverExists = flyovers.some(flyover => flyover.col === x / gridSize && flyover.row === y / gridSize)
+        if (flyoverExists) {
+          swal.fire({
+            title: 'Flyover Already Exists',
+            text: 'A flyover already exists at the selected location.',
+            icon: 'error',
+            confirmButtonText: 'OK'
+          })
+          return
+        }
         // console.log(`Flyover added at (${(x / gridSize) + 1},${(y / gridSize) + 1})`)
         swal.fire({
           title: `Add Flyover`,
@@ -904,7 +1025,9 @@ window.addEventListener('load', () => {
             const n = game.getNumberOfFlyovers()
             intersections.updateIntersectionsWithFlyoverLocation(y / gridSize, x / gridSize, true)
             game.addFlyover(y / gridSize, x / gridSize)
-            startFlyover = false
+          }else{
+            //clear the canvasTemp after cancelling the flyover
+            // ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
           }
 
 
@@ -929,7 +1052,7 @@ window.addEventListener('load', () => {
     buttonGroup8el.style.left = `${event.clientX + 7}px`
     buttonGroup8el.style.top = `${event.clientY + 7}px`
     label.textContent = `${col},${row}`
-    
+
     if (startTrack) {
       const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
       const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
@@ -974,11 +1097,11 @@ window.addEventListener('load', () => {
     positions = []
   })
 
-  window.startFlyover = function () {
-    startFlyover = true
-    startTrack = false
-    window.showPossibleFlyoverLocations()
-  }
+  // window.startFlyover = function () {
+  //   startFlyover = true
+  //   startTrack = false
+  //   window.showPossibleFlyoverLocations()
+  // }
 
   window.cancelStation = function () {
     startStation = false
@@ -1024,6 +1147,15 @@ window.addEventListener('load', () => {
     document.querySelector('#canvas_temp').style = 'cursor:crosshair'
   }
 
+  const startFlyoverSelection = function () {
+    startStation = false
+    startTrack = false
+    // startStation = true
+    if (flyoverForTrainContainer) {
+      flyoverForTrainContainer.style.display = 'block'
+    }
+    document.querySelector('#canvas_temp').style = 'cursor:crosshair'
+  }
   window.cancelFlyover = function () {
     startFlyover = false
     document.querySelector('#canvas_temp').style = 'cursor:default'
@@ -1043,34 +1175,6 @@ window.addEventListener('load', () => {
       })
     })
     Flyovers.setPossibleFlyoverLocations(possibleLocations.map(location => location.location))
-  }
-
-  window.showPossibleFlyoverLocations = function () {
-    const possibleLocations = []
-    game.trains.forEach((train, index) => {
-      train.track.possibleFlyoverLocations.forEach(location => {
-        possibleLocations.forEach(possibleLocation => {
-          if (possibleLocation.location.x === location.x && possibleLocation.location.y === location.y && possibleLocation.index !== index) {
-            possibleLocation.count++
-          }
-        })
-        possibleLocations.push({ location: location, index, count: 1 })
-      })
-    })
-    ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-    possibleLocations.forEach(location => {
-      if (!(location.count > 1)) {
-        return;
-      }
-      const x = location.location.x
-      const y = location.location.y
-      ctxTemp.beginPath()
-      ctxTemp.moveTo(x, y)
-      ctxTemp.fillStyle = 'yellow'
-      ctxTemp.arc(x, y, 10, 0, Math.PI * 2)
-      ctxTemp.closePath()
-      ctxTemp.fill()
-    })
   }
 
   //set up the grid
@@ -1466,17 +1570,17 @@ window.addEventListener('load', () => {
     }
 
     startTrack = false
-    // we close the Station popup if it is open
-    // no need for following code since stationModal is kept current in UpdateUI method of the train class
-    // const stationModal = document.querySelector('#buttonGroup3')
-    // if (stationModal) {
-    //   stationModal.style.display = 'none'
-    // }
+
 
     // update the UI with the right number of coaches or freight wagons based on the train type
     const lblNumCoaches = document.querySelector(`#lblNumCoaches${createdTrainNumber}`)
     if (lblNumCoaches) {
       lblNumCoaches.textContent = numCoaches
+    }
+    // update the UI with the right train type
+    const lblTrainType = document.querySelector(`#lblTrainType${createdTrainNumber}`)
+    if (lblTrainType) {
+      lblTrainType.textContent = trainType == 'Passenger' ? 'P' : 'F'
     }
 
     //we also update the options in the select box
@@ -1674,9 +1778,33 @@ window.addEventListener('load', () => {
 
   const buttonGroup2 = document.querySelector('#buttonGroup2');
   makeDraggable(buttonGroup2);
+  if (buttonGroup2) {
+    // buttonGroup2.addEventListener('mouseleave', () => {
+    //   clearFlyoverPreview()
+    // })
+    const buttonGroup2Close = buttonGroup2.querySelector('.dialogClose')
+    if (buttonGroup2Close) {
+      buttonGroup2Close.addEventListener('click', () => {
+        buttonGroup2.style.display = 'none'
+        clearFlyoverPreview(true)
+      })
+    }
+  }
 
   const buttonGroup3 = document.querySelector('#buttonGroup3');
   makeDraggable(buttonGroup3);
+  if (buttonGroup3) {
+    // buttonGroup3.addEventListener('mouseleave', () => {
+    //   clearStationHoverPreview()
+    // })
+    const buttonGroup3Close = buttonGroup3.querySelector('.dialogClose')
+    if (buttonGroup3Close) {
+      buttonGroup3Close.addEventListener('click', () => {
+        buttonGroup3.style.display = 'none'
+        clearStationHoverPreview(true)
+      })
+    }
+  }
 
   const buttonGroup4 = document.querySelector('#buttonGroup4');
   makeDraggable(buttonGroup4);
@@ -1696,6 +1824,31 @@ window.addEventListener('load', () => {
       sendHotkeyToDocument('P')
     })
   }
+
+  const getPossibleFlyoverLocations = function (trainNumber) {
+    const train = game.trains[trainNumber - 1]
+    if (!train) {
+      console.error(`Train with number ${trainNumber} not found`)
+      return []
+    }
+    const locations = train.getPossibleFlyoverLocations()
+    // now we check if any of these locations is also present in the track of any other train
+
+    const otherLocations = []
+    for (const loc of locations) {
+      for (const otherTrain of game.trains) {
+        if (otherTrain.trainNumber === trainNumber) {
+          continue
+        }
+        let otherTrainPossibleFlyoverLocations = otherTrain.getPossibleFlyoverLocations()
+        if (otherTrainPossibleFlyoverLocations.some(otherLoc => otherLoc.x === loc.x && otherLoc.y === loc.y)) {
+          otherLocations.push(loc)
+        }
+      }
+    }
+    return otherLocations
+  }
+  
   sendHotkeyToDocument('?')
 })
 
@@ -1910,14 +2063,7 @@ function displayFinancialResults() {
       tableBody.appendChild(row)
     }
   })
+
+
+  
 }
-
-
-// Unlock audio after user gestures to satisfy browser autoplay policy.
-// document.addEventListener('click', () => {
-//   audioManager.unlockAudio()
-// }, { once: false })
-// document.addEventListener('keydown', () => {
-//   audioManager.unlockAudio()
-// }, { once: false })
-

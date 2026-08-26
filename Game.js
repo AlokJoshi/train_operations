@@ -209,9 +209,9 @@ class Game {
     }
     if(numSegments > 0) {
       const overlappingTrains = overlapMatches.map(match => match.trainNumber).join(', ')
-      console.log(`The new train overlaps with existing train(s): ${overlappingTrains}.`)
+      // console.log(`The new train overlaps with existing train(s): ${overlappingTrains}.`)
       const cost = numSegments * this.financials.parallelTrackCostPerSegment
-      console.log(`Parallel track cost for ${numSegments} segments: $${cost}`)
+      // console.log(`Parallel track cost for ${numSegments} segments: $${cost}`)
       useParallelTrack = await this.promptUserForParallelTrack(numSegments, overlappingTrains, cost)
 
       if (useParallelTrack) {
@@ -226,7 +226,7 @@ class Game {
             : 0
             // Lane cycles as overlap grows: 0 -> 1 -> 2 -> 0 -> ...
             autoAssignedLane = maxExistingLinesOnAnySegment % 3
-          console.log(`[ParallelLane] overlapDepth=${maxExistingLinesOnAnySegment}, assignedLane=${autoAssignedLane}, trains=[${overlappingTrains}]`)
+          // console.log(`[ParallelLane] overlapDepth=${maxExistingLinesOnAnySegment}, assignedLane=${autoAssignedLane}, trains=[${overlappingTrains}]`)
           this.financials.incrementExpenses(this.getCurrentTimeIndex(), null, cost, 'Parallel Track Cost')
       }
     }
@@ -463,6 +463,10 @@ class Game {
     })
 
     return result.isConfirmed === true
+  }
+
+  getFlyovers(){
+    return this.Flyovers.getAllFlyovers()
   }
 
 }

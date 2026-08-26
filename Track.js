@@ -378,78 +378,70 @@ class Track {
     }
   }
 
-  draw() {
+  draw(ctx = this.ctxTracks, color = 'rgb(0,0,250)', lineWidth = 1) {
     // this.drawGrid()
-    this.ctxTracks.save()
-    this.ctxTracks.strokeStyle = 'rgb(0,0,250)'
-    this.ctxTracks.beginPath()
-    this.ctxTracks.moveTo(this.positions[0].x, this.positions[0].y)
+    ctx.save()
+    ctx.strokeStyle = color
+    ctx.lineWidth = lineWidth
+    ctx.beginPath()
+    ctx.moveTo(this.positions[0].x, this.positions[0].y)
     for (let i = 1; i < this.positions.length; i++) {
-      this.ctxTracks.lineTo(this.positions[i].x, this.positions[i].y)
+      ctx.lineTo(this.positions[i].x, this.positions[i].y)
     }
-    // this.ctxTracks.closePath()
-    this.ctxTracks.stroke()
-    this.ctxTracks.restore()
+    // ctx.closePath()
+    ctx.stroke()
+    ctx.restore()
   }
 
-  drawUsingNewPositions() {
+  drawUsingNewPositions(ctx = this.ctxTracks, color = 'rgb(255,0,255)', lineWidth = 3) {
 
-    //The name of the train
-    // let name_x = this.newPositions[0].x==1200? this.newPositions[0].x-100 : this.newPositions[0].x
-    // let name_y = this.newPositions[0].y==0? this.newPositions[0].y+100 :this.newPositions[0].y
-
-    // this.ctxTracks.moveTo(this.newPositions[0].x,this.newPositions[0].y-20)
-    // this.ctxTracks.fillText(this.trainName,name_x,name_y)
-
-
-    this.ctxTracks.save()
+    ctx.save()
     //draw the thick single line as backdrop
-    this.ctxTracks.strokeStyle = 'rgb(255,0,255)'
-    this.ctxTracks.lineWidth = 3
-    this.ctxTracks.beginPath()
-    this.ctxTracks.moveTo(this.newPositions[0].x, this.newPositions[0].y)
+    ctx.strokeStyle = color
+    ctx.lineWidth = lineWidth
+    ctx.beginPath()
+    ctx.moveTo(this.newPositions[0].x, this.newPositions[0].y)
     for (let i = 1; i < this.newPositions.length; i++) {
-      this.ctxTracks.lineTo(this.newPositions[i].x, this.newPositions[i].y)
+      ctx.lineTo(this.newPositions[i].x, this.newPositions[i].y)
     }
-    // this.ctxTracks.closePath()
-    this.ctxTracks.stroke()
-    this.ctxTracks.restore()
+    ctx.stroke()
+    ctx.restore()
 
-    this.ctxTracks.save()
+    ctx.save()
 
     //draw the thin single lline
-    this.ctxTracks.strokeStyle = 'rgb(0,0,50)'
-    this.ctxTracks.lineWidth = 1
-    this.ctxTracks.beginPath()
-    this.ctxTracks.moveTo(this.newPositions[0].x, this.newPositions[0].y)
+    ctx.strokeStyle = 'rgb(0,0,50)'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(this.newPositions[0].x, this.newPositions[0].y)
     for (let i = 1; i < this.newPositions.length; i++) {
-      this.ctxTracks.lineTo(this.newPositions[i].x, this.newPositions[i].y)
+      ctx.lineTo(this.newPositions[i].x, this.newPositions[i].y)
     }
-    this.ctxTracks.stroke()
-    this.ctxTracks.restore()
-    // this.ctxTracks.closePath()
+    ctx.stroke()
+    ctx.restore()
+    // ctx.closePath()
 
     //do a thick line for parallel tracks if any
     //go through the overlapMatches and draw a line from startx,starty to endx,endy for each overlapping segment
     this.overlapMatches.forEach(match => {
       match.commonSegmentsMap.forEach((value, key) => {
         const { startx, starty, endx, endy } = value
-        this.ctxTracks.save()
-        this.ctxTracks.strokeStyle = 'rgb(255, 0, 255)'
-        this.ctxTracks.lineWidth = 6
-        this.ctxTracks.beginPath()
-        this.ctxTracks.moveTo(startx, starty)
-        this.ctxTracks.lineTo(endx, endy)
-        this.ctxTracks.stroke()
+        ctx.save()
+        ctx.strokeStyle = 'rgb(255, 0, 255)'
+        ctx.lineWidth = 6
+        ctx.beginPath()
+        ctx.moveTo(startx, starty)
+        ctx.lineTo(endx, endy)
+        ctx.stroke()
 
         //draw thin single line
-        this.ctxTracks.strokeStyle = 'rgb(0,0,50)'
-        this.ctxTracks.lineWidth = 3
-        this.ctxTracks.beginPath()
-        this.ctxTracks.moveTo(startx, starty)
-        this.ctxTracks.lineTo(endx, endy)
-        this.ctxTracks.stroke()
-        this.ctxTracks.restore()
+        ctx.strokeStyle = 'rgb(0,0,50)'
+        ctx.lineWidth = 3
+        ctx.beginPath()
+        ctx.moveTo(startx, starty)
+        ctx.lineTo(endx, endy)
+        ctx.stroke()
+        ctx.restore()
       })
     })
 
@@ -485,6 +477,7 @@ class Track {
     }
     return length
   }
+
   getPossibleStationLocations() {
     //locations are those where the train can stop between the starting and ending station and where there is no station already.
     const locations = []
@@ -499,7 +492,7 @@ class Track {
           const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
           if (!hasStation) {
             locations.push(pos)
-            console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code1`)
+            // console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code1`)
           }
         }
       } else if (prev.y === current.y) {
@@ -508,7 +501,7 @@ class Track {
           const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
           if (!hasStation) {
             locations.push(pos)
-            console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code2`)
+            // console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code2`)
           }
         }
       } else {
@@ -527,32 +520,9 @@ class Track {
         }
       }
     }
-    //another loop to add locations that have been missed.
-    // AJ 08/21/26 commented out the following code because it was adding duplicate locations that were already added in the previous loop.
-    // for (let i = 1; i <= this.positions.length - 1; i++) {
-    //   const prev = this.positions[i - 1]
-    //   const current = this.positions[i]
-    //   if (prev.x === current.x && Math.abs((prev.y - current.y) / this.gridSize) == 2) {
-    //     //that means that there is a curved segment being added between two straight segments.
-    //     const pos = { x: prev.x, y: prev.y - this.gridSize * Math.sign(prev.y - current.y) }
-    //     const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
-    //     if (!hasStation) {
-    //       locations.push(pos)
-    //       console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code4`)
-    //     }
-    //   } else if (prev.y === current.y && Math.abs((prev.x - current.x) / this.gridSize) == 2) {
-    //     //that means that there is a curved segment being added between two straight segments.
-    //     const pos = { x: prev.x - this.gridSize * Math.sign(prev.x - current.x), y: prev.y }
-    //     const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
-    //     if (!hasStation) {
-    //       locations.push(pos)
-    //       console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code5`)
-    //     }
-    //   }
-    // }
-
     return locations
   }
+
   getDetailedSegmentsMap(turningCircle = 100) {
     const segmentsMap = new Map()
     const modifiedPositions = []
@@ -582,6 +552,9 @@ class Track {
       }
     }
     return segmentsMap
+  }
+  getAllLocationsOnGrid() {
+    return this.possibleFlyoverLocations
   }
 }
 

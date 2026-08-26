@@ -115,7 +115,7 @@ class Train {
     //when passenger train has an upgraded engine, its speed increases quickly from zero
     this.speed = this.trainType == 'passenger' ? 1 : 11
     this.upgradedEngine = false
-    this.debugLaneLogged = false
+    // this.debugLaneLogged = false
     this.parallelSegmentCells = this.buildParallelSegmentCellSet()
     this.awaitingTurnaround = false
     this.smokePuffs = []
@@ -194,11 +194,17 @@ class Train {
   }
   
   updateUI() {
+
     const newCountEl = document.querySelector(`#newCount${this.trainNumber}`)
     if (!newCountEl) return
     newCountEl.value = this.numCoaches
     newCountEl.setAttribute("min", Train.minNumCoaches);
     newCountEl.setAttribute("max", this.trainType === "freight" ? Train.maxNumFreightWagons : Train.maxNumCoaches);
+    
+    const trainTypeEl = document.querySelector(`#lblTrainType${this.trainNumber}`)
+    if (trainTypeEl) {
+      trainTypeEl.textContent = this.trainType === "passenger" ? "P" : "F"
+    }
 
     // Add train label in info widget once.
     const infoContainer = document.querySelector('#infoForTrain')
@@ -219,6 +225,16 @@ class Train {
       stationSpan.textContent = `T${this.trainNumber}`
       stationSpan.style = 'background-color:' + (this.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : this.color) + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
       stationContainer.appendChild(stationSpan)
+    }
+
+    const flyoverContainer = document.querySelector('#flyoverForTrain')
+    if (flyoverContainer && !flyoverContainer.querySelector(`span[data-value="${this.trainNumber}"]`)) {
+      const flyoverSpan = document.createElement('span')
+      flyoverSpan.dataset.value = String(this.trainNumber)
+      flyoverSpan.dataset.role = 'flyover-train'
+      flyoverSpan.textContent = `T${this.trainNumber}`
+      flyoverSpan.style = 'background-color:' + (this.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : this.color) + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
+      flyoverContainer.appendChild(flyoverSpan)
     }
   }
   
@@ -626,10 +642,10 @@ class Train {
     const normalizedLane = Number.isFinite(this.lane) ? ((this.lane % 3) + 3) % 3 : 0
     const laneOffsetMagnitude = laneToOffsetMultiplier[normalizedLane] * Train.widthEngine*0.3
     const engineOffsetMagnitude = this.isOnParallelSegment(x, y) ? laneOffsetMagnitude : 0
-    if (!this.debugLaneLogged) {
-      console.log(`[ParallelLaneVisual] train=${this.trainNumber}, lane=${this.lane}, normalizedLane=${normalizedLane}, offsetPx=${laneOffsetMagnitude}, parallelCells=${this.parallelSegmentCells?.size ?? 0}`)
-      this.debugLaneLogged = true
-    }
+    // if (!this.debugLaneLogged) {
+    //   console.log(`[ParallelLaneVisual] train=${this.trainNumber}, lane=${this.lane}, normalizedLane=${normalizedLane}, offsetPx=${laneOffsetMagnitude}, parallelCells=${this.parallelSegmentCells?.size ?? 0}`)
+    //   this.debugLaneLogged = true
+    // }
     const laneOffsetX = -Math.sin(heading) * engineOffsetMagnitude
     const laneOffsetY = Math.cos(heading) * engineOffsetMagnitude
 
@@ -986,6 +1002,12 @@ class Train {
     const currentTimeIndex = this.getCurrentTimeIndex()
     if (div) {
       div.replaceChildren()
+      const title = document.createElement('div')
+      const typeLabel = typeOfTrain === 'passenger' ? 'Passenger' : 'Freight'
+      title.textContent = `Train T${this.trainNumber} - ${typeLabel}`
+      title.style = 'font-weight:700;margin:0 0 8px 0;'
+      div.appendChild(title)
+
       const table = document.createElement('table')
       const thead = document.createElement('thead')
       const headerRow = document.createElement('tr')
@@ -1088,6 +1110,15 @@ class Train {
       ...eventMetrics
     })
     this.updateInfoOnTrainOperations(trainType)
+  }
+
+  getPossibleFlyoverLocations() {
+    const allLocationsOnGrid = this.track.getAllLocationsOnGrid()
+    // remove all locations where there is a station already
+    const stationLocations = this.track.stations.getAllStations()
+    const filteredLocations = allLocationsOnGrid.filter(loc => !stationLocations.some(station => station.x === loc.x && station.y === loc.y))
+    return filteredLocations
+    // return allLocationsOnGrid
   }
 }
 export {

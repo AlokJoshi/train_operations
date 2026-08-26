@@ -218,6 +218,18 @@ button:hover{
   font-size: 1.0em;
 }
 
+/* Hide number input spinner arrows in the train controls dialog. */
+#buttonGroup1 input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+#buttonGroup1 input[type="number"]::-webkit-outer-spin-button,
+#buttonGroup1 input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .key {
   font-size: 1.2em;
   /* font-weight: bold; */

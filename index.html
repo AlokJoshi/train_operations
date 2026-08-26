@@ -13,7 +13,8 @@
 </head>
 
 <body>
-  <div id="gameStage" style="background-image: url('./engine.png'); background-size: 50px 50px;">
+  <!-- <div id="gameStage" style="background-image: url('./engine.png'); background-size: 50px 50px;"> -->
+  <div id="gameStage" style="background-image: url('./favicon.ico'); background-size: 50px 50px;">
     <canvas id="canvas_tracks"></canvas>
     <canvas id="canvas"></canvas>
     <canvas id="canvas_results"></canvas>
@@ -38,15 +39,17 @@
         </div>
         <div id="trainControlsContainer"></div>
         <!-- Template for individual train controls. It is intialized in initializeTrainControlWidgets function -->
-        <template id="trainControlTemplate">
+        <template id="trainControlTemplate">  
           <div class="trainControl">
             <div style="display:flex; align-items:center; justify-content:space-between;">
-              <span data-role="label"></span>
+              <span data-role="label" title="Train"></span>
+              <span data-role="train-type" title="Train Type"></span>
               <i class="fas fa-pause" title="Pause Train" style="cursor:pointer" data-role="pause"></i>
               <input data-role="new-count" 
-                style="font-size:0.8em; width:75px;" 
-                title="Type the revised coach/wagon count and press Enter or Escape"
-                type="number" />
+                style="font-size:0.8em; width:50px;" 
+                title="Type the revised coach/wagon count (Passenger:2 to 15, Freight:2 to 50) and press Enter or Escape"
+                type="number"
+                min="2"/>
               
               <i class="fas fa-bolt" title="Upgrade Engine" style="cursor:pointer" data-role="upgrade-engine"></i>
               <div class="healthWrap" >
@@ -108,18 +111,22 @@
       style="width:300px; display:none; position:fixed; top:300px;left:150px; flex-direction:column; gap:10px">
       <div class="dialogHeader">
         <span class="dialogTitle">Flyovers</span>
-        <span class="dialogClose" onclick="document.getElementById('buttonGroup2').style.display='none';">
+        <span class="dialogClose">
           <i class="fas fa-times" title="Close"></i>
         </span>
       </div>
       <div class="dialogContent">
-        <label for="startFlyover">Start Flyover Specification. Please click where you will gain
-          by building a flyover to avoid collisions. Each flyover costs 20000000.
+        <label>Please select the train (By clicking on one of the trains below) and thenclick where you will gain
+          by building a flyover to avoid collisions. If you do not want to build a flyover, you have two options: (1) You can manually stop one train to avoid the collision or (2) You can build a station at the intersection of the two trains. 
+          Please note that each flyover costs 20000000.
+          If you hover your mouse over a train, it will highlight train track and the possible locations for building a flyover.
         </label>
-        <i class="fas fa-play" id="startFlyover" title="Add Flyover" style="cursor:pointer;"
-          onclick="startFlyover()"></i>
-        <!-- <label for="cancelFlyover">If you change your mind you can Cancel the flyover specification.</label>
-        <i class="fas fa-times" id="cancelFlyover" title="Cancel Flyover" onclick="cancelFlyover()"></i> -->
+        
+          <div id="flyoverForTrain" style="margin-top:10px;">
+
+          </div>
+          <!-- Message area for flyover actions -->
+          <div id="flyoverMessage" style="margin-top:10px;"></div>
       </div>
     </div> <!-- End of buttonGroup2: Flyovers -->
 
@@ -127,12 +134,12 @@
       style="width:400px; display:none; position:fixed; top:200px;left: 450px; flex-direction:column; gap:10px">
       <div class="dialogHeader">
         <span class="dialogTitle">Stations</span>
-        <span class="dialogClose" onclick="document.getElementById('buttonGroup3').style.display='none';">
+        <span class="dialogClose">
           <i class="fas fa-times" title="Close"></i>
         </span>
       </div>
       <div class="dialogContent" style="font-size:1.2em">
-        <label for="stationFortrain">Select the Train for which you want to build the station. Please note that the
+        <label>Select the Train for which you want to build the station. Please note that the
           game
           will
           display the locations where you can click to build a Station. Each station costs 1000000. Note that two or
@@ -144,7 +151,7 @@
     </div> <!-- End of buttonGroup3: Stations -->
 
     <div id="buttonGroup4" class="modal"
-      style="width:400px; display:none; position:fixed; top:450px;left:490px; flex-direction:column; gap:10px">
+      style="width:400px; display:none; position:fixed; top:450px;left:490px; flex-direction:column; gap:10px;">
       <div class="dialogHeader">
         <span class="dialogTitle">Results</span>
         <span class="dialogClose" onclick="document.getElementById('buttonGroup4').style.display='none';">
@@ -182,9 +189,10 @@
           <i class="fas fa-times" title="Close"></i>
         </span>
       </div>
-      <div id="soundControl" onclick="turnSoundOn()"><span id="soundControlLabel">Sound: On</span> <i class="fas fa-volume-up" title="Sound On (press N to mute)"></i></div>
-      <div id="smokeControl" style="margin-top:6px;">Steam Smoke:
-        <select id="smokeLevelControl" aria-label="Steam smoke level">
+      <div id="soundControl" style="font-size: 1.2em; margin-top:6px;cursor:pointer;" onclick="turnSoundOn()"><span id="soundControlLabel">Sound: On</span> <i class="fas fa-volume-up" title="Sound On (press N to mute)"></i></div>
+      <div id="smokeControl" style="font-size: 1.2em; margin-top:6px;" >
+        Steam Smoke:
+        <select id="smokeLevelControl" style="font-size: 1.2em;" aria-label="Steam smoke level">
           <option value="off">Off</option>
           <option value="low">Low</option>
           <option value="high" selected>High</option>
@@ -360,7 +368,7 @@
     </div> <!-- End of buttonGroup5: Instructions -->
 
     <div id="buttonGroup6" class="modal"
-      style="display:flex; position:fixed; top:10px;left:190px; flex-direction:row; gap:8px">
+      style="display:flex; position:fixed; top:10px;left:190px; flex-direction:row; gap:8px; background-color: rgba(0, 255, 0, 0.4);">
       <!-- Touch-friendly replacements for keyboard hotkeys -->
       <button type="button" class="mobile-hotkey" data-hotkey="?" title="Help" aria-label="Help">?</button>
       <button type="button" class="mobile-hotkey" data-hotkey="P" title="Pause/Resume"
