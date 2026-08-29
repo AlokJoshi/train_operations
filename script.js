@@ -39,7 +39,6 @@ let startExtendTrain = false
 let startFlyover = false
 let startStation = false
 let selectedTrainNumberForStartStation = null
-let selectedTrainNumberForStartFlyover = null
 let showingResults = false
 let showingInfo = false
 let showingHowToPlay = false
@@ -348,7 +347,7 @@ window.addEventListener('load', () => {
     ctx.fill()
     ctx.restore()
   }
-  
+
   const drawHollowCircle = (ctx, x, y, radius, color) => {
     ctx.save()
     ctx.beginPath()
@@ -726,7 +725,7 @@ window.addEventListener('load', () => {
     }
   }
 
-  const clearFlyoverPreview = (force=false) => {
+  const clearFlyoverPreview = (force = false) => {
     if (force || !startFlyover) {
       ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
     }
@@ -801,74 +800,29 @@ window.addEventListener('load', () => {
     })
   }
 
-  const flyoverForTrainContainer = document.querySelector('#flyoverForTrain')
+  const startFlyoverBtn = document.querySelector('#startFlyoverBtn')
+  const cancelFlyoverBtn = document.querySelector('#cancelFlyoverBtn')
 
-  if (flyoverForTrainContainer) {
-    flyoverForTrainContainer.addEventListener('click', (event) => {
-      startFlyover = true
-      const target = event.target
-      if (!(target instanceof HTMLElement) || target.tagName !== 'SPAN') {
-        return
-      }
-      const trainNumber = Number.parseInt(target.dataset.value, 10)
-      if (!Number.isInteger(trainNumber)) {
-        return
-      }
-      const train = game.trains[trainNumber - 1]
-      if (!train) {
-        console.error(`Train with number ${trainNumber} not found`)
-        return
-      }
-
-      flyoverForTrainContainer.querySelectorAll('span').forEach(span => span.classList.remove('selected'))
-      target.classList.add('selected')
-
-      if (startFlyover && selectedTrainNumberForStartFlyover === trainNumber) {
-        startFlyover = false
-        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-        selectedTrainNumberForStartFlyover = null
-        return
-      }
-
-      selectedTrainNumberForStartFlyover = trainNumber
-      // const possibleFlyoverLocations = getPossibleFlyoverLocations(trainNumber)
-      // ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-      // possibleFlyoverLocations.forEach(location => {
-      //   drawFilledCircle(ctxTemp, location.x, location.y, 20, 'orange')
-      // })
-      
+  if (cancelFlyoverBtn) {
+    cancelFlyoverBtn.addEventListener('click', () => {
+      startFlyover = false
+      ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
     })
-    flyoverForTrainContainer.addEventListener('mousemove', (event) => {
-      const target = event.target
-      if (!(target instanceof HTMLElement) || target.tagName !== 'SPAN') {
-        return
-      }
-      const trainNumber = Number.parseInt(target.dataset.value, 10)
-      if (!Number.isInteger(trainNumber)) {
-        return
-      }
-      const train = game.trains[trainNumber - 1]
-      if (!train) {
-        console.error(`Train with number ${trainNumber} not found`)
-        return
-      }
-      if (!startFlyover ) {
-        //clear the temporary canvas before drawing
-        ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-        train.track.drawUsingNewPositions(ctxTemp, 'rgb(255, 255, 0)', 10)
-        const flyoverLocations = getPossibleFlyoverLocations(trainNumber)
-        flyoverLocations.forEach(location => {
-          drawFilledCircle(ctxTemp, location.x, location.y, 20, 'rgb(255, 255, 0)')
-          drawHollowCircle(ctxTemp, location.x, location.y, 20, 'black')
-        })
-      }
-    })
-
-    // flyoverForTrainContainer.addEventListener('mouseleave', () => {
-    //   clearFlyoverPreview()
-    // })
   }
 
+  if (startFlyoverBtn) {
+    startFlyoverBtn.addEventListener('click', (event) => {
+      startFlyover = true
+
+      const locations = getAllPossibleFlyoverLocations()
+      ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+      locations.forEach(location => {
+        drawFilledCircle(ctxTemp, location.x, location.y, 20, 'rgb(255, 255, 0)')
+        drawHollowCircle(ctxTemp, location.x, location.y, 20, 'black')
+      })
+    })
+  }
+  
   document.querySelector('#canvas_temp').addEventListener('click', (event) => {
     const point = getCanvasPoint(event)
     if (startExtendTrain) {
@@ -985,11 +939,7 @@ window.addEventListener('load', () => {
       const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
       if ((Math.abs(x - point.x) < click_error) && (Math.abs(y - point.y) < click_error)) {
         // check if the clicked point is a valid flyover location for the selected train
-        const selectedTrainNumber = Number.parseInt(document.querySelector('#flyoverForTrain span.selected')?.dataset.value, 10)
-        if (!selectedTrainNumber) { 
-          return
-        }
-        const possibleFlyoverLocations = getPossibleFlyoverLocations(selectedTrainNumber)
+        const possibleFlyoverLocations = getAllPossibleFlyoverLocations()
         const isValidFlyoverLocation = possibleFlyoverLocations.some(location => location.x === x && location.y === y)
         if (!isValidFlyoverLocation) {
           swal.fire({
@@ -1025,7 +975,7 @@ window.addEventListener('load', () => {
             const n = game.getNumberOfFlyovers()
             intersections.updateIntersectionsWithFlyoverLocation(y / gridSize, x / gridSize, true)
             game.addFlyover(y / gridSize, x / gridSize)
-          }else{
+          } else {
             //clear the canvasTemp after cancelling the flyover
             // ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
           }
@@ -1091,6 +1041,9 @@ window.addEventListener('load', () => {
   })
 
   document.querySelector('#startTrack').addEventListener('click', () => {
+    startFlyover = false
+    startStation = false
+    startExtendTrain = false
     startTrack = true
     document.querySelector('#canvas_temp').style = 'cursor:crosshair'
     setValidTrackPoints()
@@ -1148,14 +1101,14 @@ window.addEventListener('load', () => {
   }
 
   const startFlyoverSelection = function () {
-    startStation = false
-    startTrack = false
-    // startStation = true
-    if (flyoverForTrainContainer) {
-      flyoverForTrainContainer.style.display = 'block'
-    }
-    document.querySelector('#canvas_temp').style = 'cursor:crosshair'
+    // startStation = false
+    // startTrack = false
+    // if (flyoverForTrainContainer) {
+    //   flyoverForTrainContainer.style.display = 'block'
+    // }
+    // document.querySelector('#canvas_temp').style = 'cursor:crosshair'
   }
+
   window.cancelFlyover = function () {
     startFlyover = false
     document.querySelector('#canvas_temp').style = 'cursor:default'
@@ -1825,30 +1778,43 @@ window.addEventListener('load', () => {
     })
   }
 
-  const getPossibleFlyoverLocations = function (trainNumber) {
+  const getAllGridLocations = function (trainNumber) {
     const train = game.trains[trainNumber - 1]
     if (!train) {
       console.error(`Train with number ${trainNumber} not found`)
       return []
     }
-    const locations = train.getPossibleFlyoverLocations()
-    // now we check if any of these locations is also present in the track of any other train
+    return train.getAllGridLocations()
+  }
 
-    const otherLocations = []
-    for (const loc of locations) {
+  const getAllPossibleFlyoverLocations = function () {
+
+    const allLocations = []
+    for (const train of game.trains) {
+      const locations = getAllGridLocations(train.trainNumber)
       for (const otherTrain of game.trains) {
-        if (otherTrain.trainNumber === trainNumber) {
+        if (otherTrain.trainNumber === train.trainNumber) {
           continue
         }
-        let otherTrainPossibleFlyoverLocations = otherTrain.getPossibleFlyoverLocations()
-        if (otherTrainPossibleFlyoverLocations.some(otherLoc => otherLoc.x === loc.x && otherLoc.y === loc.y)) {
-          otherLocations.push(loc)
+        const otherLocation = getAllGridLocations(otherTrain.trainNumber)
+
+        for (const loc of locations) {
+          for (const other of otherLocation) {
+            if (loc.x === other.x && loc.y === other.y) {
+              if (!game.isParallelTrackEnabledForTrains(loc.y / gridSize, loc.x / gridSize , intersections, train.trainNumber, otherTrain.trainNumber)) {
+                // if the location is already in the list, we don't add it again
+                if (!allLocations.some(l => l.x === loc.x && l.y === loc.y)) {
+                  allLocations.push(loc)
+                }
+              }
+            }
+          }
         }
       }
     }
-    return otherLocations
+    // console.log(`All possible flyover locations: ${JSON.stringify(allLocations)}`)
+    return allLocations
   }
-  
   sendHotkeyToDocument('?')
 })
 
@@ -2065,5 +2031,5 @@ function displayFinancialResults() {
   })
 
 
-  
+
 }

@@ -82,6 +82,14 @@ class Intersections {
     this.allowedTrainsByCell.set(key, allowedTrains)
   }
 
+  getAllowedTrainsAtCell(row, col) {
+    if (row < 0 || row >= this.rowCount || col < 0 || col >= this.colCount) {
+      return new Set()
+    }
+    const key = this.getCellKey(row, col)
+    return this.allowedTrainsByCell.get(key) ?? new Set()
+  }
+
   allowTrainsForCommonSegments(commonSegmentsMap, trainNumbers = []) {
     if (!(commonSegmentsMap instanceof Map)) {
       return

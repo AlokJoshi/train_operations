@@ -28,7 +28,6 @@ class Flyovers {
   }
   deleteFlyover(row, col) {
     this.Flyovers = this.Flyovers.filter(Flyover => !(Flyover.row === row && Flyover.col === col))
-    // Intersections.updateIntersection(row, col, null)
   }
   draw() {
     this.Flyovers.forEach(Flyover => {

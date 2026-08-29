@@ -122,6 +122,7 @@ class Track {
     station.distanceFromStart = this.getProjectedDistanceForStation(station)
     this.stations.addStation(station)
     station.draw()
+    this.recalculateAllStationDistances()
   }
 
   delete(position) {
@@ -130,6 +131,7 @@ class Track {
     this.positions.splice(index, 1)
     this.draw()
     this.updateSegmentsFromNewPositions()
+    this.recalculateAllStationDistances()
   }
   display() {
     // this.positions.forEach(item => console.log(JSON.stringify(item)))
@@ -515,7 +517,7 @@ class Track {
           const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
           if (!hasStation) {
             locations.push(pos)
-            console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code3`)
+            // console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code3`)
           }
         }
       }

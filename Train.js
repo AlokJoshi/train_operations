@@ -1,5 +1,14 @@
 "use strict";
 import { audioManager } from './audioManager.js'
+
+globalThis.debugTrainNumber = null
+
+globalThis.setDebugTrain = (trainNumber) => {
+  const value = Number(trainNumber)
+  globalThis.debugTrainNumber = Number.isInteger(value) ? value : null
+  console.log(`[debug] monitoring train ${globalThis.debugTrainNumber ?? 'none'}`)
+}
+
 // createAudioManager(audioSources, options) returns an object with play, pause, stop, and other audio control methods.
 // it already has 2 sounds, beep and train
 class Train {
@@ -23,7 +32,7 @@ class Train {
   static MAX_RENDERED_OPERATION_ROWS = 60
   static ticketPriceMap = new Map() // key is from row,col to row,col and value is the ticket price for that route. 
   // We populate this as we go unless the ticket price is already in the map. 
-  
+
 
   constructor({
     ctx,
@@ -97,7 +106,9 @@ class Train {
     this.travelPopulation = travelPopulation
     this.totalTravelPopulation = Array.from(this.travelPopulation.travelPopulation.values()).reduce((a, b) => a + b.population, 0)
     this.passengersOnBoard = 0
-    this.lastProcessedStationNumber = null  // prevents boarding/deboarding from firing on every frame while at a station
+    // dedupe based on station location rather than station number, because station number can change if a station is added or removed from the track. 
+    // Station location is fixed and unique for each station on the track.
+    this.lastProcessedStationVisitKey = null  // prevents boarding/deboarding from firing on every frame while at a station location
     this.stationVisitContext = null
     this.remainingDwellTime = 0
     this.freightTrainDwellTime = 200 // fixed dwell time for freight trains at each station for loading and unloading. This can be adjusted as needed.
@@ -122,9 +133,14 @@ class Train {
     this.lastSmokeEmitTick = 0
     this.smokeSetting = 'high'
 
-    
+
     this.updateUI()
-    
+
+  }
+
+  shouldLogDebug() {
+    const targetTrainNumber = Number(globalThis.debugTrainNumber)
+    return Number.isInteger(targetTrainNumber) && this.trainNumber === targetTrainNumber
   }
 
   normalizeSmokeSetting(level) {
@@ -192,7 +208,7 @@ class Train {
     }
     return this.parallelSegmentCells.has(`${cell.row},${cell.col}`)
   }
-  
+
   updateUI() {
 
     const newCountEl = document.querySelector(`#newCount${this.trainNumber}`)
@@ -200,7 +216,7 @@ class Train {
     newCountEl.value = this.numCoaches
     newCountEl.setAttribute("min", Train.minNumCoaches);
     newCountEl.setAttribute("max", this.trainType === "freight" ? Train.maxNumFreightWagons : Train.maxNumCoaches);
-    
+
     const trainTypeEl = document.querySelector(`#lblTrainType${this.trainNumber}`)
     if (trainTypeEl) {
       trainTypeEl.textContent = this.trainType === "passenger" ? "P" : "F"
@@ -237,7 +253,7 @@ class Train {
       flyoverContainer.appendChild(flyoverSpan)
     }
   }
-  
+
   upgradeEngine() {
     if (this.upgradedEngine) return // already upgraded
     this.financials.upgradeEngine(this.getCurrentTimeIndex(), this.trainNumber)
@@ -248,10 +264,8 @@ class Train {
   }
 
   addCoach(numCoaches = 1) {
-
-    console.log(`Adding ${numCoaches} coaches to train ${this.trainNumber}`)
     const maxAllowedCoaches = this.trainType === "freight" ? Train.maxNumFreightWagons : Train.maxNumCoaches
-    if (this.numCoaches+numCoaches > maxAllowedCoaches) return
+    if (this.numCoaches + numCoaches > maxAllowedCoaches) return
 
     this.numCoaches += numCoaches
     if (!this.hasExplicitVisualCoachCap) {
@@ -265,9 +279,6 @@ class Train {
     // }
   }
   removeCoach(numCoaches = 1) {
-
-    console.log(`Removing ${numCoaches} coaches from train ${this.trainNumber}`)
-    
     if (this.numCoaches <= Train.minNumCoaches) return
     if (numCoaches <= 0) return
 
@@ -392,6 +403,7 @@ class Train {
     // how far it has moved on the tracks
     this.dwellPaused = this.remainingDwellTime > 0 ? true : false
 
+    const countBeforeMove = this.count
     if ((this.ticks % currSpeed == 0) && !this.userPaused && !this.dwellPaused) {
       //this controls the overall speed of the train. The lower the engineSpeed, the faster the train moves. The train moves one step after every engineSpeed number of frames
       const previousCount = this.count
@@ -419,37 +431,65 @@ class Train {
     let atAStation = false
     const stationNumbers = this.stations.map(st => st.stationNumber)
     const minStationNumber = stationNumbers.length ? Math.min(...stationNumbers) : 0
+    const startStationLocationKey = `${Math.round(this.stations.find(st => st.stationNumber === minStationNumber).x)},${Math.round(this.stations.find(st => st.stationNumber === minStationNumber).y)}`
     const maxStationNumber = stationNumbers.length ? Math.max(...stationNumbers) : 0
-    for (const station of this.stations) {
-      const isAtStation = (Math.abs(x - station.x) < 5) && (Math.abs(y - station.y) < 5)
-      if (!isAtStation) continue
+    const endStationLocationKey = `${Math.round(this.stations.find(st => st.stationNumber === maxStationNumber).x)},${Math.round(this.stations.find(st => st.stationNumber === maxStationNumber).y)}`
 
+    for (const station of this.stations) {
+      const stationDistanceFromStart = Number.isFinite(station.distanceFromStart)
+        ? station.distanceFromStart
+        : this.track.getProjectedDistanceForStation(station)
+      const stationDistanceInCurrentDirection = this.isReturning
+        ? this.track.totalLength - stationDistanceFromStart
+        : stationDistanceFromStart
+      // const crossedStationThisFrame = stationDistanceInCurrentDirection >= Math.min(countBeforeMove, this.count) &&
+      //   stationDistanceInCurrentDirection <= Math.max(countBeforeMove, this.count)
+      // const crossedStationThisFrame = stationDistanceInCurrentDirection >= Math.min(countBeforeMove, this.count) &&
+      //   stationDistanceInCurrentDirection <= Math.max(countBeforeMove, this.count)
+      const isAtStation = ((Math.abs(x - station.x) < 5) && (Math.abs(y - station.y) < 5))
+      console.log(x, y, station.x, station.y, startStationLocationKey, endStationLocationKey, isAtStation)
+      if (!isAtStation) continue
+      
       const isTerminalForCurrentDirection = (!this.isReturning && station.stationNumber === maxStationNumber) || (this.isReturning && station.stationNumber === minStationNumber)
+      const isTerminalStation = station.stationNumber === minStationNumber || station.stationNumber === maxStationNumber
       const trainIsReturning = isTerminalForCurrentDirection ? !this.isReturning : this.isReturning
       if (this.trainType == 'passenger') {
-        //reached a station. Set the dwell time
+        const stationVisitKey = `${Math.round(station.x)},${Math.round(station.y)}`
+        
+        
+        
+        
         let totalDeboarding = 0
         let totalBoarding = 0
         const thisStationKey = `${station.stationNumber}`
         atAStation = true
-        if (this.lastProcessedStationNumber === station.stationNumber) continue  // already processed this visit, skip
-        this.lastProcessedStationNumber = station.stationNumber
-        this.remainingDwellTime = station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber ? station.dwellTime : 0
-        //deboarding loop
-        // for (const station of this.stations) {
-        for (const fromToKey of this.passengerMap.keys()) {
-          const [fromKey, toKeyInMap] = fromToKey.split('-')
-          if (toKeyInMap === thisStationKey) {
-            totalDeboarding += this.passengerMap.get(fromToKey)
-            this.passengerMap.set(fromToKey, 0) // all passengers for that route get off at the destination station or we can delete this key
+        // dedupe based on station location rather than station number, because station number can change if a station is added or removed from the track. 
+        // Station location is fixed and unique for each station on the track.
+        if (this.lastProcessedStationVisitKey === stationVisitKey) continue  // already processed this visit location, skip
+        this.lastProcessedStationVisitKey = stationVisitKey
+        this.remainingDwellTime = stationVisitKey != startStationLocationKey && stationVisitKey != endStationLocationKey ? station.dwellTime : 0
+        if (isTerminalStation) {
+          // Enforce a clean turnaround: everyone gets off and stale route keys are cleared.
+          totalDeboarding = this.passengersOnBoard
+          this.passengerMap.clear()
+        } else {
+          // run the deboarding loop first to remove passengers for this station, then run the boarding loop to add new passengers for all subsequent stations.
+          for (const fromToKey of this.passengerMap.keys()) {
+            const [fromKey, toKeyInMap] = fromToKey.split('-')
+            if (toKeyInMap === thisStationKey) {
+              totalDeboarding += this.passengerMap.get(fromToKey)
+              this.passengerMap.delete(fromToKey) // all passengers for this route have deboarded at destination
+            }
           }
         }
-        // }
-        //boarding loop
-        // Here we calculate the number of passengers boarding the train at this station for all the following 
-        // stations on the route. We can get the travel population for this station and then calculate the number 
-        // of passengers boarding for each of the following stations on the route based on the travel population 
-        // for those stations and the total travel population. This is a simplification but it should work for our purposes.
+
+
+        if (this.shouldLogDebug()) {
+          console.log(`[debug train ${this.trainNumber}] station=${station.name} stationNumber=${station.stationNumber} passengerMap=${JSON.stringify(Array.from(this.passengerMap.entries()))}`)
+        }
+        if (this.shouldLogDebug()) {
+          console.log(`[debug train ${this.trainNumber}] totalDeboarding=${totalDeboarding} totalBoarding=${totalBoarding}`)
+        }
 
 
         const travelPopFrom = this.travelPopulation.travelPopulation.get(`${station.x},${station.y}`)?.population ?? 0
@@ -511,13 +551,18 @@ class Train {
             this.passengerMap.set(fromToKey, adjustedBoarding)
           }
         }
+
+        if (this.shouldLogDebug()) {
+          console.log(`[debug train ${this.trainNumber}] station=${station.name} stationNumber=${station.stationNumber} beforeOnBoard=${this.passengersOnBoard} totalDeboarding=${totalDeboarding} totalBoarding=${totalBoarding} totalAdjustedBoarding=${totalAdjustedBoarding} totalEarnings=${totalEarnings} passengerCapacity=${passengerCapacity} unableToBoard=${unableToBoard}`)
+        }
+
         this.financials.incrementRevenueFromTickets(this.getCurrentTimeIndex(), this.trainNumber, totalEarnings)
 
         const prevPassengersOnBoard = this.passengersOnBoard
         // Instead of totalBoarding we should be using adjustedBoarding
         // this.passengersOnBoard = this.passengersOnBoard + totalBoarding - totalDeboarding
         this.passengersOnBoard = this.passengersOnBoard + totalAdjustedBoarding - totalDeboarding
-        
+
         const passengerMetrics = {
           deboarding: totalDeboarding,
           boarding: totalAdjustedBoarding,
@@ -546,8 +591,9 @@ class Train {
         // The train will stop at the station for a certain number of ticks which is determined by the dwell time of the station. 
         // This way we can create a realistic effect of the freight train stopping at the station for loading and unloading.
         atAStation = true
-        if (this.lastProcessedStationNumber === station.stationNumber) continue  // already processed this visit, skip
-        this.lastProcessedStationNumber = station.stationNumber
+        const stationVisitKey = `${Math.round(station.x)},${Math.round(station.y)}`
+        if (this.lastProcessedStationVisitKey === stationVisitKey) continue  // already processed this visit location, skip
+        this.lastProcessedStationVisitKey = stationVisitKey
         this.remainingDwellTime = station.stationNumber != minStationNumber && station.stationNumber != maxStationNumber ? station.dwellTime : 0
         // calculate the total amount of raw material required by all the stations on the route ahead of this station.
         // const isTerminalForCurrentDirection = (!this.isReturning && station.stationNumber === maxStationNumber) || (this.isReturning && station.stationNumber === minStationNumber)
@@ -596,6 +642,10 @@ class Train {
           this.rawMaterialSupply.decreaseRawMaterial(station.x, station.y, rawMaterialLoaded)
         }
 
+        if (this.shouldLogDebug()) {
+          console.log(`[debug freight train ${this.trainNumber}] station=${station.name} stationNumber=${station.stationNumber} beforeOnBoard=${this.rawMaterialOnBoard - rawMaterialLoaded} totalUnloading=${totalUnloading} rawMaterialLoaded=${rawMaterialLoaded} afterOnBoard=${this.rawMaterialOnBoard} earnings=${totalUnloading * Train.rawMaterialChargePerUnit} demand=${totalRawMaterialDemand}`)
+        }
+
         const freightMetrics = {
           unloading: totalUnloading,
           rawMaterialLoaded,
@@ -623,7 +673,7 @@ class Train {
         this.logStationOperation('departure', this.stationVisitContext)
         this.stationVisitContext = null
       }
-      this.lastProcessedStationNumber = null  // train has left the station, allow retriggering next visit
+      this.lastProcessedStationVisitKey = null  // train has left the station, allow retriggering next visit
     }
 
     if (this.awaitingTurnaround && atAStation) {
@@ -640,7 +690,7 @@ class Train {
     const heading = Number.isFinite(direction) ? direction : 0
     const laneToOffsetMultiplier = [0, -1, 1]
     const normalizedLane = Number.isFinite(this.lane) ? ((this.lane % 3) + 3) % 3 : 0
-    const laneOffsetMagnitude = laneToOffsetMultiplier[normalizedLane] * Train.widthEngine*0.3
+    const laneOffsetMagnitude = laneToOffsetMultiplier[normalizedLane] * Train.widthEngine * 0.3
     const engineOffsetMagnitude = this.isOnParallelSegment(x, y) ? laneOffsetMagnitude : 0
     // if (!this.debugLaneLogged) {
     //   console.log(`[ParallelLaneVisual] train=${this.trainNumber}, lane=${this.lane}, normalizedLane=${normalizedLane}, offsetPx=${laneOffsetMagnitude}, parallelCells=${this.parallelSegmentCells?.size ?? 0}`)
@@ -706,7 +756,7 @@ class Train {
       if (this.trainType === 'freight') {
         payload = Math.min(remainingPayload, Train.rawMaterialCapacityPerFreightCoach)
         remainingPayload -= payload
-      }else if (this.trainType === 'passenger') {
+      } else if (this.trainType === 'passenger') {
         payload = Math.min(remainingPayload, Train.coachPassengerCapacity)
         remainingPayload -= payload
       }
@@ -724,16 +774,16 @@ class Train {
   }
 
   maybeEmitSmoke(engineX, engineY, heading, currSpeed) {
-    
+
     if (this.userPaused || this.dwellPaused) {
       return
     }
-    
+
     const smokeSetting = this.normalizeSmokeSetting(this.smokeSetting)
     if (smokeSetting === 'off') {
       return
     }
-    
+
     const emitScale = smokeSetting === 'low' ? 1.6 : 0.7
     // const emitEveryTicks = Math.max(4, Math.min(28, Math.round((Number(currSpeed) || 20) * 1.2 * emitScale)))
     const emitEveryTicks = this.trainType === 'passenger' ? 10 : 40
@@ -741,7 +791,7 @@ class Train {
     if (this.ticks - this.lastSmokeEmitTick < emitEveryTicks) {
       return
     }
-    
+
     this.lastSmokeEmitTick = this.ticks
     const chimneyRadius = Train.widthEngine * Train.chimney_r / 100
     const frontOffset = -0.5 * Train.lengthEngine * 0.42 + chimneyRadius * 0.9
@@ -749,7 +799,7 @@ class Train {
     const chimneyY = engineY + Math.sin(heading) * frontOffset
     const lateralJitterX = -Math.sin(heading) * ((Math.random() - 0.5) * 1.6)
     const lateralJitterY = Math.cos(heading) * ((Math.random() - 0.5) * 1.6)
-    
+
     const puffCount = smokeSetting === 'low' ? 1 : 2
     for (let i = 0; i < puffCount; i++) {
       const puff = {
@@ -763,7 +813,7 @@ class Train {
         maxLife: 85 + Math.floor(Math.random() * 55),
         alphaMax: smokeSetting === 'low' ? 0.24 : 0.5
       }
-      
+
       this.smokePuffs.push(puff)
     }
     const maxPuffs = smokeSetting === 'low' ? 24 : Train.maxSmokePuffs
@@ -771,13 +821,13 @@ class Train {
       this.smokePuffs.splice(0, this.smokePuffs.length - maxPuffs)
     }
   }
-  
+
   drawSmokePuffs() {
 
     if (!this.smokePuffs.length) {
       return
     }
-    
+
     // if(this.trainNumber===1) debugger
     this.ctx.save()
     for (let i = this.smokePuffs.length - 1; i >= 0; i--) {
@@ -848,7 +898,7 @@ class Train {
     if (this.trainType === 'passenger') {
       //draw the gangway between the engine and the first coach
       //and each coach and next.
-      this.ctx.fillRect(Train.lengthCoach,3, 4, Train.widthCoach-6)
+      this.ctx.fillRect(Train.lengthCoach, 3, 4, Train.widthCoach - 6)
       // this.ctx.closePath()
     } else if (this.trainType === 'freight') {
       //draw 2 couplings between the engine and the first freight wagon   
@@ -867,7 +917,7 @@ class Train {
     if (this.trainType === 'passenger') {
       gradient.addColorStop(0, Train.coachColor)
       gradient.addColorStop(1, '#8888ff')
-    }else if (this.trainType === 'freight') {
+    } else if (this.trainType === 'freight') {
       gradient.addColorStop(0, Train.freightWagonColor)
       gradient.addColorStop(1, '#ff8888')
     }
@@ -956,8 +1006,19 @@ class Train {
   }
 
   addStation(station) {
+    const duplicateStation = this.stations.find(st => Math.abs(st.x - station.x) < 1 && Math.abs(st.y - station.y) < 1)
+    if (duplicateStation) {
+      return
+    }
     this.track.addStation(station)
     this.stations = this.track.getStations() // update the stations reference after adding a new station to the track
+    // Station insertion can renumber station ids; reset visit state to avoid stale processing.
+    this.lastProcessedStationVisitKey = null
+    this.stationVisitContext = null
+    if (this.trainType === 'passenger') {
+      // Passenger route state is keyed by station number, so clear stale mappings after reindex.
+      this.passengerMap.clear()
+    }
   }
 
   getNumStations() {
@@ -972,16 +1033,18 @@ class Train {
   }
 
   adjustmentForDistance(fromToKey) {
-    // we can have a simple adjustment factor based on the distance between the from station and to 
-    // station to make it more realistic. For example, we can assume that the ticket price increases 
-    // by 10% for every 100 units of distance traveled. This is a simplification but it should work for our purposes.
+    // Use superlinear growth so long-distance fares increase faster than proportionally.
     const [fromStation, toStation] = fromToKey.split('-').map(Number)
     const fromStationObj = this.stations.find(st => st.stationNumber === fromStation)
     const toStationObj = this.stations.find(st => st.stationNumber === toStation)
+    if (!fromStationObj || !toStationObj) {
+      return 1
+    }
     const fromCoords = [fromStationObj.x, fromStationObj.y]
     const toCoords = [toStationObj.x, toStationObj.y]
     const distance = Math.sqrt(Math.pow(toCoords[0] - fromCoords[0], 2) + Math.pow(toCoords[1] - fromCoords[1], 2))
-    const adjustmentFactor = 1 + (distance / 100) * 0.10
+    const distanceUnits = distance / 100
+    const adjustmentFactor = 1 + (0.08 * distanceUnits) + (0.01 * distanceUnits * distanceUnits)
     return adjustmentFactor
   }
 
@@ -1112,13 +1175,11 @@ class Train {
     this.updateInfoOnTrainOperations(trainType)
   }
 
-  getPossibleFlyoverLocations() {
+  getAllGridLocations() {
     const allLocationsOnGrid = this.track.getAllLocationsOnGrid()
     // remove all locations where there is a station already
     const stationLocations = this.track.stations.getAllStations()
-    const filteredLocations = allLocationsOnGrid.filter(loc => !stationLocations.some(station => station.x === loc.x && station.y === loc.y))
-    return filteredLocations
-    // return allLocationsOnGrid
+    return allLocationsOnGrid.filter(loc => !stationLocations.some(station => station.x === loc.x && station.y === loc.y))
   }
 }
 export {

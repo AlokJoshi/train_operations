@@ -5,7 +5,6 @@ import { Financials } from './Financials.js'
 import { Flyovers } from './Flyovers.js'
 import { Flyover } from './Flyover.js'
 import { createStation } from './Station.js'
-import { Intersections } from './Intersections.js'
 import { Population } from './Population.js'
 import { TravelPopulation } from './TravelPopulation.js'
 import { Rawmaterials } from './Rawmaterials.js'
@@ -38,7 +37,6 @@ class Game {
     this.ticksPerTimeUnit = 10000
     this.totalTimeUnits = 100
     this.financials = new Financials(this.totalTimeUnits)
-    // this.intersections = intersections
     this.population = new Population(ctx.canvas.width, ctx.canvas.height, gridSize)
     this.travelPopulation = new TravelPopulation(this.population, ctx.canvas.width, ctx.canvas.height, gridSize)
     this.rawmaterials = new Rawmaterials(ctx.canvas.width, ctx.canvas.height, gridSize)
@@ -469,7 +467,13 @@ class Game {
     return this.Flyovers.getAllFlyovers()
   }
 
-}
+  isParallelTrackEnabledForTrains(row , col,intersections, trainNumber1, trainNumber2) {
+      const enabled = intersections.getAllowedTrainsAtCell(row, col).has(trainNumber1) && intersections.getAllowedTrainsAtCell(row, col).has(trainNumber2)
+      // console.log(`[ParallelTrackCheck] Cell (${row}, ${col}) for trains ${trainNumber1} and ${trainNumber2}: ${enabled ? 'ENABLED' : 'DISABLED'}`  )
+      return enabled
+    }
+  }
+
 export {
   Game
 }
