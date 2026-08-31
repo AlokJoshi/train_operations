@@ -25,6 +25,7 @@ class Train {
   static maxNumCoaches = 15
   static maxNumFreightWagons = 50
   static minNumCoaches = 2
+  static minNumFreightWagons = 10
   static coachPassengerCapacity = 100
   static baseTicketPrice = 400
   static rawMaterialCapacityPerFreightCoach = 20000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
@@ -53,7 +54,7 @@ class Train {
     lane = 0,
     visualLengthScale = 1,
     maxVisualCoaches,
-    popups,
+    // popups,
     trainInfo
   } = {}) {
     this.ctx = ctx
@@ -64,7 +65,8 @@ class Train {
     // speed parameter: 1=slowest, 20=fastest. Internally inverted to a frame-step divisor (lower=faster).
     // Freight trains run at a fixed half-of-maximum speed (divisor 11 = parameter 10 out of 20).
     const maxInitialCoaches = this.trainType === 'freight' ? Train.maxNumFreightWagons : Train.maxNumCoaches
-    this.numCoaches = numCoaches ? Math.min(Math.max(numCoaches, Train.minNumCoaches), maxInitialCoaches) : Math.floor((Train.minNumCoaches + Train.maxNumCoaches) / 2)
+    const minInitialCoaches = this.trainType === 'freight' ? Train.minNumFreightWagons : Train.minNumCoaches
+    this.numCoaches = numCoaches ? Math.min(Math.max(numCoaches, minInitialCoaches), maxInitialCoaches) : Math.floor((minInitialCoaches + maxInitialCoaches) / 2)
     this.ticks = 0
     this.count = 0
     this.isReturning = false
@@ -116,7 +118,7 @@ class Train {
     this.rawMaterialSupply = rawMaterialSupply
     this.rawMaterialOnBoard = 0
     this.distanceTraveledInTimeUnit = 0
-    this.popups = popups
+    // this.popups = popups
     if (!trainInfo) {
       throw new Error('TrainInfo instance required')
     }
@@ -447,7 +449,7 @@ class Train {
       // const crossedStationThisFrame = stationDistanceInCurrentDirection >= Math.min(countBeforeMove, this.count) &&
       //   stationDistanceInCurrentDirection <= Math.max(countBeforeMove, this.count)
       const isAtStation = ((Math.abs(x - station.x) < 5) && (Math.abs(y - station.y) < 5))
-      console.log(x, y, station.x, station.y, startStationLocationKey, endStationLocationKey, isAtStation)
+      // console.log(x, y, station.x, station.y, startStationLocationKey, endStationLocationKey, isAtStation)
       if (!isAtStation) continue
       
       const isTerminalForCurrentDirection = (!this.isReturning && station.stationNumber === maxStationNumber) || (this.isReturning && station.stationNumber === minStationNumber)
@@ -582,7 +584,7 @@ class Train {
           this.logStationOperation('arrival', this.stationVisitContext)
         }
 
-        const existingPopupInfo = this.popups.getPopupInfo(station.x, station.y)
+        // const existingPopupInfo = this.popups.getPopupInfo(station.x, station.y)
         // this.displayInfo(existingPopupInfo, station.x, station.y)
       }
       if (this.trainType == 'freight') {
@@ -664,7 +666,7 @@ class Train {
         if (isTerminalForCurrentDirection) {
           this.logStationOperation('arrival', this.stationVisitContext)
         }
-        const existingPopupInfo = this.popups.getPopupInfo(station.x, station.y)
+        // const existingPopupInfo = this.popups.getPopupInfo(station.x, station.y)
       }
     }
 

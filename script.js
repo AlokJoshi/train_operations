@@ -160,63 +160,86 @@ function initializeTrainControlWidgets(maxTrains = 9) {
 
 initializeTrainControlWidgets(game.maxTrains)
 
-const collisionCostValueEl = document.querySelector('#collisionCostValue')
-if (collisionCostValueEl) {
-  collisionCostValueEl.textContent = `$${game.getCollisionCost().toLocaleString('en-US')}`
-}
-const flyoverCostValueEl = document.querySelector('#flyoverCost')
-if (flyoverCostValueEl) {
-  flyoverCostValueEl.textContent = `$${game.getFlyoverCost().toLocaleString('en-US')}`
-}
-const stationCostValueEl = document.querySelector('#stationCost')
-if (stationCostValueEl) {
-  stationCostValueEl.textContent = `$${game.getStationCost().toLocaleString('en-US')}`
-}
-const engineCostValueEl = document.querySelector('#engineCost')
-if (engineCostValueEl) {
-  engineCostValueEl.textContent = `$${game.getEngineCost().toLocaleString('en-US')}`
-}
-const trackCostValueEl = document.querySelector('#trackCost')
-if (trackCostValueEl) {
-  trackCostValueEl.textContent = `$${game.getTrackCostPerUnit().toLocaleString('en-US')}`
-}
+const collisionCostValueEls = document.querySelectorAll('[data-bind="collisionCostValue"]')
+collisionCostValueEls.forEach((el) => {
+  el.textContent = `$${game.getCollisionCost().toLocaleString('en-US')}`
+})
 
-const coachCapacityValueEl = document.querySelector('#coachCapacity')
-if (coachCapacityValueEl) {
-  coachCapacityValueEl.textContent = `${game.getCoachCapacity().toLocaleString('en-US')}`
-}
-const totalTimeUnitsValueEl = document.querySelector('#totalTimeUnits')
-if (totalTimeUnitsValueEl) {
-  totalTimeUnitsValueEl.textContent = `${game.getTotalTimeUnits().toLocaleString('en-US')}`
-}
-const maxNumCoachesValueEl = document.querySelector('#maxNumCoaches')
-if (maxNumCoachesValueEl) {
-  maxNumCoachesValueEl.textContent = `${game.getMaxNumCoaches().toLocaleString('en-US')}`
-}
-const maxNumFreightWagonsValueEl = document.querySelector('#maxNumFreightWagons')
-if (maxNumFreightWagonsValueEl) {
-  maxNumFreightWagonsValueEl.textContent = `${game.getMaxNumFreightWagons().toLocaleString('en-US')}`
-}
-const coachCostValueEl = document.querySelector('#coachCost')
-if (coachCostValueEl) {
-  coachCostValueEl.textContent = `$${game.getCoachCost().toLocaleString('en-US')}`
-}
-const freightWagonCostValueEl = document.querySelector('#freightWagonCost')
-if (freightWagonCostValueEl) {
-  freightWagonCostValueEl.textContent = `$${game.getFreightWagonCost().toLocaleString('en-US')}`
-}
-const engineUpgradeCostValueEl = document.querySelector('#engineUpgradeCost')
-if (engineUpgradeCostValueEl) {
-  engineUpgradeCostValueEl.textContent = `$${game.getEngineUpgradeCost().toLocaleString('en-US')}`
-}
-const initialCashValueEl = document.querySelector('#initialCash')
-if (initialCashValueEl) {
-  initialCashValueEl.textContent = `$${game.getInitialCash().toLocaleString('en-US')}`
-}
-const timeUnitDurationValueEl = document.querySelector('#timeUnitDuration')
-if (timeUnitDurationValueEl) {
-  timeUnitDurationValueEl.textContent = `${game.getTimeUnitDuration()}`
-}
+const flyoverCostValueEls = document.querySelectorAll('[data-bind="flyoverCost"]')
+flyoverCostValueEls.forEach((el) => {
+  el.textContent = `$${game.getFlyoverCost().toLocaleString('en-US')}`
+})
+
+const stationCostValueEls = document.querySelectorAll('[data-bind="stationCost"]')
+stationCostValueEls.forEach((el) => {
+  el.textContent = `$${game.getStationCost().toLocaleString('en-US')}`
+})
+const engineCostValueEls = document.querySelectorAll('[data-bind="engineCost"]')
+engineCostValueEls.forEach((el) => {
+  el.textContent = `$${game.getEngineCost().toLocaleString('en-US')}`
+})
+const trackCostValueEls = document.querySelectorAll('[data-bind="trackCost"]')
+trackCostValueEls.forEach((el) => {
+  el.textContent = `$${game.getTrackCostPerUnit().toLocaleString('en-US')}`
+})
+
+const coachCapacityValueEls = document.querySelectorAll('[data-bind="coachCapacity"]')
+coachCapacityValueEls.forEach((el) => {
+  el.textContent = `${game.getCoachCapacity().toLocaleString('en-US')}`
+})
+const totalTimeUnitsValueEls = document.querySelectorAll('[data-bind="totalTimeUnits"]')
+totalTimeUnitsValueEls.forEach((el) => {
+  el.textContent = `${game.getTotalTimeUnits().toLocaleString('en-US')}`
+})
+const maxNumCoachesValueEls = document.querySelectorAll('[data-bind="maxNumCoaches"]')
+maxNumCoachesValueEls.forEach((el) => {
+  el.textContent = `${game.getMaxNumCoaches().toLocaleString('en-US')}`
+})
+const maxNumFreightWagonsValueEls = document.querySelectorAll('[data-bind="maxNumFreightWagons"]')
+maxNumFreightWagonsValueEls.forEach((el) => {
+  el.textContent = `${game.getMaxNumFreightWagons().toLocaleString('en-US')}`
+})
+const coachCostValueEls = document.querySelectorAll('[data-bind="coachCost"]')
+coachCostValueEls.forEach((el) => {
+  el.textContent = `$${game.getCoachCost().toLocaleString('en-US')}`
+})
+const freightWagonCostValueEls = document.querySelectorAll('[data-bind="freightWagonCost"]')
+freightWagonCostValueEls.forEach((el) => {
+  el.textContent = `$${game.getFreightWagonCost().toLocaleString('en-US')}`
+})
+const engineUpgradeCostValueEls = document.querySelectorAll('[data-bind="engineUpgradeCost"]')
+engineUpgradeCostValueEls.forEach((el) => {
+  el.textContent = `$${game.getEngineUpgradeCost().toLocaleString('en-US')}`
+})
+const initialCashValueEls = document.querySelectorAll('[data-bind="initialCash"]')
+initialCashValueEls.forEach((el) => {
+  el.textContent = `$${game.getInitialCash().toLocaleString('en-US')}`
+})
+const timeUnitDurationValueEls = document.querySelectorAll('[data-bind="timeUnitDuration"]')
+timeUnitDurationValueEls.forEach((el) => {
+  el.textContent = `${game.getTimeUnitDuration()}`
+})
+const minNumCoachesValueEls = document.querySelectorAll('[data-bind="minCoaches"]')
+minNumCoachesValueEls.forEach((el) => {
+  el.textContent = `${game.getMinNumCoaches().toLocaleString('en-US')}`
+})
+const minNumFreightWagonsValueEls = document.querySelectorAll('[data-bind="minFreightWagons"]')
+minNumFreightWagonsValueEls.forEach((el) => {
+  el.textContent = `${game.getMinNumFreightWagons().toLocaleString('en-US')}`
+})
+// const maxNumCoachesValueEls = document.querySelectorAll('[data-bind="maxNumCoaches"]')
+// maxNumCoachesValueEls.forEach((el) => {
+//   el.textContent = `${game.getMaxNumCoaches().toLocaleString('en-US')}`
+// })
+// const maxNumFreightWagonsValueEls = document.querySelectorAll('[data-bind="maxFreightWagons"]')
+// maxNumFreightWagonsValueEls.forEach((el) => {
+//   el.textContent = `${game.getMaxNumFreightWagons().toLocaleString('en-US')}`
+// })
+const getMinNumCoaches = () => game.getMinNumCoaches()
+const getMinNumFreightWagons = () => game.getMinNumFreightWagons()
+const getMaxNumCoaches = () => game.getMaxNumCoaches()
+const getMaxNumFreightWagons = () => game.getMaxNumFreightWagons()
+
 
 
 const initializeDefaultTrains = async () => {
@@ -394,7 +417,7 @@ window.addEventListener('load', () => {
       return
     }
 
-    if (event.code === 'KeyN') {
+    if (event.code === 'KeyA') {
       // Allow toggling sound even when focus is inside an input.
       toggleSound()
       return
@@ -539,8 +562,8 @@ window.addEventListener('load', () => {
     } else if (event.code === 'KeyP') {
       //if the code is P then Start/Pause the game
       startPauseGame()
-    } else if (event.code === 'KeyN') {
-      //if the code is N then toggle sound
+    } else if (event.code === 'KeyA') {
+      //if the code is A then toggle sound
       toggleSound()
     }
   }
@@ -555,12 +578,12 @@ window.addEventListener('load', () => {
 
   const updateSoundControlUI = (enabled = audioManager.isEnabled()) => {
     if (soundControlLabelEl) {
-      soundControlLabelEl.textContent = enabled ? 'Sound: On' : 'Sound: Off'
+      soundControlLabelEl.textContent = enabled ? 'Audio: On' : 'Audio: Off'
     }
     if (soundControlIconEl) {
       soundControlIconEl.classList.toggle('fa-volume-up', enabled)
       soundControlIconEl.classList.toggle('fa-volume-mute', !enabled)
-      soundControlIconEl.title = enabled ? 'Sound On (press N to mute)' : 'Sound Off (press N to unmute)'
+      soundControlIconEl.title = enabled ? 'Audio On (press A to mute)' : 'Audio Off (press A to unmute)'
     }
     if (soundControlEl) {
       soundControlEl.setAttribute('aria-pressed', String(enabled))
@@ -650,7 +673,7 @@ window.addEventListener('load', () => {
     'X': 'KeyX',
     'Y': 'KeyY',
     'Z': 'KeyZ',
-    'N': 'KeyN'
+    'A': 'KeyA'
   }
 
   const sendHotkeyToDocument = (hotkey) => {
@@ -687,15 +710,27 @@ window.addEventListener('load', () => {
     typeOfTrain.addEventListener('change', (event) => {
       if (event.target.value == 'passenger') {
         //hide the freight train related controls
-        document.querySelector('#freightTrainControls').style.display = 'none'
-        document.querySelector('#passengerTrainControls').style.display = 'grid'
+        document.querySelectorAll('.freightTrainControls').forEach(el => el.style.display = 'none')
+        document.querySelectorAll('.passengerTrainControls').forEach(el => el.style.display = 'block')
+        // fix the span 
+        document.querySelector('span.passengerTrainControls').innerHTML =`Coaches:(${getMinNumCoaches()}-${getMaxNumCoaches()})`
+        const inputEl = document.getElementById('numcoaches')
+        inputEl.min = getMinNumCoaches()
+        inputEl.max = getMaxNumCoaches()
+        inputEl.title = `# of Coaches (${getMinNumCoaches()}-${getMaxNumCoaches()})`
       } else if (event.target.value == 'freight') {
         //hide the passenger train related controls
-        document.querySelector('#passengerTrainControls').style.display = 'none'
-        document.querySelector('#freightTrainControls').style.display = 'grid'
+        document.querySelectorAll('.passengerTrainControls').forEach(el => el.style.display = 'none')
+        document.querySelectorAll('.freightTrainControls').forEach(el => el.style.display = 'block')
+        document.querySelector('span.freightTrainControls').innerHTML =`Wagons:(${getMinNumFreightWagons()}-${getMaxNumFreightWagons()})`
+        const inputEl = document.getElementById('numfreightwagons')
+        inputEl.min = getMinNumFreightWagons()
+        inputEl.max = getMaxNumFreightWagons()
+        inputEl.title = `# Freight Wagons (${getMinNumFreightWagons()}-${getMaxNumFreightWagons()})`
       }
     })
   }
+  typeOfTrain.dispatchEvent(new Event('change', { target: { value: 'passenger' } }))
 
   const infoForTrainContainer = document.querySelector('#infoForTrain')
   if (infoForTrainContainer) {
@@ -1373,17 +1408,19 @@ window.addEventListener('load', () => {
     const cancelTrackBtn = document.querySelector('#cancelTrack')
     const startTrackBtn = document.querySelector('#startTrack')
     if (startTrackBtn) {
-      startTrackBtn.style.display = 'none'
+      startTrackBtn.style.pointerEvents = 'none'
+      startTrackBtn.style.opacity = '0.5'
     }
     if (cancelTrackBtn) {
-      cancelTrackBtn.style.display = 'block'
+      cancelTrackBtn.style.pointerEvents = 'all'
+      cancelTrackBtn.style.opacity = '1'
     }
     swal.fire({
       title: 'Set Starting Point',
       text: `Click on the grid to set the starting point of the track. After that, you can continue to add more points to define the track. Since the train cannot make sharp turns you will be guided and you will
       only be able to add points (shown by green circles) that do not create sharp turns. When you are done, click on the check icon in the train control. If you want to cancel, click on the cross icon in the train control.`
     })
-    document.querySelector('#canvas_temp').style = 'cursor:crosshair'
+    document.querySelector('#canvas_temp').style = 'cursor:pointer'
   }
 
   window.canceltrack = () => {
@@ -1479,11 +1516,6 @@ window.addEventListener('load', () => {
     const numFreightWagonsEl = document.querySelector('#numfreightwagons')
     const selectTrainTypeEl = document.querySelector('#typeoftrain')
     const trainType = selectTrainTypeEl?.value === 'freight' ? 'freight' : 'passenger'
-    // const parsedSpeed = Number.parseInt(speedEl?.value ?? '', 10)
-    // const speed = Number.isInteger(parsedSpeed) && parsedSpeed >= 1 && parsedSpeed <= 20
-    //   ? parsedSpeed
-    //   : Math.ceil(Math.random() * 20)
-
     const parsedNumCoaches = Number.parseInt(numCoachesEl?.value ?? '', 10)
     const parsedNumFreightWagons = Number.parseInt(numFreightWagonsEl?.value ?? '', 10)
     const passengerCoachCount = Number.isInteger(parsedNumCoaches) && parsedNumCoaches >= 0
@@ -1504,7 +1536,7 @@ window.addEventListener('load', () => {
       document.querySelector('#startTrack').style.display = 'block'
       return
     }
-    // game.addTrain(positions, speed, numCoaches, 0, intersections, { trainType })
+    // game.addTrain(positions, numCoaches, 0, intersections, { trainType })
     const createdTrainNumber = await game.addTrain(positions, numCoaches, 0, intersections, { trainType })
     if (!createdTrainNumber) {
       return
@@ -1515,13 +1547,15 @@ window.addEventListener('load', () => {
     //set the icon to play
     const startTrackBtn = document.querySelector('#startTrack')
     if (startTrackBtn) {
-      startTrackBtn.style.display = 'block'
+      startTrackBtn.style.pointerEvents = 'all'
+      startTrackBtn.style.opacity = '1'
     }
     const cancelTrackBtn = document.querySelector('#cancelTrack')
     if (cancelTrackBtn) {
-      cancelTrackBtn.style.display = 'none'
+      cancelTrackBtn.style.pointerEvents = 'none'
+      cancelTrackBtn.style.opacity = '0.5'
     }
-
+    
     startTrack = false
 
 
@@ -1554,6 +1588,8 @@ window.addEventListener('load', () => {
     if (flagOffIcon) {
       flagOffIcon.style.pointerEvents = 'none'
     }
+    //remove the positions associated with the created train
+    positions = []
   }
 
   const trainTypeSelect = document.querySelector('#typeoftrain')

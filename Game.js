@@ -93,6 +93,12 @@ class Game {
   getMaxNumFreightWagons() {
     return Train.maxNumFreightWagons
   }
+  getMinNumFreightWagons() {
+    return Train.minNumFreightWagons
+  }
+  getMinNumCoaches() {
+    return Train.minNumCoaches
+  }
   getFreightWagonCost() {
     //for the time being same cost as passenger coach
     return this.financials.coachCost
@@ -205,7 +211,7 @@ class Game {
         })
       }
     }
-    if(numSegments > 0) {
+    if (numSegments > 0) {
       const overlappingTrains = overlapMatches.map(match => match.trainNumber).join(', ')
       // console.log(`The new train overlaps with existing train(s): ${overlappingTrains}.`)
       const cost = numSegments * this.financials.parallelTrackCostPerSegment
@@ -213,22 +219,22 @@ class Game {
       useParallelTrack = await this.promptUserForParallelTrack(numSegments, overlappingTrains, cost)
 
       if (useParallelTrack) {
-          const overlapCountBySegment = new Map()
-          overlapMatches.forEach((match) => {
-            match.commonSegmentsMap.forEach((segment, key) => {
-              overlapCountBySegment.set(key, (overlapCountBySegment.get(key) ?? 0) + 1)
-            })
+        const overlapCountBySegment = new Map()
+        overlapMatches.forEach((match) => {
+          match.commonSegmentsMap.forEach((segment, key) => {
+            overlapCountBySegment.set(key, (overlapCountBySegment.get(key) ?? 0) + 1)
           })
-          const maxExistingLinesOnAnySegment = overlapCountBySegment.size > 0
-            ? Math.max(...overlapCountBySegment.values())
-            : 0
-            // Lane cycles as overlap grows: 0 -> 1 -> 2 -> 0 -> ...
-            autoAssignedLane = maxExistingLinesOnAnySegment % 3
-          // console.log(`[ParallelLane] overlapDepth=${maxExistingLinesOnAnySegment}, assignedLane=${autoAssignedLane}, trains=[${overlappingTrains}]`)
-          this.financials.incrementExpenses(this.getCurrentTimeIndex(), null, cost, 'Parallel Track Cost')
+        })
+        const maxExistingLinesOnAnySegment = overlapCountBySegment.size > 0
+          ? Math.max(...overlapCountBySegment.values())
+          : 0
+        // Lane cycles as overlap grows: 0 -> 1 -> 2 -> 0 -> ...
+        autoAssignedLane = maxExistingLinesOnAnySegment % 3
+        // console.log(`[ParallelLane] overlapDepth=${maxExistingLinesOnAnySegment}, assignedLane=${autoAssignedLane}, trains=[${overlappingTrains}]`)
+        this.financials.incrementExpenses(this.getCurrentTimeIndex(), null, cost, 'Parallel Track Cost')
       }
     }
-    
+
     // Apply freight train defaults automatically when trainType is 'freight'
     if (options.trainType === 'freight') {
       options = {
@@ -252,7 +258,7 @@ class Game {
     const firstPosition = positions[0]
     const lastPosition = positions[positions.length - 1]
 
-    const track = new Track(this.ctxTracks, positions, '', this.gridSize,overlapMatches)
+    const track = new Track(this.ctxTracks, positions, '', this.gridSize, overlapMatches)
 
     if (firstPosition.x == lastPosition.x && firstPosition.y == lastPosition.y) {
       alert('The starting and ending positions are the same. Please choose different positions for the starting and ending points.')
@@ -296,7 +302,7 @@ class Game {
       lane: options.lane ?? autoAssignedLane,
       visualLengthScale: options.visualLengthScale,
       maxVisualCoaches: options.maxVisualCoaches,
-      popups: this.popups,
+      // popups: this.popups,
       trainInfo: this.trainInfo
     })
     const length = track.getTotalLength()
@@ -463,16 +469,20 @@ class Game {
     return result.isConfirmed === true
   }
 
-  getFlyovers(){
+  getFlyovers() {
     return this.Flyovers.getAllFlyovers()
   }
 
-  isParallelTrackEnabledForTrains(row , col,intersections, trainNumber1, trainNumber2) {
-      const enabled = intersections.getAllowedTrainsAtCell(row, col).has(trainNumber1) && intersections.getAllowedTrainsAtCell(row, col).has(trainNumber2)
-      // console.log(`[ParallelTrackCheck] Cell (${row}, ${col}) for trains ${trainNumber1} and ${trainNumber2}: ${enabled ? 'ENABLED' : 'DISABLED'}`  )
-      return enabled
-    }
+  isParallelTrackEnabledForTrains(row, col, intersections, trainNumber1, trainNumber2) {
+    const enabled = intersections.getAllowedTrainsAtCell(row, col).has(trainNumber1) && intersections.getAllowedTrainsAtCell(row, col).has(trainNumber2)
+    // console.log(`[ParallelTrackCheck] Cell (${row}, ${col}) for trains ${trainNumber1} and ${trainNumber2}: ${enabled ? 'ENABLED' : 'DISABLED'}`  )
+    return enabled
   }
+
+  
+
+  
+}
 
 export {
   Game

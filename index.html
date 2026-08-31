@@ -34,75 +34,73 @@
       </div>
       <div class="dialogContent">
         <div>
-          <label style="font-size: 1.2em;" >Start/Pause All:</label>
+          <label style="font-size: 1.2em;">Start/Pause All:</label>
           <i class="fas fa-play" id="startPauseBtn" title="Start/Pause All Trains" style="cursor:pointer"></i>
         </div>
         <div id="trainControlsContainer"></div>
         <!-- Template for individual train controls. It is intialized in initializeTrainControlWidgets function -->
-        <template id="trainControlTemplate">  
+        <template id="trainControlTemplate">
           <div class="trainControl">
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <span data-role="label" title="Train"></span>
               <span data-role="train-type" title="Train Type"></span>
               <i class="fas fa-pause" title="Pause Train" style="cursor:pointer" data-role="pause"></i>
-              <input data-role="new-count" 
-                style="font-size:0.8em; width:50px;" 
-                title="Type the revised coach/wagon count (Passenger:2 to 15, Freight:2 to 50) and press Enter or Escape"
+              <input data-role="new-count" style="font-size:0.8em; width:50px;"
+                title="Type the revised coach/wagon count;" />
+
+              <!-- (Passenger:<span data-bind='minCoaches'></span> to <span data-bind='maxCoaches'></span>,
+                Freight:<span data-bind="minFreightWagons"></span> to <span data-bind="maxFreightWagons"></span>) and press Enter or Escape"
                 type="number"
-                min="2"/>
-              
+                min="2"/> -->
+
               <i class="fas fa-bolt" title="Upgrade Engine" style="cursor:pointer" data-role="upgrade-engine"></i>
-              <div class="healthWrap" >
-                <div class="health" 
-                style="border:1px solid black;" 
-                title="If this train is damaged, the box will be red" data-role="health"></div>
+              <div class="healthWrap">
+                <div class="health" style="border:1px solid black;"
+                  title="If this train is damaged, the box will be red" data-role="health"></div>
               </div>
               <i class="fas fa-expand-alt" title="Extend Train" style="cursor:pointer" data-role="extend"></i>
               <i class="fas fa-times" title="Remove Train" style="cursor:pointer" data-role="remove"></i>
             </div>
-            
+
             <div style="display:none; justify-content:space-evenly;" data-role="extension-controls">
               <span>Extend:</span>
-              <i class="fas fa-check" title="Complete Train Extension" style="cursor:pointer;" data-role="complete-extension"></i>
+              <i class="fas fa-check" title="Complete Train Extension" style="cursor:pointer;"
+                data-role="complete-extension"></i>
               <span>Cancel:</span>
-              <i class="fas fa-times" title="Cancel Train Extension" style="cursor:pointer;" data-role="cancel-extension"></i>
+              <i class="fas fa-times" title="Cancel Train Extension" style="cursor:pointer;"
+                data-role="cancel-extension"></i>
             </div>
           </div>
         </template>
-        <label style="font-size: 1.2em;">New Train Specification:</label>
-        <div id="newTrainSpecification" style="padding:10px; border:1px solid #ccc; border-radius:5px;">
-          <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
-            <label for="startTrack">Start Track Spec.:</label>
-            <i class="fas fa-play" title="Start Track" id="startTrack" style="cursor:pointer;"
-              onclick="starttrack()"></i>
-          </div>
-          <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
-            <label for="cancelTrack">Cancel Track:</label>
-            <i class="fas fa-times" style="cursor:pointer;" title="Cancel Track" id="cancelTrack"
-              onclick="canceltrack()"></i>
-          </div>
-          <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
-            <label for="typeoftrain">Type of Train:</label>
-            <select title="Type of Train" id="typeoftrain" style="font-size:0.8em">
-              <option value="passenger">Passenger</option>
-              <option value="freight">Freight</option>
-            </select>
-          </div>
-          <div id="passengerTrainControls" style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
-            <label for="numcoaches">Coaches:</label>
-            <input type="number" title="# of Coaches" id="numcoaches" min="2" max="15" value="7"
-              placeholder="# of Coaches" style="font-size:0.8em">
-          </div>
-          <div id="freightTrainControls" style="display:none;grid-template-columns:3fr 2fr; gap:10px;">
-            <label for="numfreightwagons">Freight Wagons:</label>
-            <input type="number" title="# Freight Wagons" id="numfreightwagons" min="20" max="100" value="30"
-              placeholder="# Freight Wagons" style="font-size:0.8em">
-          </div>
-          <div style="display:grid;grid-template-columns:3fr 2fr; gap:10px;">
-            <label for="starttrain">Start new Train:</label>
-            <i id="flagOff" class="fas fa-flag-checkered" style="cursor:pointer;" title="Start Train" id="starttrain"
-              onclick="newtrain()"></i>
-          </div>
+        <span style="font-size: 1.2em;">New Train Specification:</span>
+        <div id="newTrainSpecification"
+          style="display:grid;grid-template-columns:4fr 1fr;grid-row-gap:5px;margin-top:10px;padding:10px; border:1px solid #ccc; border-radius:5px;">
+
+          <span for="startTrack">Start Track Spec.:</span>
+          <i class="fas fa-play" title="Start Track" id="startTrack" style="cursor:pointer;" onclick="starttrack()"></i>
+
+          <span for="cancelTrack">Cancel Track:</span>
+          <i class="fas fa-times" style="cursor:pointer;pointer-events:none;opacity: 0.5;" title="Cancel Track" id="cancelTrack"
+            onclick="canceltrack()"></i>
+
+          <span for="typeoftrain">Type of Train:</span>
+          <select title="Type of Train" id="typeoftrain" style="width:150px;font-size:0.8em">
+            <option value="passenger">Passenger</option>
+            <option value="freight">Freight</option>
+          </select>
+
+          <span class="passengerTrainControls" for="numcoaches">Coaches:</span>
+          <input class="passengerTrainControls" type="number" title="# of Coaches" id="numcoaches" value="7"
+            placeholder="# of Coaches" style="width:150px;font-size:0.8em">
+
+          <span class="freightTrainControls" for="numfreightwagons" style="display:none">Wagons:</span>
+          <input class="freightTrainControls" type="number" title="# Freight Wagons" id="numfreightwagons" value="30"
+            placeholder="# Freight Wagons" style="display:none;width:150px;font-size:0.8em">
+
+          <span for="starttrain">Start new Train:</span>
+          <i id="flagOff" class="fas fa-flag-checkered" style="cursor:pointer;" title="Start Train" id="starttrain"
+            onclick="newtrain()"></i>
+
         </div>
       </div> <!-- End of newTrainSpecification -->
     </div> <!-- End of buttonGroup1: Train -->
@@ -116,14 +114,18 @@
         </span>
       </div>
       <div class="dialogContent">
-        <label>Once you click on Start button below, all the possible locations for building a flyover will be highlighted. 
+        <label>Once you click on Start button below, all the possible locations for building a flyover will be
+          highlighted.
           Please select the intersection where you want build a flyover by clicking on it.
-          If you do not want to build a flyover, you have two options: (1) You can manually stop one of the two trains involved 
-          to avoid the collision or (2) You can build a station at the intersection of the two trains. 
+          If you do not want to build a flyover, you have two options: (1) You can manually stop one of the two trains
+          involved
+          to avoid the collision or (2) You can build a station at the intersection of the two trains.
           Please note that each flyover costs 5,00,000.
         </label>
-          <button id="startFlyoverBtn" type="button" style="border-radius: 10px;padding:10px; margin-top:10px;cursor: pointer;">Start</button>
-          <button id="cancelFlyoverBtn" type="button" style="border-radius: 10px;padding:10px; margin-top:10px;cursor: pointer;">Cancel</button> 
+        <button id="startFlyoverBtn" type="button"
+          style="border-radius: 10px;padding:10px; margin-top:10px;cursor: pointer;">Start</button>
+        <button id="cancelFlyoverBtn" type="button"
+          style="border-radius: 10px;padding:10px; margin-top:10px;cursor: pointer;">Cancel</button>
       </div>
     </div> <!-- End of buttonGroup2: Flyovers -->
 
@@ -186,8 +188,10 @@
           <i class="fas fa-times" title="Close"></i>
         </span>
       </div>
-      <div id="soundControl" style="font-size: 1.2em; margin-top:6px;cursor:pointer;" onclick="turnSoundOn()"><span id="soundControlLabel">Sound: On</span> <i class="fas fa-volume-up" title="Sound On (press N to mute)"></i></div>
-      <div id="smokeControl" style="font-size: 1.2em; margin-top:6px;" >
+      <div id="soundControl" style="font-size: 1.2em; margin-top:6px;cursor:pointer;" onclick="turnSoundOn()"><span
+          id="soundControlLabel">Audio: On</span> <i class="fas fa-volume-up" title="Audio On (press  to mute)"></i>
+      </div>
+      <div id="smokeControl" style="font-size: 1.2em; margin-top:6px;">
         Steam Smoke:
         <select id="smokeLevelControl" style="font-size: 1.2em;" aria-label="Steam smoke level">
           <option value="off">Off</option>
@@ -201,16 +205,19 @@
             onclick="document.getElementById('startPauseBtn').click();">Start/Pause</button>
         </div>
         <!-- Instructions for how to use the game will be displayed here -->
-        <p>Click on the Start Button to begin the game. The game will run for <span id="totalTimeUnits"></span> time
+        <p>Click on the Start Button to begin the game. The game will run for <span data-bind="totalTimeUnits"></span>
+          time
           units. Each time unit is shown at the
-          center of the screen and will take about <span id="timeUnitDuration"></span> minutes of playing time. The
+          center of the screen and will take about <span data-bind="timeUnitDuration"></span> minutes of playing time.
+          The
           time
           for
           which the entire game is paused is not counted.
         </p>
         <p>Your objective to earn as much profit as possible by running up to a total of 9 trains.
-          You start with a cash in hand of <span id="initialCash"></span> million dollars and 2 passenger trains and
-          1 freight train.
+          You start with a cash in hand of <span data-bind="initialCash"></span> million dollars and one passenger train
+          and
+          one freight train.
         </p>
         <p>You can pause the entire game at any time by pressing the <span class="key">P</span> key on the keyboard.
           <span class="key">P</span>
@@ -225,22 +232,24 @@
           Pressing the <span class="key">T</span> key again removes the Train dialog box. The passenger trains can
           have
           a
-          maximum of <span id="maxNumCoaches"></span> coaches and the
-          freight trains can have a maximum of <span id="maxNumFreightWagons"></span> freight wagons. Each passenger
+          maximum of <span data-bind="maxNumCoaches"></span> coaches and the
+          freight trains can have a maximum of <span data-bind="maxNumFreightWagons"></span> freight wagons. Each
+          passenger
           coach
           costs
-          <span id="coachCost"></span> and each freight wagon costs <span id="freightWagonCost"></span>. You can
+          <span data-bind="coachCost"></span> and each freight wagon costs <span data-bind="freightWagonCost"></span>.
+          You can
           add or remove coaches or freight wagons by using the
           <span class="key">+</span> and <span class="key">-</span> buttons in the train dialog box. You can also stop
           or pause any train by using the pause button <i class="fa fa-pause"></i> in the train dialog box
           or by pressing the corresponding number key for each train (1 for Train #1, 2 for Train #2 and so on).
           There is an option to delete a train completely but if you do that, you will lose all the money you invested
           in that train and you will not be able to get it back.
-          When a new train is started, it comes with a standard engine which costs <span id="engineCost"></span>.
+          When a new train is started, it comes with a standard engine which costs <span data-bind="engineCost"></span>.
           However, you can upgrade the engine of freight trains later in the
           game to increase the speed of the freight trains by clicking on the upgrade button <span
             class="fa fa-bolt"></span> in the train dialog box.
-          Each engine upgrade costs <span id="engineUpgradeCost"></span>.
+          Each engine upgrade costs <span data-bind="engineUpgradeCost"></span>.
           There is also an option to extend the train route by clicking on the extend button in the train dialog box.
           This
           extension can be done from either end of the train track. After clicking on the extend button, you will need
@@ -260,7 +269,8 @@
         <p>
           Similarly <span class="key">S</span> brings up the Stations dialog box to add more stations to any train's
           route. Each station costs
-          <span id="stationCost"></span>. However, adding a station allows you to earn more revenue from passengers or
+          <span data-bind="stationCost"></span>. However, adding a station allows you to earn more revenue from
+          passengers or
           freight that is dropped off
           at that station or picked up from that station.
         </p>
@@ -268,10 +278,10 @@
           Similarly <span class="key">F</span> brings up the Flyover dialog box to add a flyover at any point where
           two
           or more trains cross each other and where they are likely to collide. Note that flyovers are expensive each
-          costs <span id="flyoverCost"></span>.
+          costs <span data-bind="flyoverCost"></span>.
           Hence if you do not want to add them, you can manually stop one train to avoid the collision as described
           above.
-          Each collision costs <span id="collisionCostValue"></span>.
+          Each collision costs <span data-bind="collisionCostValue"></span>.
         </p>
         <p>
           Before starting a new train, you may want to know where the cities and passengers are. You can see this
@@ -317,34 +327,33 @@
             of
             the track and stations on the route also
             cost
-            money. Each coach has a capacity of <span id="coachCapacity"></span> passengers.
+            money. Each coach has a capacity of <span data-bind="coachCapacity"></span> passengers.
           </li>
           <li>Freight trains earn you money based on the amount of freight they carry from the source to the
             destination.
             They also cost you money based on the number of stations they stop at.</li>
-          <li>Adding a flyover costs you 20 million dollars but it allows you to avoid collisions which can cause
-            significant damage
-            to your trains and hence significant loss of money because the two trains involved in the collision are
-            out
-            of
-            commission for
-            a certain period of time. In addition to this, you have to compensate for the loss of life and property.
+          <li>Adding a flyover costs you <span id="flyoverCost"></span> but it allows you to avoid collisions which can
+            cause
+            significant damage to your trains and hence significant loss of money because the two trains involved
+            in the collision are out of commission for a certain period of time. In addition to this, you have to
+            compensate for the loss of life and property.
           </li>
-          <li>Adding a station costs you 1 million dollars but it allows you to earn more revenue from passengers or
+          <li>Adding a station is expensive but it allows you to earn more revenue from passengers or
             freight (if there are any passengers/freight available there). Also if there
             is a station at the intersection of two or more trains, they can cross each other without the need for a
-            flyover and hence you
-            can save money by not building a flyover.
+            flyover as long as one of the trains has a station at the intersection.
           </li>
-          <li>Sometimes, specially for freight trains, you may see trailing red dots. These indicate that the train is still
-            occupying that portion of the track (this is done for trains with a very large number of freight wagons.)
-            <img src="./Explain_RedDots.PNG" style="width:550px" alt="" srcset="">
+          <li>Sometimes, you may see that some coaches/freight wagons have a white circle on them.
+            This indicates that the coach or freight wagon is currently not carrying any passengers/freight.
+            In the image below one train is not carrying any passengers as indicated by the white circle on its coaches.
+            <img src="./Explain_WhiteCircles.PNG" style="width:550px" alt="" srcset="">
           </li>
-          <li>Note that collisions between trains take place only at grid intersections. If two trains cross each other at a point that does not fall
+          <li>Note that collisions between trains take place only at grid intersections. If two trains cross each other
+            at a point that does not fall
             exactly on the grid intersection, a collision will not occur.
           </li>
-          <li>When you start the game, there are two grid points where there could be collisions. Hence you
-            must place stations at these points or manage the collisions manually by stopping one train while the 
+          <li>When you start the game, there is one grid point where there could be collisions. Hence you
+            must place a stations at the intersection or manage the collisions manually by stopping one train while the
             other train is occupying the intersection. See below:
             <img src="./possible_collision.PNG" style="width:550px" alt="" srcset="">
           </li>
@@ -354,8 +363,9 @@
             will end.
             <img src="bigzero.PNG" style="width:550px" alt="" srcset="">
           </li>
-          <li>A train whistle can be heard at the beginning of each period. The clinking sound is played when money is incremented in the game. Also, there is loud crash sound if there is a train collision. All sounds
-            can be switched off, if you wish by pressing the <span class="key">N</span> key.
+          <li>A train whistle can be heard at the beginning of each period. The clinking sound is played when money is
+            incremented in the game. Also, there is loud crash sound if there is a train collision. All sounds
+            can be switched off, if you wish by pressing the <span class="key">A</span> key.
           </li>
         </ul>
         <div style="display:flex; align-items:center; justify-content:center;">
@@ -382,8 +392,8 @@
         aria-label="Show raw materials supply map">Y</button>
       <button type="button" class="mobile-hotkey" data-hotkey="Z" title="Show Rawmaterial Demand Map"
         aria-label="Show raw material demand map">Z</button>
-      <button type="button" class="mobile-hotkey" data-hotkey="N" title="Toggle Sound"
-        aria-label="Toggle sound">N</button>
+      <button type="button" class="mobile-hotkey" data-hotkey="A" title="Toggle Audio"
+        aria-label="Toggle audio">A</button>
     </div> <!-- End of buttonGroup6: Touch-friendly replacements for keyboard hotkeys -->
 
     <div id="buttonGroup7" class="modal"
@@ -416,7 +426,7 @@
     <div id="buttonGroup8" style="display: none; position:fixed;">
       <span></span>
     </div><!-- End of buttonGroup8: Tooltip -->
-  
+
   </div> <!-- End of controls -->
   <script type="module" src="script.js"></script>
 </body>
