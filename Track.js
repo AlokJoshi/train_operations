@@ -525,36 +525,37 @@ class Track {
     return locations
   }
 
-  getDetailedSegmentsMap(turningCircle = 100) {
-    const segmentsMap = new Map()
-    const modifiedPositions = []
-    let firstx = this.positions[0].x
-    let firsty = this.positions[0].y
-    let secondx = this.newPositions[i].x
-    let secondy = this.newPositions[i].y
-    let thirdx = this.newPositions[i + 1]?.x
-    let thirdy = this.newPositions[i + 1]?.y
-    modifiedPositions.push({ x: firstx, y: firsty })
-    for (let i = 1; i < this.positions.length; i++) {
-      secondx = this.newPositions[i].x
-      secondy = this.newPositions[i].y
-      thirdx = this.newPositions[i + 1]?.x
-      thirdy = this.newPositions[i + 1]?.y
-      if (firstx === secondx && secondx === thirdx) {
-        // vertical segment will collapse into a single vertical position in the modifiedPositions array
+  // getDetailedSegmentsMap(turningCircle = 100) {
+  //   const segmentsMap = new Map()
+  //   const modifiedPositions = []
+  //   let firstx = this.positions[0].x
+  //   let firsty = this.positions[0].y
+  //   let secondx = this.newPositions[i].x
+  //   let secondy = this.newPositions[i].y
+  //   let thirdx = this.newPositions[i + 1]?.x
+  //   let thirdy = this.newPositions[i + 1]?.y
+  //   modifiedPositions.push({ x: firstx, y: firsty })
+  //   for (let i = 1; i < this.positions.length; i++) {
+  //     secondx = this.newPositions[i].x
+  //     secondy = this.newPositions[i].y
+  //     thirdx = this.newPositions[i + 1]?.x
+  //     thirdy = this.newPositions[i + 1]?.y
+  //     if (firstx === secondx && secondx === thirdx) {
+  //       // vertical segment will collapse into a single vertical position in the modifiedPositions array
 
-      } else if (firsty === secondy && secondy === thirdy) {
-        // horizontal segment will collapse into a single horizontal position in the modifiedPositions array
+  //     } else if (firsty === secondy && secondy === thirdy) {
+  //       // horizontal segment will collapse into a single horizontal position in the modifiedPositions array
 
-      } else {
-        // neither vertical nor horizontal segment, keep the position as is
-        modifiedPositions.push({ x: secondx, y: secondy })
-        firstx = secondx
-        firsty = secondy
-      }
-    }
-    return segmentsMap
-  }
+  //     } else {
+  //       // neither vertical nor horizontal segment, keep the position as is
+  //       modifiedPositions.push({ x: secondx, y: secondy })
+  //       firstx = secondx
+  //       firsty = secondy
+  //     }
+  //   }
+  //   return segmentsMap
+  // }
+  
   getAllLocationsOnGrid() {
     return this.possibleFlyoverLocations
   }

@@ -20,3 +20,24 @@ Practical example in your context:
 
 // Factory — returns a plain data objectfunction createStation(name, x, y, dwellTicks, stopOnReturn = true) {  return { name, x, y, dwellTicks, stopOnReturn, distanceFromStart: null }}// vs class — adds prototype overhead for a pure data recordclass Station {  constructor(name, x, y, dwellTicks, stopOnReturn = true) { ... }}
 For a station, which is just a data record attached to a route, the factory is the right choice — it produces plain, serializable objects with no overhead.
+
+
+I’ll map the actual audio options in your current code to the sound behavior they control, then give you practical presets you can copy for horn, ambience, and sample playback. I’m quickly reading the relevant sections so the explanation matches your exact implementation.
+
+
+
+
+
+
+
+
+
+Yes. In your current setup, you have two sound paths and each has different options:
+
+File-based playback (HTML Audio)
+Synthesized playback (Web Audio API)
+How they are defined:
+
+Audio manager construction is in audioManager.js.
+Core implementation is in utility.js:170.
+1. Global AudioManager options (at creation time)

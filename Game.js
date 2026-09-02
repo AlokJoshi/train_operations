@@ -393,7 +393,11 @@ class Game {
   removeTrain(trainNumber) {
     if (trainNumber <= this.trains.length) {
       const train = this.trains[trainNumber - 1]
-      train.startStop()
+      if (train) {
+        if (!train.isUserPaused()) {
+          train.setUserPaused(true)
+        }
+      }
       // instead of removing the train from the array, we can set the null value for the train in the array. 
       // This way we can keep the train number consistent and avoid issues with train numbers changing after a train is removed.
       this.trains[trainNumber - 1] = null

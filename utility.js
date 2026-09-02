@@ -172,6 +172,7 @@ function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = 
   let mediaUnlocked = false
   let audioEnabled = !!enabled
   let audioContext = null
+  let audioPausedBySystem = false
 
   const resolvedHornDefaults = {
     baseFrequency: 280,
@@ -216,7 +217,7 @@ function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = 
   })
 
   const unlockAudio = async () => {
-    if (!audioEnabled) {
+    if (!audioEnabled || audioPausedBySystem) {
       return false
     }
 
@@ -250,7 +251,7 @@ function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = 
     volume = resolvedHornDefaults.volume,
     detune = resolvedHornDefaults.detune
   } = {}) => {
-    if (!audioEnabled) {
+    if (!audioEnabled || audioPausedBySystem) {
       return false
     }
 
@@ -341,9 +342,168 @@ function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = 
     }
   }
 
+  const playDistantSteamTrain = async ({
+    duration = 8,
+    volume = 0.08,
+    chuffRate = 2.6,
+    pan = 0,
+    withWhistle = false
+  } = {}) => {
+    if (!audioEnabled || audioPausedBySystem) {
+      return false
+    }
+
+    const ctx = getAudioContext()
+    if (!ctx) {
+      return false
+    }
+
+    if (!(await ensureWebAudioReady())) {
+      return false
+    }
+
+    const safeDuration = Math.min(20, Math.max(2, Number(duration) || 8))
+    const safeVolume = Math.min(1, Math.max(0, Number(volume) || 0.08))
+    const safeChuffRate = Math.min(5.5, Math.max(0.8, Number(chuffRate) || 2.6))
+    const safePan = Math.min(1, Math.max(-1, Number(pan) || 0))
+    const now = ctx.currentTime
+
+    const master = ctx.createGain()
+    master.gain.setValueAtTime(0.0001, now)
+    master.gain.exponentialRampToValueAtTime(Math.max(0.0001, safeVolume), now + 0.8)
+    master.gain.setValueAtTime(Math.max(0.0001, safeVolume), now + Math.max(1.2, safeDuration - 1.2))
+    master.gain.exponentialRampToValueAtTime(0.0001, now + safeDuration)
+
+    const distanceFilter = ctx.createBiquadFilter()
+    distanceFilter.type = 'lowpass'
+    distanceFilter.frequency.setValueAtTime(1100, now)
+    distanceFilter.frequency.linearRampToValueAtTime(700, now + safeDuration)
+    distanceFilter.Q.setValueAtTime(0.8, now)
+
+    const outputNode = typeof ctx.createStereoPanner === 'function'
+      ? ctx.createStereoPanner()
+      : null
+    if (outputNode) {
+      outputNode.pan.setValueAtTime(safePan, now)
+    }
+
+    master.connect(distanceFilter)
+    if (outputNode) {
+      distanceFilter.connect(outputNode)
+      outputNode.connect(ctx.destination)
+    } else {
+      distanceFilter.connect(ctx.destination)
+    }
+
+    const noiseBufferLength = Math.ceil(ctx.sampleRate * 2)
+    const noiseBuffer = ctx.createBuffer(1, noiseBufferLength, ctx.sampleRate)
+    const noiseData = noiseBuffer.getChannelData(0)
+    for (let i = 0; i < noiseBufferLength; i++) {
+      noiseData[i] = (Math.random() * 2 - 1) * 0.5
+    }
+
+    const steamNoise = ctx.createBufferSource()
+    steamNoise.buffer = noiseBuffer
+    steamNoise.loop = true
+
+    const steamBand = ctx.createBiquadFilter()
+    steamBand.type = 'bandpass'
+    steamBand.frequency.setValueAtTime(320, now)
+    steamBand.Q.setValueAtTime(1.2, now)
+
+    const chuffGain = ctx.createGain()
+    chuffGain.gain.setValueAtTime(0.0001, now)
+
+    const chuffInterval = 1 / safeChuffRate
+    for (let t = 0; t < safeDuration; t += chuffInterval) {
+      const start = now + t
+      const peak = 0.34 + Math.random() * 0.2
+      chuffGain.gain.setValueAtTime(0.0001, start)
+      chuffGain.gain.exponentialRampToValueAtTime(peak, start + 0.03)
+      chuffGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16)
+    }
+
+    steamNoise.connect(steamBand)
+    steamBand.connect(chuffGain)
+    chuffGain.connect(master)
+
+    const rumbleOsc = ctx.createOscillator()
+    rumbleOsc.type = 'triangle'
+    rumbleOsc.frequency.setValueAtTime(72, now)
+    rumbleOsc.frequency.linearRampToValueAtTime(62, now + safeDuration)
+
+    const rumbleGain = ctx.createGain()
+    rumbleGain.gain.setValueAtTime(0.015, now)
+    rumbleGain.gain.linearRampToValueAtTime(0.01, now + safeDuration)
+    rumbleOsc.connect(rumbleGain)
+    rumbleGain.connect(master)
+
+    let whistleOsc1 = null
+    let whistleOsc2 = null
+    let whistleGain = null
+    if (withWhistle) {
+      const whistleStart = now + Math.min(Math.max(0.9, safeDuration * 0.25), safeDuration - 1.2)
+      const whistleDuration = Math.min(1.1, Math.max(0.55, safeDuration * 0.16))
+
+      whistleOsc1 = ctx.createOscillator()
+      whistleOsc1.type = 'sine'
+      whistleOsc1.frequency.setValueAtTime(430, whistleStart)
+      whistleOsc1.frequency.linearRampToValueAtTime(500, whistleStart + whistleDuration)
+
+      whistleOsc2 = ctx.createOscillator()
+      whistleOsc2.type = 'triangle'
+      whistleOsc2.frequency.setValueAtTime(865, whistleStart)
+      whistleOsc2.frequency.linearRampToValueAtTime(995, whistleStart + whistleDuration)
+
+      whistleGain = ctx.createGain()
+      whistleGain.gain.setValueAtTime(0.0001, whistleStart)
+      whistleGain.gain.exponentialRampToValueAtTime(0.08, whistleStart + 0.12)
+      whistleGain.gain.exponentialRampToValueAtTime(0.0001, whistleStart + whistleDuration)
+
+      whistleOsc1.connect(whistleGain)
+      whistleOsc2.connect(whistleGain)
+      whistleGain.connect(master)
+
+      whistleOsc1.start(whistleStart)
+      whistleOsc2.start(whistleStart)
+      whistleOsc1.stop(whistleStart + whistleDuration)
+      whistleOsc2.stop(whistleStart + whistleDuration)
+    }
+
+    try {
+      steamNoise.start(now)
+      rumbleOsc.start(now)
+      steamNoise.stop(now + safeDuration)
+      rumbleOsc.stop(now + safeDuration)
+
+      const cleanupDelay = Math.ceil((safeDuration + 0.2) * 1000)
+      setTimeout(() => {
+        try {
+          steamNoise.disconnect()
+          steamBand.disconnect()
+          chuffGain.disconnect()
+          rumbleOsc.disconnect()
+          rumbleGain.disconnect()
+          if (whistleOsc1) whistleOsc1.disconnect()
+          if (whistleOsc2) whistleOsc2.disconnect()
+          if (whistleGain) whistleGain.disconnect()
+          master.disconnect()
+          distanceFilter.disconnect()
+          if (outputNode) outputNode.disconnect()
+        } catch {
+          // Ignore cleanup errors for already-disconnected nodes.
+        }
+      }, cleanupDelay)
+
+      return true
+    } catch {
+      return false
+    }
+  }
+
   const safePlay = async (soundKey, { volume = 1, loop = false, restart = true } = {}) => {
     const audio = sounds.get(soundKey)
-    if (!audioEnabled || !audio) {
+    if (!audioEnabled || audioPausedBySystem || !audio) {
       return false
     }
 
@@ -382,6 +542,34 @@ function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = 
     return audioEnabled
   }
 
+  const pauseAllAudio = async () => {
+    audioPausedBySystem = true
+    sounds.forEach((audio) => {
+      try {
+        audio.pause()
+        audio.currentTime = 0
+      } catch {
+        // Ignore media state errors while force-stopping sounds.
+      }
+    })
+    if (audioContext && audioContext.state === 'running') {
+      try {
+        await audioContext.suspend()
+      } catch {
+        // Ignore suspend errors.
+      }
+    }
+    return true
+  }
+
+  const resumeAllAudio = async () => {
+    audioPausedBySystem = false
+    if (!audioEnabled) {
+      return false
+    }
+    return ensureWebAudioReady()
+  }
+
   const toggleSound = (forceEnabled) => {
     const nextEnabled = typeof forceEnabled === 'boolean'
       ? forceEnabled
@@ -393,9 +581,13 @@ function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = 
     unlockAudio,
     safePlay,
     playTrainHorn,
+    playDistantSteamTrain,
+    pauseAllAudio,
+    resumeAllAudio,
     setEnabled,
     toggleSound,
     isEnabled: () => audioEnabled,
+    isPausedBySystem: () => audioPausedBySystem,
     isUnlocked: () => {
       const webAudioRunning = !!audioContext && audioContext.state === 'running'
       return mediaUnlocked || webAudioRunning
@@ -409,7 +601,7 @@ export {
   ck,
   rowAndColumnName,
   alpha,
-  getDetailedSegmentsMap,
+  // getDetailedSegmentsMap,
   getCommonSegmentsMap,
   createAudioManager,
   delay

@@ -2,9 +2,10 @@ import { Rawmaterials} from './Rawmaterials.js'
 
 class RawMaterialSupply {
   // Raw material reserves are available in Rawmaterial object but only this amount becomes available each time unit.
-  static PRODUCTION_PER_TIME_UNIT = 0.01 
-  // percentage of raw material from adjacent grid points that becomes available at this grid point each time unit, adjust as needed
-  static PERCENT_FROM_ADJACENT = 0.8 
+  static PRODUCTION_PER_TIME_UNIT = 0.015 
+
+  // proportion of raw material from adjacent grid points that becomes available at this grid point each time unit, adjust as needed
+  static PROPORTION_FROM_ADJACENT = 0.8 
 
   constructor(canvasWidth,canvasHeight, gridSize) {
     // key: x,y string; value: number of travelers if a station is built there
@@ -41,7 +42,7 @@ class RawMaterialSupply {
           if (adjKey === key) {
             totalRawmaterial += this.rawmaterials.values.get(adjKey) 
           } else {  
-            totalRawmaterial += this.rawmaterials.values.get(adjKey)* RawMaterialSupply.PERCENT_FROM_ADJACENT
+            totalRawmaterial += this.rawmaterials.values.get(adjKey)* RawMaterialSupply.PROPORTION_FROM_ADJACENT
           }
         }
       }
@@ -76,6 +77,15 @@ class RawMaterialSupply {
 
   getKey(x, y) {
     return `${x},${y}`
+  }
+
+  getAll() {
+    const result = []
+    this.rawmaterialAvailability.forEach((rawmaterial, key) => {
+      const [x, y] = key.split(',').map(Number)
+      result.push({ x, y, rawmaterial: rawmaterial.available })
+    })
+    return result
   }
 }
 export {

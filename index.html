@@ -37,7 +37,7 @@
           <label style="font-size: 1.2em;">Start/Pause All:</label>
           <i class="fas fa-play" id="startPauseBtn" title="Start/Pause All Trains" style="cursor:pointer"></i>
         </div>
-        <div id="trainControlsContainer"></div>
+        <div id="trainControlsContainer" onmouseleave="clearTempCanvas()"></div>
         <!-- Template for individual train controls. It is intialized in initializeTrainControlWidgets function -->
         <template id="trainControlTemplate">
           <div class="trainControl">
@@ -47,12 +47,6 @@
               <i class="fas fa-pause" title="Pause Train" style="cursor:pointer" data-role="pause"></i>
               <input data-role="new-count" style="font-size:0.8em; width:50px;"
                 title="Type the revised coach/wagon count;" />
-
-              <!-- (Passenger:<span data-bind='minCoaches'></span> to <span data-bind='maxCoaches'></span>,
-                Freight:<span data-bind="minFreightWagons"></span> to <span data-bind="maxFreightWagons"></span>) and press Enter or Escape"
-                type="number"
-                min="2"/> -->
-
               <i class="fas fa-bolt" title="Upgrade Engine" style="cursor:pointer" data-role="upgrade-engine"></i>
               <div class="healthWrap">
                 <div class="health" style="border:1px solid black;"
@@ -61,7 +55,6 @@
               <i class="fas fa-expand-alt" title="Extend Train" style="cursor:pointer" data-role="extend"></i>
               <i class="fas fa-times" title="Remove Train" style="cursor:pointer" data-role="remove"></i>
             </div>
-
             <div style="display:none; justify-content:space-evenly;" data-role="extension-controls">
               <span>Extend:</span>
               <i class="fas fa-check" title="Complete Train Extension" style="cursor:pointer;"
@@ -110,18 +103,18 @@
       <div class="dialogHeader">
         <span class="dialogTitle">Flyovers</span>
         <span class="dialogClose">
-          <i class="fas fa-times" title="Close"></i>
+          <i class="fas fa-times" title="Close" onclick="document.getElementById('buttonGroup2').style.display='none';startFlyover=false;"></i>
+          <!-- <i class="fas fa-times" title="Close"></i> -->
         </span>
       </div>
       <div class="dialogContent">
-        <label>Once you click on Start button below, all the possible locations for building a flyover will be
+        <span>Once you click on Start button below, all the possible locations for building a flyover will be
           highlighted.
           Please select the intersection where you want build a flyover by clicking on it.
           If you do not want to build a flyover, you have two options: (1) You can manually stop one of the two trains
           involved
           to avoid the collision or (2) You can build a station at the intersection of the two trains.
-          Please note that each flyover costs 5,00,000.
-        </label>
+          Please note that each flyover costs </span><span id="flyoverCost"></span>.
         <button id="startFlyoverBtn" type="button"
           style="border-radius: 10px;padding:10px; margin-top:10px;cursor: pointer;">Start</button>
         <button id="cancelFlyoverBtn" type="button"

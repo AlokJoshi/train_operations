@@ -1,7 +1,7 @@
 import { Game } from './Game.js'
 import { Track } from './Track.js'
 import { Intersections } from './Intersections.js'
-import { makeDraggable, alpha, getDetailedSegmentsMap, getCommonSegmentsMap, delay } from './utility.js'
+import { makeDraggable, alpha } from './utility.js'
 import { audioManager } from './audioManager.js'
 
 globalThis.globalTicks = 0
@@ -45,11 +45,40 @@ let showingHowToPlay = false
 let click_error = 20
 let validTrackPoints = new Set()
 let validStartingPoints = new Set()
-let positionsForExtendTrain = []
+// let positionsForExtendTrain = [] removed on 9/1/26
 const collisionAnimations = new Map()
 let collisionAnimationFrameId = null
 const collisionAnimationDurationMs = 3000
 const collisionClearRadius = 96
+let nextDistantSteamTick = 0
+
+function scheduleDistantSteamAmbience(origin = 'loop', force = false, delay = 400 + Math.random() * 1200) {
+  if (!audioManager.isEnabled()) {
+    return
+  }
+
+  if (!force && globalThis.globalTicks < nextDistantSteamTick) {
+    return
+  }
+
+  const ambientDelayMs = delay
+  const options = {
+    duration: 30 + Math.random() * 20,
+    volume: 0.57 + Math.random() * 0.03,
+    chuffRate: 4.0 + Math.random() * 0.8,
+    pan: Math.random() * 2 - 1,
+    withWhistle: Math.random() < 0.5
+  }
+
+  const thisTick = globalThis.globalTicks
+  // console.log(`[audio] scheduling distant steam (${origin}) at tick ${thisTick}`)
+  setTimeout(async () => {
+    const played = await audioManager.playDistantSteamTrain(options)
+    // console.log(`[audio] distant steam ${played ? 'played' : 'skipped'} (${origin}) at tick ${globalThis.globalTicks}`)
+  }, ambientDelayMs)
+
+  nextDistantSteamTick = globalThis.globalTicks + 1800 + Math.floor(Math.random() * 1600)
+}
 
 function setValidTrackPoints() {
   validTrackPoints.clear()
@@ -114,6 +143,7 @@ function initializeTrainControlWidgets(maxTrains = 9) {
     }
 
     trainControlEl.id = `train${trainNumber}`
+    trainControlEl.setAttribute('onmousemove',`highlightTrainTrack(${trainNumber},event)`)
     trainControlEl.querySelector('[data-role="label"]').id = `lblTrain${trainNumber}`
     trainControlEl.querySelector('[data-role="label"]').textContent = `T${trainNumber}`
     trainControlEl.querySelector('[data-role="train-type"]').id = `lblTrainType${trainNumber}`
@@ -301,19 +331,22 @@ const drawScene = () => {
               trainNumber: train.trainNumber,
               baseFrequency: 320 + 10 * train.trainNumber,
               duration: 0.2,
-              volume: 0.11
+              volume: 0.05
             })
             setTimeout(() => {
               audioManager.playTrainHorn({
                 trainNumber: train.trainNumber,
                 baseFrequency: 320 + 10 * train.trainNumber,
                 duration: 2.0,
-                volume: 0.11
+                volume: 0.05
               })
             }, 200)
           }, startDelayMs)
         }
       })
+
+      scheduleDistantSteamAmbience('time-unit')
+
       if (currentTimeUnit === 100) {
         paused = true
         swal.fire({
@@ -488,9 +521,11 @@ window.addEventListener('load', () => {
     } else if (event.code === 'KeyY') {
       //if the code is Y then show the rawmaterials Map
       if (!showingRawmaterialsMap) {
-        const rawmaterialsMap = game.rawmaterials.getAll()
+        // const rawmaterialsMap = game.rawmaterials.getAll()
+        const rawmaterialsMap = game.rawmaterialSupply.getAll()
+        // const perTimeUnit = RawMaterialSupply.PRODUCTION_PER_TIME_UNIT
         const maxRawmaterial = Math.max(...rawmaterialsMap.map(p => p.rawmaterial))
-        const rMaxSquare = (gridSize / 2) ** 2
+        const rMaxSquare = (gridSize) ** 2 //(gridSize / 2) ** 2
         rawmaterialsMap.forEach(p => {
           const radiusSquare = rMaxSquare * (p.rawmaterial / maxRawmaterial)
           const radius = Math.sqrt(radiusSquare)
@@ -498,6 +533,13 @@ window.addEventListener('load', () => {
           ctxMaps2.arc(p.x, p.y, radius, 0, 2 * Math.PI)
           ctxMaps2.fillStyle = 'rgba(255,255,0,0.5)'
           ctxMaps2.fill()
+
+          if(p.rawmaterial > 20000) {
+            ctxMaps2.font = '15px Arial'
+            ctxMaps2.fillStyle = 'black'
+            const textMetrics = ctxMaps2.measureText(`${Math.floor(p.rawmaterial)}`)
+            ctxMaps2.fillText(`${Math.floor(p.rawmaterial)}`, p.x - textMetrics.width / 2, p.y + 10)
+          }
         })
       } else {
         ctxMaps2.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
@@ -648,6 +690,7 @@ window.addEventListener('load', () => {
   window.setTrainSmokeLevel(currentSmokeLevel)
 
   const startPauseGame = () => {
+    const wasPaused = paused
     //switch the play button to pause
     const startPauseButton = document.querySelector('#startPauseBtn')
     if (startPauseButton.classList.contains('fa-play')) {
@@ -658,6 +701,23 @@ window.addEventListener('load', () => {
       startPauseButton.classList.add('fa-play')
     }
     paused = !paused
+
+    if (!wasPaused && paused) {
+      audioManager.pauseAllAudio().then(() => {
+        // console.log('[audio] all audio paused with game pause')
+      })
+      return
+    }
+
+    if (wasPaused && !paused) {
+      audioManager.resumeAllAudio().then((resumed) => {
+        // console.log(`[audio] system resume ${resumed ? 'succeeded' : 'failed'}`)
+      })
+      audioManager.unlockAudio().then((unlocked) => {
+        // console.log(`[audio] unlock ${unlocked ? 'succeeded' : 'failed'}`)
+        scheduleDistantSteamAmbience('resume', true)
+      })
+    }
   }
 
   document.addEventListener('keydown', handleTrainHotkeys)
@@ -826,7 +886,7 @@ window.addEventListener('load', () => {
       if (!startStation) {
         //clear the temporary canvas before drawing
         ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-        train.track.drawUsingNewPositions(ctxTemp, 'rgb(255, 255, 0)', 10)
+        train.track.drawUsingNewPositions(ctxTemp, 'rgba(255, 255, 0, 0.5)', 10)
       }
     })
 
@@ -836,15 +896,6 @@ window.addEventListener('load', () => {
   }
 
   const startFlyoverBtn = document.querySelector('#startFlyoverBtn')
-  const cancelFlyoverBtn = document.querySelector('#cancelFlyoverBtn')
-
-  if (cancelFlyoverBtn) {
-    cancelFlyoverBtn.addEventListener('click', () => {
-      startFlyover = false
-      ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-    })
-  }
-
   if (startFlyoverBtn) {
     startFlyoverBtn.addEventListener('click', (event) => {
       startFlyover = true
@@ -857,6 +908,15 @@ window.addEventListener('load', () => {
       })
     })
   }
+
+  const cancelFlyoverBtn = document.querySelector('#cancelFlyoverBtn')
+  if (cancelFlyoverBtn) {
+    cancelFlyoverBtn.addEventListener('click', () => {
+      startFlyover = false
+      ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+    })
+  }
+
   
   document.querySelector('#canvas_temp').addEventListener('click', (event) => {
     const point = getCanvasPoint(event)
@@ -867,7 +927,6 @@ window.addEventListener('load', () => {
       if ((Math.abs(x - point.x) < click_error) && (Math.abs(y - point.y) < click_error)) {
         // console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y}`)
         if ((positionsForExtendTrain.length === 0) && (!validStartingPoints.has(`${x},${y}`))) {
-          console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y} but it's not a valid track point`)
           swal.fire({
             title: 'Invalid Starting Point',
             text: `The point at (Row ${alpha((y / gridSize))}, Col ${alpha((x / gridSize))}) is not a valid starting point for track extension.`,
@@ -876,7 +935,6 @@ window.addEventListener('load', () => {
           })
           return
         }
-        console.log(`Clicked at ${event.pageX},${event.pageY}, snapped to ${x},${y} and it's a valid starting point for track extension`)
         // figure out if this point is in the same row or column as the previous point
         // if it is then we remove the redundant previous point
         if ((positionsForExtendTrain.length > 0) && !validTrackPoints.has(`${x},${y}`)) {
@@ -1406,11 +1464,11 @@ window.addEventListener('load', () => {
   window.starttrack = () => {
     startTrack = true
     const cancelTrackBtn = document.querySelector('#cancelTrack')
-    const startTrackBtn = document.querySelector('#startTrack')
-    if (startTrackBtn) {
-      startTrackBtn.style.pointerEvents = 'none'
-      startTrackBtn.style.opacity = '0.5'
-    }
+    // const startTrackBtn = document.querySelector('#startTrack')
+    // if (startTrackBtn) {
+    //   startTrackBtn.style.pointerEvents = 'none'
+    //   startTrackBtn.style.opacity = '0.5'
+    // }
     if (cancelTrackBtn) {
       cancelTrackBtn.style.pointerEvents = 'all'
       cancelTrackBtn.style.opacity = '1'
@@ -1432,11 +1490,13 @@ window.addEventListener('load', () => {
       setValidTrackPoints()
       const startTrackBtn = document.querySelector('#startTrack')
       if (startTrackBtn) {
-        startTrackBtn.style.display = 'block'
+        startTrackBtn.style.pointerEvents = 'all'
+        startTrackBtn.style.opacity = '1'
       }
       const cancelTrackBtn = document.querySelector('#cancelTrack')
       if (cancelTrackBtn) {
-        cancelTrackBtn.style.display = 'none'
+        cancelTrackBtn.style.pointerEvents = 'none'
+        cancelTrackBtn.style.opacity = '0.5'
       }
       ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
     }
@@ -1651,7 +1711,22 @@ window.addEventListener('load', () => {
     game.removeCoach(trainNumber, oldValue - newValue)
     blurCountInput()
   }
-
+  window.clearTempCanvas = function () {
+    ctxTemp.clearRect(0, 0, ctxTemp.canvas.width, ctxTemp.canvas.height)
+  }
+  window.highlightTrainTrack = function (trainNumber, event) {
+    const train = game.trains[trainNumber - 1]
+    if (!train) {
+      console.error(`Train with number ${trainNumber} not found`)
+      return
+    }
+    //clear ctxTemp but only if some other operation is not in progress
+    console.log(`startTrack: ${startTrack}, startExtendTrain: ${startExtendTrain}, startStation: ${startStation}, startFlyover: ${startFlyover}`)
+    if(!startTrack && !startExtendTrain && !startStation && !startFlyover){
+      ctxTemp.clearRect(0, 0, ctxTemp.canvas.width, ctxTemp.canvas.height)
+      train.track.drawUsingNewPositions(ctxTemp, 'rgba(255, 255, 0, 0.5)', 10)
+    }
+  }
   window.addCoach = function (trainNumber) {
     const train = game.trains[trainNumber - 1]
     if (!train) {

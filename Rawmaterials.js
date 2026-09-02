@@ -42,8 +42,6 @@ class Rawmaterials {
   }
 
   displayStatistics() {
-    const rawmaterials = Array.from(this.values.values())
-    const totalRawmaterial = rawmaterials.reduce((a, b) => a + b, 0)
     // console.log(`Total Rawmaterial: ${totalRawmaterial}`)
     //north/south divide only
     let northRawmaterial = 0

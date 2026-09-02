@@ -28,8 +28,8 @@ class Train {
   static minNumFreightWagons = 10
   static coachPassengerCapacity = 100
   static baseTicketPrice = 400
-  static rawMaterialCapacityPerFreightCoach = 20000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
-  static rawMaterialChargePerUnit = 100 // fixed charge per unit of raw material to keep it simple. Revenue is calculated based on the amount of raw material unloaded at the station.
+  static freightWagonCapacity = 20000 // fixed raw material capacity per freight coach to keep it simple. We can adjust this as needed to make it more realistic.
+  static freightChargePerUnit = 100 // fixed charge per unit of raw material to keep it simple. Revenue is calculated based on the amount of raw material unloaded at the station.
   static MAX_RENDERED_OPERATION_ROWS = 60
   static ticketPriceMap = new Map() // key is from row,col to row,col and value is the ticket price for that route. 
   // We populate this as we go unless the ticket price is already in the map. 
@@ -317,6 +317,10 @@ class Train {
       this.userPaused = false
       this.awaitingTurnaround = false
     }
+  }
+
+  isUserPaused() {
+    return this.userPaused
   }
 
   startStop() {
@@ -615,10 +619,10 @@ class Train {
           //earn revenue based on the amount of raw material unloaded and a fixed price per unit of raw material to keep it simple. 
           // We can also add a multiplier based on the distance between the from station and to station to make it more realistic 
           // but for now we will keep it simple with a fixed price per unit of raw material.
-          this.financials.incrementRevenueFromRawMaterial(this.getCurrentTimeIndex(), this.trainNumber, totalUnloading * Train.rawMaterialChargePerUnit)
+          this.financials.incrementRevenueFromRawMaterial(this.getCurrentTimeIndex(), this.trainNumber, totalUnloading * Train.freightChargePerUnit)
           this.rawMaterialOnBoard -= totalUnloading
           this.rawMaterialDemand.decreaseDemand(station.x, station.y, totalUnloading)
-          // console.log(`Train ${this.trainNumber} at station ${station.stationNumber} unloaded ${totalUnloading} units of raw material, remaining on board: ${this.rawMaterialOnBoard} money earned: ${totalUnloading * Train.rawMaterialChargePerUnit}`)
+          // console.log(`Train ${this.trainNumber} at station ${station.stationNumber} unloaded ${totalUnloading} units of raw material, remaining on board: ${this.rawMaterialOnBoard} money earned: ${totalUnloading * Train.freightChargePerUnit}`)
         }
 
         for (const nextStation of this.stations) {
@@ -629,13 +633,13 @@ class Train {
             totalRawMaterialDemand += demand
           }
         }
-        // console.log(`Train ${this.trainNumber} total raw material demand for upcoming stations is ${totalRawMaterialDemand} units and available capacity on train is ${(this.numCoaches * Train.rawMaterialCapacityPerFreightCoach) - this.rawMaterialOnBoard} units`)
+        // console.log(`Train ${this.trainNumber} total raw material demand for upcoming stations is ${totalRawMaterialDemand} units and available capacity on train is ${(this.numCoaches * Train.freightWagonCapacity) - this.rawMaterialOnBoard} units`)
 
         //let us load the train with this raw material if the suppy is available at the station
         let rawMaterialAvailable = this.rawMaterialSupply.availableAt(station.x, station.y)
         // console.log(`Train ${this.trainNumber} checking raw material supply at station ${station.stationNumber} with available raw material of ${rawMaterialAvailable} units`)
 
-        let capacity = this.numCoaches * Train.rawMaterialCapacityPerFreightCoach
+        let capacity = this.numCoaches * Train.freightWagonCapacity
         let availableCapacity = capacity - (this.rawMaterialOnBoard ?? 0)
         let rawMaterialLoaded = Math.min(totalRawMaterialDemand - this.rawMaterialOnBoard, rawMaterialAvailable, availableCapacity)
 
@@ -645,7 +649,7 @@ class Train {
         }
 
         if (this.shouldLogDebug()) {
-          console.log(`[debug freight train ${this.trainNumber}] station=${station.name} stationNumber=${station.stationNumber} beforeOnBoard=${this.rawMaterialOnBoard - rawMaterialLoaded} totalUnloading=${totalUnloading} rawMaterialLoaded=${rawMaterialLoaded} afterOnBoard=${this.rawMaterialOnBoard} earnings=${totalUnloading * Train.rawMaterialChargePerUnit} demand=${totalRawMaterialDemand}`)
+          console.log(`[debug freight T${this.trainNumber}] S=${station.name} SN=${station.stationNumber} Available=${rawMaterialAvailable} beforeOnBoard=${this.rawMaterialOnBoard - rawMaterialLoaded} totalUnloading=${totalUnloading} rawMaterialLoaded=${rawMaterialLoaded} afterOnBoard=${this.rawMaterialOnBoard} earnings=${totalUnloading * Train.freightChargePerUnit} demand=${totalRawMaterialDemand}`)
         }
 
         const freightMetrics = {
@@ -653,7 +657,7 @@ class Train {
           rawMaterialLoaded,
           rawMaterialOnBoard: this.rawMaterialOnBoard,
           unableToLoad: totalRawMaterialDemand - this.rawMaterialOnBoard,
-          earnings: totalUnloading * Train.rawMaterialChargePerUnit
+          earnings: totalUnloading * Train.freightChargePerUnit
         }
 
         this.stationVisitContext = {
@@ -756,7 +760,7 @@ class Train {
       this.ctx.rotate(coachHeading)
       this.ctx.translate(-10, -1 * Train.widthCoach * 0.5)
       if (this.trainType === 'freight') {
-        payload = Math.min(remainingPayload, Train.rawMaterialCapacityPerFreightCoach)
+        payload = Math.min(remainingPayload, Train.freightWagonCapacity)
         remainingPayload -= payload
       } else if (this.trainType === 'passenger') {
         payload = Math.min(remainingPayload, Train.coachPassengerCapacity)
@@ -932,10 +936,10 @@ class Train {
     this.ctx.restore()
 
     if (this.trainType === 'passenger' && payload < Train.coachPassengerCapacity ||
-      this.trainType === 'freight' && payload < Train.rawMaterialCapacityPerFreightCoach) {
+      this.trainType === 'freight' && payload < Train.freightWagonCapacity) {
       const radius = this.trainType === 'passenger'
         ? (Train.coachPassengerCapacity - payload) * 5 / Train.coachPassengerCapacity
-        : (Train.rawMaterialCapacityPerFreightCoach - payload) * 5 / Train.rawMaterialCapacityPerFreightCoach
+        : (Train.freightWagonCapacity - payload) * 5 / Train.freightWagonCapacity
       //draw a white circle on the coach to indicate that the coach/wagon is not full.
       this.ctx.save()
       this.ctx.beginPath()
