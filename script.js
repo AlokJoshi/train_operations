@@ -456,7 +456,7 @@ window.addEventListener('load', () => {
       return
     }
 
-    if (!startTrack && !startExtendTrain && !startFlyover && event.key === 'Escape') {
+    if (!startTrack && !startExtendTrain && !startFlyover && !startStation && event.key === 'Escape') {
       ctxMaps1.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       ctxMaps2.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       ctxMaps3.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
@@ -535,10 +535,11 @@ window.addEventListener('load', () => {
           ctxMaps2.fill()
 
           if(p.rawmaterial > 20000) {
+            const txt = `${Math.round(p.rawmaterial/1000)} K`
             ctxMaps2.font = '15px Arial'
             ctxMaps2.fillStyle = 'black'
-            const textMetrics = ctxMaps2.measureText(`${Math.floor(p.rawmaterial)}`)
-            ctxMaps2.fillText(`${Math.floor(p.rawmaterial)}`, p.x - textMetrics.width / 2, p.y + 10)
+            const textMetrics = ctxMaps2.measureText(txt)
+            ctxMaps2.fillText(txt, p.x - textMetrics.width / 2, p.y + 10)
           }
         })
       } else {
@@ -563,9 +564,10 @@ window.addEventListener('load', () => {
             ctxMaps3.fill()
 
             ctxMaps3.font = '20px Arial'
-            ctxMaps3.fillStyle = 'black'
-            const textMetrics = ctxMaps3.measureText(`${Math.floor(p.rawmaterial)}`)
-            ctxMaps3.fillText(`${Math.floor(p.rawmaterial)}`, p.x - textMetrics.width / 2, p.y + 10)
+            ctxMaps3.fillStyle = 'white'
+            const txt = `${Math.floor(p.rawmaterial/1000)} K`
+            const textMetrics = ctxMaps3.measureText(txt)
+            ctxMaps3.fillText(txt, p.x - textMetrics.width / 2, p.y + 10)
           }
         })
       } else {
@@ -1017,12 +1019,7 @@ window.addEventListener('load', () => {
           }).then((result) => {
             if (result.isConfirmed) {
               game.addStation(selectedTrainNumber, location.x, location.y, `S${selectedTrainNumber}${String((location.x / gridSize) + 1).padStart(2, '0')}${String((location.y / gridSize) + 1).padStart(2, '0')}`, 30)
-              //clear the canvasTemp after adding the station
-              // AJ 08/21/26 removed the following line so that more than one station can be added.
-              // ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
             }
-            // AJ 08/21/26 removed the following line so that more than one station can be added.
-            // startStation = false
           })
         }
       })
@@ -1150,6 +1147,10 @@ window.addEventListener('load', () => {
   // }
 
   window.cancelStation = function () {
+    const stationElement = document.querySelector('#buttonGroup3')
+    if (stationElement) {
+      stationElement.style.display='none'
+    }
     startStation = false
     document.querySelector('#canvas_temp').style = 'cursor:default'
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
@@ -1567,6 +1568,18 @@ window.addEventListener('load', () => {
       ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       return
     }
+
+    window.closeflyover = () => {
+      // Implement the logic to close the flyover here
+      const flyoverElement = document.querySelector('#buttonGroup2')
+      if (flyoverElement) {
+        flyoverElement.style.display='none'
+        startFlyover = false
+      }
+    }
+
+    
+
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
 
 

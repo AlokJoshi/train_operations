@@ -103,7 +103,7 @@
       <div class="dialogHeader">
         <span class="dialogTitle">Flyovers</span>
         <span class="dialogClose">
-          <i class="fas fa-times" title="Close" onclick="document.getElementById('buttonGroup2').style.display='none';startFlyover=false;"></i>
+          <i class="fas fa-times" title="Close" id="closeFlyover" onclick="closeflyover();"></i>
           <!-- <i class="fas fa-times" title="Close"></i> -->
         </span>
       </div>
@@ -114,11 +114,13 @@
           If you do not want to build a flyover, you have two options: (1) You can manually stop one of the two trains
           involved
           to avoid the collision or (2) You can build a station at the intersection of the two trains.
-          Please note that each flyover costs </span><span id="flyoverCost"></span>.
+          Please note that each flyover costs </span><span data-bind="flyoverCost"></span>.
+        <div>
         <button id="startFlyoverBtn" type="button"
           style="border-radius: 10px;padding:10px; margin-top:10px;cursor: pointer;">Start</button>
         <button id="cancelFlyoverBtn" type="button"
           style="border-radius: 10px;padding:10px; margin-top:10px;cursor: pointer;">Cancel</button>
+        </div>
       </div>
     </div> <!-- End of buttonGroup2: Flyovers -->
 
@@ -127,7 +129,7 @@
       <div class="dialogHeader">
         <span class="dialogTitle">Stations</span>
         <span class="dialogClose">
-          <i class="fas fa-times" title="Close"></i>
+          <i class="fas fa-times" title="Close" onclick="cancelStation();"></i>
         </span>
       </div>
       <div class="dialogContent" style="font-size:1.2em">
@@ -208,10 +210,11 @@
           which the entire game is paused is not counted.
         </p>
         <p>Your objective to earn as much profit as possible by running up to a total of 9 trains.
-          You start with a cash in hand of <span data-bind="initialCash"></span> million dollars and one passenger train
-          and
-          one freight train.
+          You start with a cash in hand of <span data-bind="initialCash"></span> million dollars and two passenger trains
+          and one freight train.
         </p>
+        <p>The game is controlled by either using your keyboard or the on-screen control shown below</p>
+        <img src="main_toolbar.PNG" alt="On-screen controls" style="width:550px;"/>
         <p>You can pause the entire game at any time by pressing the <span class="key">P</span> key on the keyboard.
           <span class="key">P</span>
           also starts the game if it is paused. When the game is in the paused state, the time units will not progress
@@ -231,9 +234,8 @@
           coach
           costs
           <span data-bind="coachCost"></span> and each freight wagon costs <span data-bind="freightWagonCost"></span>.
-          You can
-          add or remove coaches or freight wagons by using the
-          <span class="key">+</span> and <span class="key">-</span> buttons in the train dialog box. You can also stop
+          You can change the number of coaches or freight wagons by entering the new number in the input field.
+          You can also stop
           or pause any train by using the pause button <i class="fa fa-pause"></i> in the train dialog box
           or by pressing the corresponding number key for each train (1 for Train #1, 2 for Train #2 and so on).
           There is an option to delete a train completely but if you do that, you will lose all the money you invested
