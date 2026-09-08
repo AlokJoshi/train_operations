@@ -41,3 +41,49 @@ How they are defined:
 Audio manager construction is in audioManager.js.
 Core implementation is in utility.js:170.
 1. Global AudioManager options (at creation time)
+
+
+
+laneOccupancy is the runtime map that tracks which train is currently occupying each grid cell, per lane.
+
+How it is structured:
+1. It is initialized as a Map in `Intersections.js:12`.
+2. Top-level key is a cell key string from row,col via `Intersections.js:16`.
+3. Value is another Map for lanes at that cell:
+- lane number -> train number
+
+So conceptually:
+- cell 10,20 -> { lane 0: train 2, lane 1: train 5 }
+
+How it is used in updateIntersection:
+1. Cell bounds and special-cell guard run first in `Intersections.js:106`.
+2. It fetches per-cell lane map:
+- occupancyByLane = laneOccupancy.get(cellKey) at `Intersections.js:116`
+3. If trainNumber is null/undefined, it means clear occupancy for that lane:
+- delete lane entry
+- remove cell entry if no lanes remain
+- this is in `Intersections.js:118-126`
+4. If a train is entering:
+- it checks current train on same lane
+- if same lane already has a different train, collision logic runs
+- if allowedTrainsByCell says both are allowed at that cell, collision is skipped
+- collision branch is in `Intersections.js:130-152`
+5. If no conflict:
+- it sets lane -> train in the per-cell map
+- stores map back to laneOccupancy
+- in `Intersections.js:153-155`
+
+Why per-lane matters:
+1. Two trains can be in same cell without collision if they are on different lanes (depends on how caller passes lane).
+2. Collision check is lane-specific, not just cell-specific.
+
+When it gets cleared:
+1. Flyover/station update clears occupancy for that cell in:
+- `Intersections.js:163`
+- `Intersections.js:171`
+2. removeTrain walks all laneOccupancy entries and removes that train from every lane in `Intersections.js:175-187`.
+
+In short:
+- laneOccupancy is the live occupancy state used for immediate collision detection.
+- intersections grid stores static cell type state like Flyover/Station.
+- laneOccupancy is dynamic, updated every movement step.

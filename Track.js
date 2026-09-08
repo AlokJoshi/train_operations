@@ -81,6 +81,10 @@ class Track {
     return this.stations.getAllStations()
   }
 
+  getRemovableStations() {
+    return this.stations.getRemovableStations()
+  }
+
   getProjectedDistanceForStation(station) {
     let nearestDistance = 0
     let nearestSquaredDistance = Number.POSITIVE_INFINITY
@@ -122,6 +126,11 @@ class Track {
     station.distanceFromStart = this.getProjectedDistanceForStation(station)
     this.stations.addStation(station)
     station.draw()
+    this.recalculateAllStationDistances()
+  }
+
+  deleteStation(station) {
+    this.stations.deleteStation(station)
     this.recalculateAllStationDistances()
   }
 
@@ -492,19 +501,19 @@ class Track {
         for (let n = 0; n <= Math.abs(current.y - prev.y) / this.gridSize; n++) {
           const pos = { x: current.x, y: current.y + n * this.gridSize * Math.sign(prev.y - current.y) }
           const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
-          if (!hasStation) {
-            locations.push(pos)
-            // console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code1`)
-          }
+          // if (!hasStation) {
+          locations.push({location:pos, hasStation: hasStation})
+          // console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code1`)
+          // }
         }
       } else if (prev.y === current.y) {
         for (let n = 0; n <= Math.abs(current.x - prev.x) / this.gridSize; n++) {
           const pos = { x: current.x + n * this.gridSize * Math.sign(prev.x - current.x), y: current.y }
           const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
-          if (!hasStation) {
-            locations.push(pos)
-            // console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code2`)
-          }
+          // if (!hasStation) {
+            locations.push({location:pos, hasStation: hasStation})
+          //   // console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code2`)
+          // }
         }
       } else {
         // AJ 08/21/26 added handling for curved track segments
@@ -515,10 +524,10 @@ class Track {
           const y = Math.round(current.y / this.gridSize) * this.gridSize
           const pos = { x: x, y: y }
           const hasStation = this.stations.getAllStations().some(station => station.x === pos.x && station.y === pos.y)
-          if (!hasStation) {
-            locations.push(pos)
+          // if (!hasStation) {
+            locations.push({location:pos, hasStation: hasStation})
             // console.log(`Added possible station location at (${pos.x}, ${pos.y}) in code3`)
-          }
+          // }
         }
       }
     }
@@ -555,9 +564,13 @@ class Track {
   //   }
   //   return segmentsMap
   // }
-  
+
   getAllLocationsOnGrid() {
     return this.possibleFlyoverLocations
+  }
+
+  hasStation(x, y) {
+    return this.stations.getRemovableStations().some(station => station.x === x && station.y === y)
   }
 }
 

@@ -183,8 +183,8 @@
           <i class="fas fa-times" title="Close"></i>
         </span>
       </div>
-      <div id="soundControl" style="font-size: 1.2em; margin-top:6px;cursor:pointer;" onclick="turnSoundOn()"><span
-          id="soundControlLabel">Audio: On</span> <i class="fas fa-volume-up" title="Audio On (press  to mute)"></i>
+      <div id="soundControl" style="font-size: 1.2em; margin-top:6px;cursor:pointer;" onclick="toggleAudio()"><span
+          id="soundControlLabel">Audio: On</span> <i class="fas fa-volume-up" title="Audio On (click  to mute)"></i>
       </div>
       <div id="smokeControl" style="font-size: 1.2em; margin-top:6px;">
         Steam Smoke:
@@ -211,33 +211,33 @@
         </p>
         <p>Your objective to earn as much profit as possible by running up to a total of 9 trains.
           You start with a cash in hand of <span data-bind="initialCash"></span> million dollars and two passenger trains
-          and one freight train.
+          and one freight train already in operation.
         </p>
         <p>The game is controlled by either using your keyboard or the on-screen control shown below</p>
         <img src="main_toolbar.PNG" alt="On-screen controls" style="width:550px;"/>
-        <p>You can pause the entire game at any time by pressing the <span class="key">P</span> key on the keyboard.
-          <span class="key">P</span>
-          also starts the game if it is paused. When the game is in the paused state, the time units will not progress
-          but
-          you will still be able to add
-          trains, stations and flyovers.
+        <p>When later in this document we say that a certain key is to be pressed, you can click on the same key in this on-screen control as an 
+          alternative to using the keyboard.
         </p>
+
+        <p>Pausing the entire game (when the game play is completely frozen, even the time is frozen!) is important as you can make strategic decisions without the pressure of ongoing events. 
+          You can pause the entire game at any time by pressing the <span class="key">P</span> key on the keyboard.
+          <span class="key">P</span>
+          also starts the game if it is paused. When the game is paused, you will still be able to add
+          trains, extend trains, upgrade engines, add stations and flyovers etc.
+        </p>
+
         <p>
-          The <span class="key">T</span> key displays the trains dialog box. It also allows you to monitor trains and
+          The <span class="key">T</span> key displays the trains dialog box. It also allows you to make modifications to existing trains and
           start a new Train.
           Pressing the <span class="key">T</span> key again removes the Train dialog box. The passenger trains can
-          have
-          a
-          maximum of <span data-bind="maxNumCoaches"></span> coaches and the
+          have a maximum of <span data-bind="maxNumCoaches"></span> coaches and the
           freight trains can have a maximum of <span data-bind="maxNumFreightWagons"></span> freight wagons. Each
-          passenger
-          coach
-          costs
+          passenger coach costs
           <span data-bind="coachCost"></span> and each freight wagon costs <span data-bind="freightWagonCost"></span>.
           You can change the number of coaches or freight wagons by entering the new number in the input field.
           You can also stop
           or pause any train by using the pause button <i class="fa fa-pause"></i> in the train dialog box
-          or by pressing the corresponding number key for each train (1 for Train #1, 2 for Train #2 and so on).
+          or by pressing the corresponding number key for each train (1 for Train #1, 2 for Train #2 and so on on your keyboard).
           There is an option to delete a train completely but if you do that, you will lose all the money you invested
           in that train and you will not be able to get it back.
           When a new train is started, it comes with a standard engine which costs <span data-bind="engineCost"></span>.
@@ -246,21 +246,58 @@
             class="fa fa-bolt"></span> in the train dialog box.
           Each engine upgrade costs <span data-bind="engineUpgradeCost"></span>.
           There is also an option to extend the train route by clicking on the extend button in the train dialog box.
-          This
-          extension can be done from either end of the train track. After clicking on the extend button, you will need
+          This extension can be done from either end of the train track. After clicking on the extend button, you will need
           to click on the map to specify the additional route for the train.
           Once the additional route is specified, you can either confirm the extension by clicking on the check button
           in the train dialog box or cancel the extension by clicking on the times button in the train dialog box.
           Below the train level controls, there is a button to start the track specification for a new train. After
           clicking on that button, you will need to click on the map to
           specify the route for the new train and then click on the flag off button in the train dialog box to start
-          the
-          new train. You can also cancel the track specification for the new train by clicking on the cancel button in
-          the train dialog box.
-          You will need to specify the type of the train (passenger or freight), the number of coaches or freight
-          wagons
-          and the speed of the train before flagging off the new train.
+          the new train. You can also cancel the track specification for the new train by clicking on the cancel button in
+          the train dialog box. You will need to specify the type of the train (passenger or freight), the number of coaches or freight
+          wagons and the speed of the train before flagging off the new train.
         </p>
+        <p>Designing a new train route requires careful planning to ensure that your train operates profitably and takes as small a
+          route that covers the necessary stations. Remember that each train is charged a maintenance cost for the tracks and it is
+          obviously directly based on the length of the route. Each station also incurs a maintenance cost. Adding stations where you
+          are not picking up or dropping off passengers/freight not only incurs the maintenance cost but also slows down the train.
+          Also keep in mind that trains cannot make sharp turns. The green circles on the screen will guide you to make valid moves for the train route.
+        </p>
+        <p>
+          You will obviously start from a location where there are passengers or freight to pick up. Let us say that you want to start
+          at point A on the map and you want to create stations at points B and C and terminate your train at D. As shown below:
+        </p>
+        <img src="./Train_Route_Plan.PNG" alt="Train Route Plan" style="width:550px;" />
+        <p>
+          <li>First click on the <icon class="fa fa-play"></icon> in the new train section of the train dialog.</li>
+          
+          <li>Next, click on the map at points A to select your starting location. When you do this, you will see the following. Note that
+            the green circles indicate that you can click on any of those grid points. 
+          </li>
+          <img src="./Train_Route_After_A.PNG" alt="Train Route After Selecting A" style="width:550px;" />
+          <li>Since you want to move towards B, you will click on the first
+            green circle in the horizontal direction towards B. After you do this your screen will look as follows. Note that we have overshot
+            the point in the horizontal direction by one grid point. But we can always click on the grid point to the left of the existing
+          point.</li>
+            <img src="./Train_Route_After_B.PNG" alt="Train Route After Selecting B" style="width:550px;" />
+            <li>Once we click on the grid point to the left of the existing point, the screen will display the following. Now the next
+              point to click on is vertically down and at the row as the point D.
+            </li>
+            <img src="./Train_Route_After_B_Left.PNG" alt="Train Route After Selecting B Left" style="width:550px;" />
+            <li>Once we do this, the screen will display as follows. Now it is time to click on the point D to get the correct train route.</li>
+            <img src="./Train_Route_After_Vertically_down_D.PNG" alt="Train Route After Moving Vertically Down to D" style="width:550px;" />
+            <li>Once you click on the point D your screen will display as follows.</li>
+            <img src="./Train_Route_After_D.PNG" alt="Train Route After Clicking D" style="width:550px;" />
+            <li>This completes the train route. To accept this train route and start the train, you will select the train type and the number of coaches
+              or freight wagons this train will have and click on the <icon class="fa fa-flag"></icon> icon in the new train section of the train dialog.
+            Note that while an existing train route and this one are crossing each other, the trains will not collide since they are not crossing each other
+            at a grid point.</li>
+            <li>The overall process is shown in the video below.</li>
+            <video controls style="width:550px;">
+              <source src="./NewTrain2.mp4" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+            </p>
         <p>
           Similarly <span class="key">S</span> brings up the Stations dialog box to add more stations to any train's
           route. Each station costs
@@ -388,7 +425,7 @@
       <button type="button" class="mobile-hotkey" data-hotkey="Z" title="Show Rawmaterial Demand Map"
         aria-label="Show raw material demand map">Z</button>
       <button type="button" class="mobile-hotkey" data-hotkey="A" title="Toggle Audio"
-        aria-label="Toggle audio">A</button>
+        aria-label="Toggle audio">A<icon id="audio_is_on" class="fa fa-volume-up"></icon><icon id="audio_is_off" class="fa fa-volume-mute"></icon></button>
     </div> <!-- End of buttonGroup6: Touch-friendly replacements for keyboard hotkeys -->
 
     <div id="buttonGroup7" class="modal"

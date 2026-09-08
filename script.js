@@ -143,7 +143,7 @@ function initializeTrainControlWidgets(maxTrains = 9) {
     }
 
     trainControlEl.id = `train${trainNumber}`
-    trainControlEl.setAttribute('onmousemove',`highlightTrainTrack(${trainNumber},event)`)
+    trainControlEl.setAttribute('onmousemove', `highlightTrainTrack(${trainNumber},event)`)
     trainControlEl.querySelector('[data-role="label"]').id = `lblTrain${trainNumber}`
     trainControlEl.querySelector('[data-role="label"]').textContent = `T${trainNumber}`
     trainControlEl.querySelector('[data-role="train-type"]').id = `lblTrainType${trainNumber}`
@@ -393,6 +393,42 @@ window.addEventListener('load', () => {
   let positionsForExtendTrain = []
   let activeTrainExtensionTrainNumber = null
 
+  const displayPossibleStationLocations = (trainNumber) => {
+    const train = game.trains[trainNumber - 1]
+    if (!train) {
+      console.error(`Train with number ${trainNumber} not found`)
+      return
+    }
+    const possibleStationLocations = train.track.getPossibleStationLocations()
+    ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+    possibleStationLocations.forEach(location => {
+      const pos = location?.location
+      if (!pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.y)) {
+        return
+      }
+      ctxTemp.beginPath()
+      ctxTemp.moveTo(pos.x, pos.y)
+      if (location.hasStation) {
+        // red for existing station to be deleted
+        ctxTemp.fillStyle = 'rgb(255,0,0)'
+      } else {
+        // green for potential new station
+        ctxTemp.fillStyle = 'rgb(0,255,0)'
+      }
+      ctxTemp.arc(pos.x, pos.y, 10, 0, Math.PI * 2)
+      ctxTemp.closePath()
+      ctxTemp.fill()
+      // draw a black border around the circle
+      ctxTemp.strokeStyle = 'rgb(0,0,0)'
+      ctxTemp.lineWidth = 2
+      ctxTemp.beginPath()
+      ctxTemp.arc(pos.x, pos.y, 10, 0, Math.PI * 2)
+      ctxTemp.stroke()
+      ctxTemp.restore()
+      ctxTemp.save()
+    })
+  }
+
   const drawFilledCircle = (ctx, x, y, radius, color) => {
     ctx.save()
     ctx.beginPath()
@@ -534,8 +570,8 @@ window.addEventListener('load', () => {
           ctxMaps2.fillStyle = 'rgba(255,255,0,0.5)'
           ctxMaps2.fill()
 
-          if(p.rawmaterial > 20000) {
-            const txt = `${Math.round(p.rawmaterial/1000)} K`
+          if (p.rawmaterial > 20000) {
+            const txt = `${Math.round(p.rawmaterial / 1000)} K`
             ctxMaps2.font = '15px Arial'
             ctxMaps2.fillStyle = 'black'
             const textMetrics = ctxMaps2.measureText(txt)
@@ -565,7 +601,7 @@ window.addEventListener('load', () => {
 
             ctxMaps3.font = '20px Arial'
             ctxMaps3.fillStyle = 'white'
-            const txt = `${Math.floor(p.rawmaterial/1000)} K`
+            const txt = `${Math.floor(p.rawmaterial / 1000)} K`
             const textMetrics = ctxMaps3.measureText(txt)
             ctxMaps3.fillText(txt, p.x - textMetrics.width / 2, p.y + 10)
           }
@@ -634,6 +670,7 @@ window.addEventListener('load', () => {
     }
   }
 
+
   updateSoundControlUI()
 
   const toggleSound = async () => {
@@ -642,6 +679,14 @@ window.addEventListener('load', () => {
       await audioManager.unlockAudio()
     }
     updateSoundControlUI(enabled)
+    const audioEnabledEl = document.querySelector('#audio_is_on')
+    const audioDisabledEl = document.querySelector('#audio_is_off')
+    if (audioEnabledEl) {
+      audioEnabledEl.style.display = enabled ? 'inline' : 'none'
+    }
+    if (audioDisabledEl) {
+      audioDisabledEl.style.display = enabled ? 'none' : 'inline'
+    }
     return enabled
   }
 
@@ -775,7 +820,7 @@ window.addEventListener('load', () => {
         document.querySelectorAll('.freightTrainControls').forEach(el => el.style.display = 'none')
         document.querySelectorAll('.passengerTrainControls').forEach(el => el.style.display = 'block')
         // fix the span 
-        document.querySelector('span.passengerTrainControls').innerHTML =`Coaches:(${getMinNumCoaches()}-${getMaxNumCoaches()})`
+        document.querySelector('span.passengerTrainControls').innerHTML = `Coaches:(${getMinNumCoaches()}-${getMaxNumCoaches()})`
         const inputEl = document.getElementById('numcoaches')
         inputEl.min = getMinNumCoaches()
         inputEl.max = getMaxNumCoaches()
@@ -784,7 +829,7 @@ window.addEventListener('load', () => {
         //hide the passenger train related controls
         document.querySelectorAll('.passengerTrainControls').forEach(el => el.style.display = 'none')
         document.querySelectorAll('.freightTrainControls').forEach(el => el.style.display = 'block')
-        document.querySelector('span.freightTrainControls').innerHTML =`Wagons:(${getMinNumFreightWagons()}-${getMaxNumFreightWagons()})`
+        document.querySelector('span.freightTrainControls').innerHTML = `Wagons:(${getMinNumFreightWagons()}-${getMaxNumFreightWagons()})`
         const inputEl = document.getElementById('numfreightwagons')
         inputEl.min = getMinNumFreightWagons()
         inputEl.max = getMaxNumFreightWagons()
@@ -855,19 +900,12 @@ window.addEventListener('load', () => {
       }
 
       startStation = true
-      const possibleStationLocations = train.track.getPossibleStationLocations()
-      ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-      possibleStationLocations.forEach(location => {
-        ctxTemp.beginPath()
-        ctxTemp.moveTo(location.x, location.y)
-        ctxTemp.fillStyle = 'purple'
-        ctxTemp.arc(location.x, location.y, 10, 0, Math.PI * 2)
-        ctxTemp.closePath()
-        ctxTemp.fill()
-      })
+      displayPossibleStationLocations(trainNumber)
 
       selectedTrainNumberForStartStation = trainNumber
     })
+
+
 
     stationForTrainContainer.addEventListener('mousemove', (event) => {
       const target = event.target
@@ -919,7 +957,7 @@ window.addEventListener('load', () => {
     })
   }
 
-  
+
   document.querySelector('#canvas_temp').addEventListener('click', (event) => {
     const point = getCanvasPoint(event)
     if (startExtendTrain) {
@@ -991,6 +1029,7 @@ window.addEventListener('load', () => {
         document.querySelector('#flagOff').style.pointerEvents = 'auto'
       }
     }
+
     if (startStation) {
       // user is selecting one of the locations highlighted for station placement. So we will check if the click is within the click_error range of any of the highlighted locations and if it is then we will add a station at that location for the selected train.
       const selectedTrainNumber = Number.parseInt(document.querySelector('#stationFortrain span.selected')?.dataset.value, 10)
@@ -1005,25 +1044,47 @@ window.addEventListener('load', () => {
         return
       }
       const train = game.trains[selectedTrainNumber - 1]
-      const possibleStationLocations = train.track.getPossibleStationLocations()
-      possibleStationLocations.forEach(location => {
-        if ((Math.abs(location.x - point.x) < click_error) && (Math.abs(location.y - point.y) < click_error)) {
-          // console.log(`Station added for Train ${selectedTrainNumber} at (${location.x},${location.y})`)
+      const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
+      const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
+      if ((Math.abs(x - point.x) < click_error) && (Math.abs(y - point.y) < click_error)) {
+        const hasStation = train.track.hasStation(x, y)
+        if (hasStation) {
+          // alert('A station already exists at this location.')
+          swal.fire({
+            title: 'Station Already Exists',
+            text: 'A station already exists at the selected location. Do you want to delete this station?',
+            icon: 'error',
+            showCancelButton: true,
+            confirmButtonText: 'Yes',
+            cancelButtonText: 'No'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              game.deleteStationAt(selectedTrainNumber, x, y)
+              game.displayAllTracksAndStations()
+              displayPossibleStationLocations(selectedTrainNumber)
+            }
+          })
+        } else {
+          // alert('No station exists at this location.')
           swal.fire({
             title: `Add Station for Train ${selectedTrainNumber}`,
-            text: `Do you want to add a Station for Train ${selectedTrainNumber} at (Row ${alpha((location.y / gridSize))}, Col ${alpha((location.x / gridSize))})?`,
+            text: `Do you want to add a Station for Train ${selectedTrainNumber} at (Row ${alpha((y / gridSize))}, Col ${alpha((x / gridSize))})?`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Yes',
             cancelButtonText: 'No'
           }).then((result) => {
             if (result.isConfirmed) {
-              game.addStation(selectedTrainNumber, location.x, location.y, `S${selectedTrainNumber}${String((location.x / gridSize) + 1).padStart(2, '0')}${String((location.y / gridSize) + 1).padStart(2, '0')}`, 30)
+              game.addStation(selectedTrainNumber, x, y, `S${selectedTrainNumber}${String((x / gridSize) + 1).padStart(2, '0')}${String((y / gridSize) + 1).padStart(2, '0')}`, 30)
+              // redisplay the list of possible station locations for the selected train
+              game.displayAllTracksAndStations()
+              displayPossibleStationLocations(selectedTrainNumber)
             }
           })
         }
-      })
+      }
     }
+    
     if (startFlyover) {
       const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
       const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
@@ -1075,6 +1136,7 @@ window.addEventListener('load', () => {
       }
     }
   })
+
   document.querySelector('#canvas_temp').addEventListener('mousemove', (event) => {
     const point = getCanvasPoint(event)
     const row = alpha(Math.round((point.y - CANVASMARGIN) / gridSize))
@@ -1089,8 +1151,8 @@ window.addEventListener('load', () => {
     }
     buttonGroup8el.style.display = 'block'
     // buttonGroup8 is fixed-position, so place it in viewport coordinates.
-    buttonGroup8el.style.left = `${event.clientX + 7}px`
-    buttonGroup8el.style.top = `${event.clientY + 7}px`
+    buttonGroup8el.style.left = `${event.clientX + 11}px`
+    buttonGroup8el.style.top = `${event.clientY + 15}px`
     label.textContent = `${col},${row}`
 
     if (startTrack) {
@@ -1149,7 +1211,7 @@ window.addEventListener('load', () => {
   window.cancelStation = function () {
     const stationElement = document.querySelector('#buttonGroup3')
     if (stationElement) {
-      stationElement.style.display='none'
+      stationElement.style.display = 'none'
     }
     startStation = false
     document.querySelector('#canvas_temp').style = 'cursor:default'
@@ -1191,7 +1253,7 @@ window.addEventListener('load', () => {
     if (stationForTrainContainer) {
       stationForTrainContainer.style.display = 'block'
     }
-    document.querySelector('#canvas_temp').style = 'cursor:crosshair'
+    document.querySelector('#canvas_temp').style = 'cursor:pointer'
   }
 
   const startFlyoverSelection = function () {
@@ -1503,7 +1565,7 @@ window.addEventListener('load', () => {
     }
   }
 
-  window.turnSoundOn = async () => {
+  window.toggleAudio = async () => {
     if (audioManager.isEnabled()) {
       await toggleSound()
       return
@@ -1573,12 +1635,12 @@ window.addEventListener('load', () => {
       // Implement the logic to close the flyover here
       const flyoverElement = document.querySelector('#buttonGroup2')
       if (flyoverElement) {
-        flyoverElement.style.display='none'
+        flyoverElement.style.display = 'none'
         startFlyover = false
       }
     }
 
-    
+
 
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
 
@@ -1628,7 +1690,7 @@ window.addEventListener('load', () => {
       cancelTrackBtn.style.pointerEvents = 'none'
       cancelTrackBtn.style.opacity = '0.5'
     }
-    
+
     startTrack = false
 
 
@@ -1735,7 +1797,7 @@ window.addEventListener('load', () => {
     }
     //clear ctxTemp but only if some other operation is not in progress
     console.log(`startTrack: ${startTrack}, startExtendTrain: ${startExtendTrain}, startStation: ${startStation}, startFlyover: ${startFlyover}`)
-    if(!startTrack && !startExtendTrain && !startStation && !startFlyover){
+    if (!startTrack && !startExtendTrain && !startStation && !startFlyover) {
       ctxTemp.clearRect(0, 0, ctxTemp.canvas.width, ctxTemp.canvas.height)
       train.track.drawUsingNewPositions(ctxTemp, 'rgba(255, 255, 0, 0.5)', 10)
     }
@@ -1925,7 +1987,7 @@ window.addEventListener('load', () => {
         for (const loc of locations) {
           for (const other of otherLocation) {
             if (loc.x === other.x && loc.y === other.y) {
-              if (!game.isParallelTrackEnabledForTrains(loc.y / gridSize, loc.x / gridSize , intersections, train.trainNumber, otherTrain.trainNumber)) {
+              if (!game.isParallelTrackEnabledForTrains(loc.y / gridSize, loc.x / gridSize, intersections, train.trainNumber, otherTrain.trainNumber)) {
                 // if the location is already in the list, we don't add it again
                 if (!allLocations.some(l => l.x === loc.x && l.y === loc.y)) {
                   allLocations.push(loc)

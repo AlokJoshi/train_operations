@@ -17,8 +17,29 @@ class Stations {
     // After adding a station, station order/numbering must be based on current track distance.
     this.reindexByDistance()
   }
+
+  deleteStation(station) {
+    const index = this.stations.findIndex(item => item === station)
+    if (index !== -1) {
+      this.stations.splice(index, 1)
+      this.reindexByDistance()
+    }
+  }
+
   getAllStations() {
     return this.stations
   }
+
+  getRemovableStations(){
+    // first and last stations are not removable
+    if (this.stations.length <= 2) {
+      return []
+    }
+    return this.stations.slice(1, this.stations.length - 1) 
+  } 
+  getStationAt(x, y) {
+    return this.stations.find(station => station.x === x && station.y === y)
+  }
+
 }
 export { Stations }

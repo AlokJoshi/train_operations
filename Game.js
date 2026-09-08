@@ -28,6 +28,8 @@ class Game {
     this.ctx = ctx
     this.ctxTracks = ctxTracks
     this.ctxTemp = ctxTemp
+    this.canvasWidth = ctx.canvas.width
+    this.canvasHeight = ctx.canvas.height
     this.gridSize = gridSize
     this.OFFSET_X = OFFSET_X
     this.OFFSET_Y = OFFSET_Y
@@ -267,8 +269,8 @@ class Game {
       //we add stations at both starting and ending points
       track.addStation(createStation(this.canvasWidth, this.canvasHeight, this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0, trainNumber, 30))
       track.addStation(createStation(this.canvasWidth, this.canvasHeight, this.ctxTracks, lastPosition.x, lastPosition.y, this.gridSize, 0, trainNumber, 30))
-      intersections.updateIntersectionsWithStationLocation(firstPosition.y / this.gridSize, firstPosition.x / this.gridSize, 'Station')
-      intersections.updateIntersectionsWithStationLocation(lastPosition.y / this.gridSize, lastPosition.x / this.gridSize, 'Station')
+      intersections.updateIntersectionsWithStationLocation(firstPosition.y / this.gridSize, firstPosition.x / this.gridSize, true)
+      intersections.updateIntersectionsWithStationLocation(lastPosition.y / this.gridSize, lastPosition.x / this.gridSize, true)
       if (!options.partOfInitialSetup) {
         this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
         this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
@@ -403,15 +405,9 @@ class Game {
       this.trains[trainNumber - 1] = null
       // we remove the track for the deleted train. We do this by
       // redrawing the tracks only for the remaining trains. This is a simple way to remove the track of the deleted train without having to implement a more complex track management system.
-      this.trains.forEach(train => {
-        if (train) {
-          train.track.drawUsingNewPositions()
-          const stations = train.track.stations.getAllStations()
-          stations.forEach(station => {
-            station.draw()
-          })
-        }
-      })
+     
+     this.displayAllTracksAndStations()
+
       const trainElement = document.querySelector(`#train${trainNumber}`)
       if (trainElement) {
         trainElement.style.filter = "blur(5px)"
@@ -419,17 +415,48 @@ class Game {
       this.Flyovers.draw()
     }
   }
+
+  displayAllTracksAndStations() {
+    //clear the ctxTracks before redrawing all tracks and stations
+    this.ctxTracks.clearRect(0, 0, this.ctxTracks.canvas.width, this.ctxTracks.canvas.height)
+    this.trains.forEach(train => {
+      if (train) {
+        train.track.drawUsingNewPositions()
+        const stations = train.track.stations.getAllStations()
+        stations.forEach(station => {
+          console.log(`Drawing station trainNumber ${train.trainNumber} at (${station.x}, ${station.y})`)
+          station.draw()
+        })
+      }
+    })
+  }
+
   addStation(trainNumber, x, y, name, stopDuration, options = {}) {
     if (trainNumber <= this.trains.length) {
       const train = this.trains[trainNumber - 1]
       const station = createStation(this.canvasWidth, this.canvasHeight, this.ctxTracks, x, y, this.gridSize, 0, trainNumber, stopDuration)
       train.addStation(station)
-      train.intersections.updateIntersectionsWithStationLocation(y / this.gridSize, x / this.gridSize, 'Station')
+      train.intersections.updateIntersectionsWithStationLocation(y / this.gridSize, x / this.gridSize, true)
       if (!options.partOfInitialSetup) {
         this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
       }
     }
   }
+  deleteStationAt(trainNumber, x, y) {
+    if (trainNumber <= this.trains.length) {
+      const train = this.trains[trainNumber - 1]
+      if (train) {
+        const station = train.track.stations.getStationAt(x , y )
+        if (station) {
+          train.deleteStation(station)
+          train.intersections.updateIntersectionsWithStationLocation(y / this.gridSize, x / this.gridSize, false)
+          this.financials.deleteStation(this.getCurrentTimeIndex(), trainNumber)
+          this.displayAllTracksAndStations()
+        }
+      }
+    }
+  }
+
   getCumFinancialSummaryByTrain() {
     return this.financials.getCumFinancialSummaryByTrain()
   }
@@ -447,7 +474,7 @@ class Game {
       const stationLocation = train.extendTrain(positionsForExtendTrain)
       const station = createStation(this.canvasWidth, this.canvasHeight, this.ctxTracks, stationLocation.x, stationLocation.y, this.gridSize, 0, trainNumber, 30)
       train.addStation(station)
-      train.intersections.updateIntersectionsWithStationLocation(stationLocation.y / this.gridSize, stationLocation.x / this.gridSize, 'Station')
+      train.intersections.updateIntersectionsWithStationLocation(stationLocation.y / this.gridSize, stationLocation.x / this.gridSize, true)
       this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
     }
   }

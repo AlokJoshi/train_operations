@@ -172,7 +172,7 @@ class Intersections {
     if (row < 0 || row >= this.rowCount || col < 0 || col >= this.colCount) {
       return
     }
-    this.intersections[row][col] = Station? "Station" : null
+    this.intersections[row][col] = Station===true ? "Station" : null
     this.laneOccupancy.delete(this.getCellKey(row, col))
   }
 

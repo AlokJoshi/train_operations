@@ -52,6 +52,9 @@ class Financials {
   incrementNumStations(timeIndex, trainIndex) {
     this.numStations[timeIndex][trainIndex]++
   }
+  decrementNumStations(timeIndex, trainIndex) {
+    this.numStations[timeIndex][trainIndex]--
+  }
   incrementRevenue(timeIndex, trainIndex, amount, reason = '') {
     if (timeIndex < this.totalTimeUnits) {
       this.totalRevenue[timeIndex][trainIndex] += amount
@@ -172,6 +175,15 @@ class Financials {
     const trainIndex = trainNumber - 1
     this.incrementExpenses(timeIndex, trainIndex, cost, 'Adding Station')
     this.incrementNumStations(timeIndex, trainIndex)
+  }
+
+  deleteStation(timeIndex, trainNumber) {
+    const trainIndex = trainNumber - 1
+    // deleting a station does not incur a direct cost.
+    // const cost = this.getStationCost()
+    // const trainIndex = trainNumber - 1
+    // this.incrementExpenses(timeIndex, trainIndex, cost, 'Deleting Station')
+    this.decrementNumStations(timeIndex, trainIndex)
   }
 
   incrementRevenueFromTickets(timeIndex, trainNumber, amount) {

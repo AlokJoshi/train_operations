@@ -1026,7 +1026,18 @@ class Train {
       this.passengerMap.clear()
     }
   }
-
+  deleteStation(station) {
+    this.track.deleteStation(station)
+    this.stations = this.track.getStations() // update the stations reference after deleting a station from the track
+    // Station deletion can renumber station ids; reset visit state to avoid stale processing.
+    this.lastProcessedStationVisitKey = null
+    this.stationVisitContext = null
+    if (this.trainType === 'passenger') {
+      // Passenger route state is keyed by station number, so clear stale mappings after reindex.
+      this.passengerMap.clear()
+    }
+  }
+  
   getNumStations() {
     //used for calculating the station maintenance/operating cost for this train.
     return this.stations.length
