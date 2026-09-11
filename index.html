@@ -119,7 +119,7 @@
         <button id="startFlyoverBtn" type="button"
           style="border-radius: 10px;padding:10px; margin-top:10px;cursor: pointer;">Start</button>
         <button id="cancelFlyoverBtn" type="button"
-          style="border-radius: 10px;padding:10px; margin-top:10px;cursor: pointer;">Cancel</button>
+          style="border-radius: 10px;padding:10px; margin-top:10px;cursor: pointer;" onclick="closeflyover();">Cancel</button>
         </div>
       </div>
     </div> <!-- End of buttonGroup2: Flyovers -->
@@ -302,9 +302,9 @@
           Similarly <span class="key">S</span> brings up the Stations dialog box to add more stations to any train's
           route. Each station costs
           <span data-bind="stationCost"></span>. However, adding a station allows you to earn more revenue from
-          passengers or
-          freight that is dropped off
-          at that station or picked up from that station.
+          passengers or freight that is dropped off or picked up from that station. The same screen allows you to 
+          delete an existing station. While, deleting a station does not recover any of the cost incurred on building the station,
+          ongoing station maintenance cost will be saved.
         </p>
         <p>
           Similarly <span class="key">F</span> brings up the Flyover dialog box to add a flyover at any point where
@@ -317,8 +317,7 @@
         </p>
         <p>
           Before starting a new train, you may want to know where the cities and passengers are. You can see this
-          information by
-          clicking on the <span class="key">X</span> key.
+          information by clicking on the <span class="key">X</span> key.
         </p>
         <p>
           The raw material availablility is shown on the map if you click on the <span class="key">Y</span> key.
@@ -335,35 +334,23 @@
           the more passengers or freight it can pick up and drop off and hence the more revenue it can earn. However,
           stopping at
           more stations takes time and also increases the cost since facilities need to be provided at each station.
-          Hence you need to find the right balance to maximize your profit. If passengers or freight cannot be picked
-          up
-          at a station
-          because the train is full, it will be shown as (x??) in the station dialog box.
+          Hence you need to find the right balance to maximize your profit.
         </p>
         <p>
           Pressing the <span class="key">R</span> key brings up the Results dialog box which displays the revenue,
-          expenses and profit for each train and overall. You can use this information to make informed decisions
-          about
-          how to manage your trains,
-          stations and flyovers to maximize your profit.
+          expenses and overall profit. 
         </p>
-        <p>Please note that you can only add trains, stations, and flyovers if you have enough funds.</p>
+        <p>Please note that you can add trains only if you have enough funds.</p>
         <p>
           If you press the <span class="key">?</span> key, the game will display the 'How to play' dialog box.</p>
         <p>
         <p>Keep in mind the following obvious information:</p>
         <ul>
           <li>Passenger trains earn you money based on the number of passengers they carry. Each passenger coach you
-            add
-            costs money. You pay for the maintenance cost of the track at the end of each period. based on the length
-            of
-            the track and stations on the route also
-            cost
-            money. Each coach has a capacity of <span data-bind="coachCapacity"></span> passengers.
+            add costs money. You pay for the maintenance cost of the track and stations at the end of each period. 
+            Each coach has a capacity of <span data-bind="coachCapacity"></span> passengers. Freight wagons have
+            a capacity of <span data-bind="freightCapacity"></span> units.
           </li>
-          <li>Freight trains earn you money based on the amount of freight they carry from the source to the
-            destination.
-            They also cost you money based on the number of stations they stop at.</li>
           <li>Adding a flyover costs you <span id="flyoverCost"></span> but it allows you to avoid collisions which can
             cause
             significant damage to your trains and hence significant loss of money because the two trains involved
@@ -425,8 +412,11 @@
       <button type="button" class="mobile-hotkey" data-hotkey="Z" title="Show Rawmaterial Demand Map"
         aria-label="Show raw material demand map">Z</button>
       <button type="button" class="mobile-hotkey" data-hotkey="A" title="Toggle Audio"
-        aria-label="Toggle audio">A<icon id="audio_is_on" class="fa fa-volume-up"></icon><icon id="audio_is_off" class="fa fa-volume-mute"></icon></button>
-    </div> <!-- End of buttonGroup6: Touch-friendly replacements for keyboard hotkeys -->
+        aria-label="Toggle audio">A<icon id="audio_is_on" class="fa fa-volume-up"></icon><icon id="audio_is_off" class="fa fa-volume-mute" style="display:none;"></icon></button>
+      <button type="button" class="mobile-hotkey" data-hotkey="D" title="Demo Add Train"
+        aria-label="Demo Add Station">D</button>
+    
+      </div> <!-- End of buttonGroup6: Touch-friendly replacements for keyboard hotkeys -->
 
     <div id="buttonGroup7" class="modal"
       style="width:700px; display:none; position:fixed; top:100px;left:690px; flex-direction:column; gap:10px">

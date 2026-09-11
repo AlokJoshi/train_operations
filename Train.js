@@ -226,8 +226,8 @@ class Train {
 
     // Add train label in info widget once.
     const infoContainer = document.querySelector('#infoForTrain')
-    if (infoContainer && !infoContainer.querySelector(`span[data-value="${this.trainNumber}"]`)) {
-      const infoSpan = document.createElement('span')
+    if (infoContainer && !infoContainer.querySelector(`div[data-value="${this.trainNumber}"]`)) {
+      const infoSpan = document.createElement('div')
       infoSpan.dataset.value = String(this.trainNumber)
       infoSpan.textContent = `T${this.trainNumber}`
       infoSpan.style = 'background-color:' + (this.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : this.color) + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'

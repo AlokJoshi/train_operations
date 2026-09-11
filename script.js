@@ -1,7 +1,7 @@
 import { Game } from './Game.js'
 import { Track } from './Track.js'
 import { Intersections } from './Intersections.js'
-import { makeDraggable, alpha } from './utility.js'
+import { makeDraggable, alpha, delay, convertFromCanvasToClientCoordinates } from './utility.js'
 import { audioManager } from './audioManager.js'
 
 globalThis.globalTicks = 0
@@ -38,6 +38,7 @@ let startTrack = false
 let startExtendTrain = false
 let startFlyover = false
 let startStation = false
+let runningScriptedDemo = false
 let selectedTrainNumberForStartStation = null
 let showingResults = false
 let showingInfo = false
@@ -217,6 +218,11 @@ const coachCapacityValueEls = document.querySelectorAll('[data-bind="coachCapaci
 coachCapacityValueEls.forEach((el) => {
   el.textContent = `${game.getCoachCapacity().toLocaleString('en-US')}`
 })
+const freightCapacityValueEls = document.querySelectorAll('[data-bind="freightCapacity"]')
+freightCapacityValueEls.forEach((el) => {
+  el.textContent = `${game.getFreightCapacity().toLocaleString('en-US')}`
+})
+
 const totalTimeUnitsValueEls = document.querySelectorAll('[data-bind="totalTimeUnits"]')
 totalTimeUnitsValueEls.forEach((el) => {
   el.textContent = `${game.getTotalTimeUnits().toLocaleString('en-US')}`
@@ -392,6 +398,259 @@ window.addEventListener('load', () => {
   let showingRawmaterialDemandMap = false
   let positionsForExtendTrain = []
   let activeTrainExtensionTrainNumber = null
+  let runningScriptedDemo = false
+
+  const animateMouseFromCenterToCoordinates = async(x, y, options = {}) => {
+    const durationMs = Number.isFinite(options.durationMs) ? options.durationMs : 1400
+    const startDelayMs = Number.isFinite(options.startDelayMs) ? options.startDelayMs : 120
+
+    return new Promise((resolve) => {
+      const startX = window.innerWidth / 2
+      const startY = window.innerHeight / 2
+
+      const fakeCursor = document.createElement('div')
+      fakeCursor.textContent = '▲'
+      fakeCursor.style.position = 'fixed'
+      fakeCursor.style.left = '0'
+      fakeCursor.style.top = '0'
+      fakeCursor.style.transform = `translate(${startX}px, ${startY}px)`
+      fakeCursor.style.transformOrigin = 'center center'
+      fakeCursor.style.fontSize = '24px'
+      fakeCursor.style.lineHeight = '1'
+      fakeCursor.style.color = '#111'
+      fakeCursor.style.textShadow = '0 0 4px rgba(255,255,255,0.9)'
+      fakeCursor.style.pointerEvents = 'none'
+      fakeCursor.style.zIndex = '100000'
+      fakeCursor.style.opacity = '0'
+
+      document.body.appendChild(fakeCursor)
+
+      const easeInOutCubic = (t) => {
+        return t < 0.5
+          ? 4 * t * t * t
+          : 1 - Math.pow(-2 * t + 2, 3) / 2
+      }
+
+      const start = performance.now() + startDelayMs
+      const step = (now) => {
+        if (now < start) {
+          requestAnimationFrame(step)
+          return
+        }
+
+        fakeCursor.style.opacity = '1'
+
+        const rawProgress = (now - start) / durationMs
+        const progress = Math.max(0, Math.min(1, rawProgress))
+        const eased = easeInOutCubic(progress)
+        const currentX = startX + (x - startX) * eased
+        const currentY = startY + (y - startY) * eased
+        fakeCursor.style.transform = `translate(${currentX}px, ${currentY}px)`
+
+        if (progress < 1) {
+          requestAnimationFrame(step)
+        } else {
+          resolve(true)
+        }
+      }
+
+      requestAnimationFrame(step)
+    })
+  }
+  const animateMouseFromCenterToElement = async (targetEl, options = {}) => {
+    const durationMs = Number.isFinite(options.durationMs) ? options.durationMs : 1400
+    const startDelayMs = Number.isFinite(options.startDelayMs) ? options.startDelayMs : 120
+
+    return new Promise((resolve) => {
+      if (!(targetEl instanceof HTMLElement)) {
+        resolve(false)
+        return
+      }
+
+      const startX = window.innerWidth / 2
+      const startY = window.innerHeight / 2
+      const targetRect = targetEl.getBoundingClientRect()
+      const endX = targetRect.left + targetRect.width / 2
+      const endY = targetRect.top + targetRect.height / 2
+
+      const fakeCursor = document.createElement('div')
+      fakeCursor.textContent = '▲'
+      fakeCursor.style.position = 'fixed'
+      fakeCursor.style.left = '0'
+      fakeCursor.style.top = '0'
+      fakeCursor.style.transform = `translate(${startX}px, ${startY}px)`
+      fakeCursor.style.transformOrigin = 'center center'
+      fakeCursor.style.fontSize = '24px'
+      fakeCursor.style.lineHeight = '1'
+      fakeCursor.style.color = '#111'
+      fakeCursor.style.textShadow = '0 0 4px rgba(255,255,255,0.9)'
+      fakeCursor.style.pointerEvents = 'none'
+      fakeCursor.style.zIndex = '100000'
+      fakeCursor.style.opacity = '0'
+
+      document.body.appendChild(fakeCursor)
+
+      const easeInOutCubic = (t) => {
+        return t < 0.5
+          ? 4 * t * t * t
+          : 1 - Math.pow(-2 * t + 2, 3) / 2
+      }
+
+      const start = performance.now() + startDelayMs
+      const step = (now) => {
+        if (now < start) {
+          requestAnimationFrame(step)
+          return
+        }
+
+        fakeCursor.style.opacity = '1'
+
+        const rawProgress = (now - start) / durationMs
+        const progress = Math.max(0, Math.min(1, rawProgress))
+        const eased = easeInOutCubic(progress)
+        const x = startX + (endX - startX) * eased
+        const y = startY + (endY - startY) * eased
+        fakeCursor.style.transform = `translate(${x}px, ${y}px)`
+
+        if (progress < 1) {
+          requestAnimationFrame(step)
+          return
+        }
+
+        fakeCursor.style.transition = 'transform 120ms ease-out'
+        fakeCursor.style.transform = `translate(${endX}px, ${endY}px) scale(0.9)`
+
+        setTimeout(() => {
+          fakeCursor.remove()
+          resolve(true)
+        }, 180)
+      }
+
+      requestAnimationFrame(step)
+    })
+  }
+
+  const dismissVisibleSwal = () => {
+    if (typeof window.swal === 'undefined') {
+      return false
+    }
+    if (typeof window.swal.isVisible === 'function' && !window.swal.isVisible()) {
+      return false
+    }
+    if (typeof window.swal.clickConfirm === 'function') {
+      window.swal.clickConfirm()
+      return true
+    }
+    if (typeof window.swal.close === 'function') {
+      window.swal.close()
+      return true
+    }
+    return false
+  }
+
+  const startScriptedDemoToAddTrain = async () => {
+    runningScriptedDemo = true
+
+    //close the Train dialog box if it is open
+    document.getElementById('buttonGroup1').style.display = 'none'
+
+    await delay(1000)
+
+    //show the letter T in Bold in the center of the screen for a few seconds
+    const tElement = document.createElement('div')
+    tElement.textContent = 'Demo has started. If Train Dialog box was open, it has been closed so that it can be shown how to open the Train dialog box.'
+    tElement.style.position = 'fixed'
+    tElement.style.top = '25%'
+    tElement.style.left = '50%'
+    tElement.style.transform = 'translate(-25%, -50%)'
+    tElement.style.fontSize = '48px'
+    tElement.style.fontWeight = 'bold'
+    tElement.style.color = 'black'
+    tElement.style.zIndex = '1000'
+    document.body.appendChild(tElement)
+    
+    
+    await delay(2000)
+    tElement.textContent = 'Click on the T key on your keyboard to bring up the Train dialog box.'
+    tElement.style.transform = 'translate(-25%, -50%)'
+    // Use the same hotkey path as normal controls to avoid missing event.code.
+    sendHotkeyToDocument('T')
+    
+    await delay(2000)
+    
+    tElement.textContent = 'Now click on the Start New Train button as shown below.'
+    tElement.style.transform = 'translate(-25%, -50%)'
+    await delay(500)
+    
+    // mouse movement animation is triggered after opening the train dialog.
+    const startNewTrainPlayBtn = document.querySelector('#startTrack')
+    if (startNewTrainPlayBtn instanceof HTMLElement) {
+      const didAnimate = await animateMouseFromCenterToElement(startNewTrainPlayBtn)
+      if (didAnimate && runningScriptedDemo) {
+          startNewTrainPlayBtn.click()
+          
+          tElement.textContent = 'This brings up an instructional message as to the process that you must follow. Read it carefully before clicking on OK'
+          tElement.style.transform = 'translate(-25%, -50%)'
+          
+          // The Start New Train click opens an instructional swal; dismiss it for scripted playback.
+          dismissVisibleSwal()
+          
+          await delay(1000)
+          
+          tElement.textContent = 'Now click on the starting point from where you want the train to begin.'
+          tElement.style.transform = 'translate(-25%, -50%)'
+          //now animate the cursor movement from the center of the screen to a certain x,y coordinate on the canvas
+          const canvasTempEl = document.querySelector('#canvas_temp')
+
+          let {clientX: clientX1, clientY: clientY1} = convertFromCanvasToClientCoordinates(canvasTempEl, 800, 400)
+          let didAnimateToCoordinates = await animateMouseFromCenterToCoordinates(clientX1, clientY1)
+          
+          if (!didAnimateToCoordinates) {
+            console.error('Failed to animate mouse to the specified coordinates')
+            return false
+          }
+          // and send a click event at the final viewport coordinates on the canvas
+          let clickEvent = new MouseEvent('click', {
+            clientX: clientX1,
+            clientY: clientY1,
+            bubbles: true,
+            cancelable: true
+          })
+          console.log('startTrack', 800, 400, clientX1, clientY1, canvasTempEl)
+          canvasTempEl.dispatchEvent(clickEvent)
+          
+          await delay(500)
+          tElement.textContent = 'Now click on the next point to specify the route.'
+          tElement.style.transform = 'translate(-25%, -50%)'
+
+          let {clientX: clientX2, clientY: clientY2} = convertFromCanvasToClientCoordinates(canvasTempEl, 1200, 400)
+          didAnimateToCoordinates = await animateMouseFromCenterToCoordinates(clientX2, clientY2)
+
+          if (!didAnimateToCoordinates) {
+            console.error('Failed to animate mouse to the specified coordinates')
+            return false
+          }
+          // and send a click event at the final viewport coordinates on the canvas
+          clickEvent = new MouseEvent('click', {
+            clientX: clientX2,
+            clientY: clientY2,
+            bubbles: true,
+            cancelable: true
+          })
+          console.log('startTrack', 1200, 400, clientX2, clientY2, canvasTempEl)
+          canvasTempEl.dispatchEvent(clickEvent)
+          
+        }
+      tElement.style.display = 'none'
+    }
+    
+
+
+  }
+
+  const stopScriptedDemoToAddTrain = () => {
+    runningScriptedDemo = false
+  }
 
   const displayPossibleStationLocations = (trainNumber) => {
     const train = game.trains[trainNumber - 1]
@@ -525,7 +784,7 @@ window.addEventListener('load', () => {
       } else {
         FlyoverControls.style.display = 'none'
       }
-      startFlyoverSelection()
+      // startFlyoverSelection()
     } else if (event.code === 'KeyS') {
       //if the code is S then show the possible Station related controls
       const StationControls = document.querySelector('#buttonGroup3')
@@ -563,19 +822,20 @@ window.addEventListener('load', () => {
         const maxRawmaterial = Math.max(...rawmaterialsMap.map(p => p.rawmaterial))
         const rMaxSquare = (gridSize) ** 2 //(gridSize / 2) ** 2
         rawmaterialsMap.forEach(p => {
-          const radiusSquare = rMaxSquare * (p.rawmaterial / maxRawmaterial)
-          const radius = Math.sqrt(radiusSquare)
-          ctxMaps2.beginPath()
-          ctxMaps2.arc(p.x, p.y, radius, 0, 2 * Math.PI)
-          ctxMaps2.fillStyle = 'rgba(255,255,0,0.5)'
-          ctxMaps2.fill()
-
-          if (p.rawmaterial > 20000) {
-            const txt = `${Math.round(p.rawmaterial / 1000)} K`
-            ctxMaps2.font = '15px Arial'
-            ctxMaps2.fillStyle = 'black'
-            const textMetrics = ctxMaps2.measureText(txt)
-            ctxMaps2.fillText(txt, p.x - textMetrics.width / 2, p.y + 10)
+          if (p.rawmaterial > 10000) {
+            const radiusSquare = rMaxSquare * (p.rawmaterial / maxRawmaterial)
+            const radius = Math.sqrt(radiusSquare)
+            ctxMaps2.beginPath()
+            ctxMaps2.arc(p.x, p.y, radius, 0, 2 * Math.PI)
+            ctxMaps2.fillStyle = 'rgba(255,255,0,0.5)'
+            ctxMaps2.fill()
+            if (p.rawmaterial > 100000) {
+              const txt = `${Math.round(p.rawmaterial / 1000)} K`
+              ctxMaps2.font = '15px Arial'
+              ctxMaps2.fillStyle = 'black'
+              const textMetrics = ctxMaps2.measureText(txt)
+              ctxMaps2.fillText(txt, p.x - textMetrics.width / 2, p.y + 10)
+            }
           }
         })
       } else {
@@ -645,6 +905,9 @@ window.addEventListener('load', () => {
     } else if (event.code === 'KeyA') {
       //if the code is A then toggle sound
       toggleSound()
+    } else if (event.code === 'KeyD') {
+      //if the code is D then demo add train
+      startScriptedDemoToAddTrain()
     }
   }
 
@@ -780,7 +1043,8 @@ window.addEventListener('load', () => {
     'X': 'KeyX',
     'Y': 'KeyY',
     'Z': 'KeyZ',
-    'A': 'KeyA'
+    'A': 'KeyA',
+    'D': 'KeyD'
   }
 
   const sendHotkeyToDocument = (hotkey) => {
@@ -857,6 +1121,28 @@ window.addEventListener('load', () => {
         infoTrainOperationsElement.style.display = 'block'
       }
     })
+    infoForTrainContainer.addEventListener('mousemove', (event) => {
+      // highlight the train track
+      const target = event.target
+      if (!(target instanceof HTMLElement) || target.tagName !== 'DIV') {
+        return
+      }
+      const trainNumber = Number.parseInt(target.dataset.value, 10)
+      if (!Number.isInteger(trainNumber)) {
+        return
+      }
+      const train = game.trains[trainNumber - 1]
+      if (!train) {
+        return
+      }
+      //clear the temporary canvas before drawing
+      ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+      train.track.drawUsingNewPositions(ctxTemp, 'rgba(255, 255, 0, 0.5)', 7)
+    })
+    infoForTrainContainer.addEventListener('mouseleave', (event) => {
+      //clear the temporary once the mouse leaves the train info element
+      ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+    })
   }
 
   const stationForTrainContainer = document.querySelector('#stationFortrain')
@@ -926,7 +1212,7 @@ window.addEventListener('load', () => {
       if (!startStation) {
         //clear the temporary canvas before drawing
         ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-        train.track.drawUsingNewPositions(ctxTemp, 'rgba(255, 255, 0, 0.5)', 10)
+        train.track.drawUsingNewPositions(ctxTemp, 'rgba(255, 255, 0, 0.5)', 7)
       }
     })
 
@@ -1084,7 +1370,7 @@ window.addEventListener('load', () => {
         }
       }
     }
-    
+
     if (startFlyover) {
       const x = CANVASMARGIN + Math.round((point.x - CANVASMARGIN) / gridSize) * gridSize
       const y = CANVASMARGIN + Math.round((point.y - CANVASMARGIN) / gridSize) * gridSize
@@ -1256,14 +1542,14 @@ window.addEventListener('load', () => {
     document.querySelector('#canvas_temp').style = 'cursor:pointer'
   }
 
-  const startFlyoverSelection = function () {
-    // startStation = false
-    // startTrack = false
-    // if (flyoverForTrainContainer) {
-    //   flyoverForTrainContainer.style.display = 'block'
-    // }
-    // document.querySelector('#canvas_temp').style = 'cursor:crosshair'
-  }
+  // const startFlyoverSelection = function () {
+  //   // startStation = false
+  //   // startTrack = false
+  //   // if (flyoverForTrainContainer) {
+  //   //   flyoverForTrainContainer.style.display = 'block'
+  //   // }
+  //   // document.querySelector('#canvas_temp').style = 'cursor:crosshair'
+  // }
 
   window.cancelFlyover = function () {
     startFlyover = false
@@ -1631,14 +1917,7 @@ window.addEventListener('load', () => {
       return
     }
 
-    window.closeflyover = () => {
-      // Implement the logic to close the flyover here
-      const flyoverElement = document.querySelector('#buttonGroup2')
-      if (flyoverElement) {
-        flyoverElement.style.display = 'none'
-        startFlyover = false
-      }
-    }
+
 
 
 
@@ -1786,6 +2065,16 @@ window.addEventListener('load', () => {
     game.removeCoach(trainNumber, oldValue - newValue)
     blurCountInput()
   }
+
+  window.closeflyover = () => {
+    // Implement the logic to close the flyover here
+    const flyoverElement = document.querySelector('#buttonGroup2')
+    if (flyoverElement) {
+      flyoverElement.style.display = 'none'
+      startFlyover = false
+    }
+  }
+
   window.clearTempCanvas = function () {
     ctxTemp.clearRect(0, 0, ctxTemp.canvas.width, ctxTemp.canvas.height)
   }
@@ -1799,7 +2088,7 @@ window.addEventListener('load', () => {
     console.log(`startTrack: ${startTrack}, startExtendTrain: ${startExtendTrain}, startStation: ${startStation}, startFlyover: ${startFlyover}`)
     if (!startTrack && !startExtendTrain && !startStation && !startFlyover) {
       ctxTemp.clearRect(0, 0, ctxTemp.canvas.width, ctxTemp.canvas.height)
-      train.track.drawUsingNewPositions(ctxTemp, 'rgba(255, 255, 0, 0.5)', 10)
+      train.track.drawUsingNewPositions(ctxTemp, 'rgba(255, 255, 0, 0.5)', 7)
     }
   }
   window.addCoach = function (trainNumber) {
@@ -2215,7 +2504,5 @@ function displayFinancialResults() {
       tableBody.appendChild(row)
     }
   })
-
-
-
 }
+audioManager.setEnabled(true)

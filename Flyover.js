@@ -12,7 +12,7 @@ class Flyover{
     const y = offsetY + this.row * gridSize
     ctx.save()
     ctx.beginPath()
-    ctx.fillStyle = 'rgba(0, 0, 255, 0.5)' // Blue color with 50% opacity
+    ctx.fillStyle = 'rgba(0, 255, 0, 0.5)' // Green color with 50% opacity
     ctx.arc(x, y, Flyover.FLYOVER_CIRCLE_RADIUS, 0, 2 * Math.PI) // Draw a circle with radius Flyover.FLYOVER_CIRCLE_RADIUS
     ctx.fill()
     ctx.closePath()

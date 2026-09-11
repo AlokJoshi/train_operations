@@ -86,6 +86,9 @@ class Game {
   getCoachCapacity() {
     return Train.coachPassengerCapacity
   }
+  getFreightCapacity() {
+    return Train.freightWagonCapacity
+  }
   getTotalTimeUnits() {
     return this.totalTimeUnits
   }
@@ -424,7 +427,6 @@ class Game {
         train.track.drawUsingNewPositions()
         const stations = train.track.stations.getAllStations()
         stations.forEach(station => {
-          console.log(`Drawing station trainNumber ${train.trainNumber} at (${station.x}, ${station.y})`)
           station.draw()
         })
       }

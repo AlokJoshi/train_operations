@@ -594,7 +594,19 @@ function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = 
     },
     getAudio: (soundKey) => sounds.get(soundKey) ?? null
   }
+
 }
+
+const convertFromCanvasToClientCoordinates = (canvasEl, canvasX, canvasY) => {
+  if (!(canvasEl instanceof HTMLCanvasElement)) {
+    console.error('Invalid canvas element')
+    return null
+  }
+  const canvasRect = canvasEl.getBoundingClientRect()
+  const clientX = canvasRect.left + canvasX
+  const clientY = canvasRect.top + canvasY
+  return { clientX, clientY }
+} 
 
 export {
   makeDraggable,
@@ -604,5 +616,6 @@ export {
   // getDetailedSegmentsMap,
   getCommonSegmentsMap,
   createAudioManager,
-  delay
+  delay,
+  convertFromCanvasToClientCoordinates
 }

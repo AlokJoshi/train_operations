@@ -87,3 +87,74 @@ In short:
 - laneOccupancy is the live occupancy state used for immediate collision detection.
 - intersections grid stores static cell type state like Flyover/Station.
 - laneOccupancy is dynamic, updated every movement step.
+
+
+I’ll measure your actual workspace asset sizes first, then pinpoint the biggest contributors and give concrete ways to cut initial wait time. I’m running a quick size audit now.
+
+Ran terminal command: $files = Get-ChildItem -Recurse -File; $total = ($files | Measure-Object -Property Length -Sum).Sum; "TOTAL_BYTES=$total"; "TOTAL_MB=$([math]::Round($total/1MB,3))"; $files | Sort-Object Length -Descending | Select-Object -First 25 @{Name='Path';Expression={$_.FullName.Replace((Get-Location).Path + '\','')}}, @{Name='KB';Expression={[math]::Round($_.Length/1KB,1)}} | Format-Table -AutoSize
+Completed with input: $files = Get-ChildItem -Recurse -File; $total = ($files | Measure-Object -Property Length -Sum).Sum; "TOTAL_BYTES=$total"; "TOTAL_MB=$([math]::Round($total/1MB,3))"; $files | Sort-Object Length -Descending | Select-Object -First 25 @{Name='Path';Expression={$_.FullName.Replace((Get-Location).Path + '\','')}}, @{Name='KB';Expression={[math]::Round($_.Length/1KB,1)}} | Format-Table -AutoSize
+
+I now have total workspace size; next I’m calculating the likely first-load payload by summing the assets actually referenced by your page and audio manager so the optimization advice is precise.
+
+Searched for regex `<img\s+[^>]*src=|<link\s+[^>]*href=|<script\s+[^>]*src=|favicon|\.PNG|\.png|\.mp3|\.wav|\.mp4` (`**/index.html`), 18 results
+
+Read 
+
+Ran terminal command: $all = Get-ChildItem -Recurse -File; $web = $all | Where-Object { $_.Extension -in '.html','.css','.js','.png','.PNG','.jpg','.jpeg','.gif','.webp','.ico','.mp3','.wav','.mp4' -and $_.FullName -notmatch '\\node_modules\' }; $sum = ($web | Measure-Object Length -Sum).Sum; "WEB_ASSET_BYTES=$sum"; "WEB_ASSET_MB=$([math]::Round($sum/1MB,3))"; $web | Group-Object Extension | Sort-Object Name | ForEach-Object { $extSum = ($_.Group | Measure-Object Length -Sum).Sum; [pscustomobject]@{Ext=$_.Name; Count=$_.Count; MB=[math]::Round($extSum/1MB,3)} } | Format-Table -AutoSize; "TOP_15_WEB_ASSETS"; $web | Sort-Object Length -Descending | Select-Object -First 15 Name, @{Name='MB';Expression={[math]::Round($_.Length/1MB,3)}} | Format-Table -AutoSize
+
+Searched for regex `audio\.preload\s*=\s*'auto'|NewTrain2\.mp4|<img src=|createAudioManager\(|type="module" src="script.js"` (`**/*.{js,html}`), 16 results
+
+Searched for regex `Dirt6\.png|Dirt6` (`**/*.{css,html,js}`), 1 result
+
+I’ve identified the biggest contributors; I’ll do one more quick check to isolate just the audio files that are eagerly preloaded so we can quantify the fastest win.
+
+Ran terminal command: $assets = @('beep.mp3','train.wav','steam_engine_whistle.mp3','money.mp3','pop.mp3','chugging_sound.mp3','horn.mp3','traincollide.mp3','drumroll.mp3'); $rows = foreach($a in $assets){ $f = Get-Item $a -ErrorAction SilentlyContinue; if($f){ [pscustomobject]@{Name=$a; MB=[math]::Round($f.Length/1MB,3)} } }; $rows | Format-Table -AutoSize; "AUDIO_PRELOAD_MB=$([math]::Round((($rows | Measure-Object MB -Sum).Sum),3))"
+
+Searched for regex `NewTrain\.mp4|airplane\.mp3|Explain_RedDots\.PNG|main_toolbar\.PNG` (`**/*.{html,js,css}`), 1 result
+
+Your current payload is fairly large for a browser game.
+
+Size I measured:
+1. Total workspace files: 23.026 MB.
+2. Likely web asset set (html/css/js/images/audio/video, excluding node_modules): 22.136 MB.
+3. Audio files configured in AudioManager and currently preloaded: 6.193 MB.
+
+Biggest contributors:
+1. `train.wav` at 4.619 MB.
+2. PNG images total about 10.134 MB.
+3. MP4 videos total about 5.273 MB.
+4. Audio preload behavior is eager in `utility.js:215` where audio preload is set to auto.
+5. Many tutorial images/video are referenced directly in `index.html:217` and `index.html:297`, so the browser tends to fetch them early even if hidden in modals.
+
+Important note:
+- External CDN files in `index.html:10`, `index.html:11`, and `index.html:12` add extra download time beyond the 22.136 MB local total.
+
+Best ways to reduce wait (highest impact first):
+1. Stop eager audio preload.
+- Change preload from auto to metadata or none in `utility.js:215`.
+- This alone can defer about 6.2 MB from initial load.
+
+2. Convert heavy media formats.
+- Convert `train.wav` to compressed mp3/ogg.
+- Convert large PNG screenshots to WebP.
+- This can cut several MB quickly.
+
+3. Lazy-load tutorial media.
+- For how-to-play images/video in `index.html:217` and `index.html:297`, only set src when the help modal opens.
+- Keeps gameplay startup fast.
+
+4. Set video preload to metadata or none.
+- For the tutorial video source around `index.html:297`, avoid full download before user opens it.
+
+5. Remove unused large assets from deploy output.
+- You appear to have some large files not currently referenced; keep them out of shipped build.
+
+6. Enable compression at server level.
+- Gzip/Brotli for js/css/html and cache headers significantly improve repeat loads.
+
+Fastest practical target:
+- You can likely reduce first interactive wait from around 20+ MB down to roughly 6 to 10 MB by combining steps 1 to 4.
+
+If you want, I can apply the first two code-level wins now:
+1. switch audio to deferred preload
+2. lazy-load tutorial images/video on first open of the help modal
