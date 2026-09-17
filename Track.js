@@ -390,7 +390,6 @@ class Track {
   }
 
   draw(ctx = this.ctxTracks, color = 'rgb(0,0,250)', lineWidth = 1) {
-    // this.drawGrid()
     ctx.save()
     ctx.strokeStyle = color
     ctx.lineWidth = lineWidth
@@ -399,7 +398,6 @@ class Track {
     for (let i = 1; i < this.positions.length; i++) {
       ctx.lineTo(this.positions[i].x, this.positions[i].y)
     }
-    // ctx.closePath()
     ctx.stroke()
     ctx.restore()
   }
@@ -458,26 +456,7 @@ class Track {
 
     // this.stations.forEach(station => station.draw())
   }
-  drawGrid() {
-    const gridSize = this.gridSize
-    const numCols = 1200 / gridSize
-    const numRows = 800 / gridSize
-    this.ctxTracks.strokeStyle = 'rgba(50,0,0,0.2)'
-
-
-    this.ctxTracks.beginPath()
-
-    for (let i = 0; i < numCols; i++) {
-      this.ctxTracks.moveTo(i * gridSize, 0)
-      this.ctxTracks.lineTo(i * gridSize, 800)
-    }
-    for (let j = 0; j < numRows; j++) {
-      this.ctxTracks.moveTo(0, j * gridSize)
-      this.ctxTracks.lineTo(1200, j * gridSize)
-    }
-    this.ctxTracks.closePath()
-    this.ctxTracks.stroke()
-  }
+  
   getTotalLength() {
     let length = 0
     const positions = this.positions;

@@ -606,16 +606,206 @@ const convertFromCanvasToClientCoordinates = (canvasEl, canvasX, canvasY) => {
   const clientX = canvasRect.left + canvasX
   const clientY = canvasRect.top + canvasY
   return { clientX, clientY }
-} 
+}
+
+const animateMouseFromStartToEndCoordinates = async (startX, startY, endX, endY, options = {}) => {
+  const durationMs = Number.isFinite(options.durationMs) ? options.durationMs : 1400
+  const startDelayMs = Number.isFinite(options.startDelayMs) ? options.startDelayMs : 120
+
+  return new Promise((resolve) => {
+    // const startX = window.innerWidth / 2
+    // const startY = window.innerHeight / 2
+
+    const fakeCursor = document.createElement('div')
+    fakeCursor.textContent = '▲'
+    fakeCursor.style.position = 'fixed'
+    fakeCursor.style.left = '0'
+    fakeCursor.style.top = '0'
+    fakeCursor.style.transform = `translate(${startX}px, ${startY}px)`
+    fakeCursor.style.transformOrigin = 'center center'
+    fakeCursor.style.fontSize = '24px'
+    fakeCursor.style.lineHeight = '1'
+    fakeCursor.style.color = '#111'
+    fakeCursor.style.textShadow = '0 0 4px rgba(255,255,255,0.9)'
+    fakeCursor.style.pointerEvents = 'none'
+    fakeCursor.style.zIndex = '100000'
+    fakeCursor.style.opacity = '0'
+
+    document.body.appendChild(fakeCursor)
+
+    const easeInOutCubic = (t) => {
+      return t < 0.5
+        ? 4 * t * t * t
+        : 1 - Math.pow(-2 * t + 2, 3) / 2
+    }
+
+    const start = performance.now() + startDelayMs
+    const step = (now) => {
+      if (now < start) {
+        requestAnimationFrame(step)
+        return
+      }
+
+      fakeCursor.style.opacity = '1'
+
+      const rawProgress = (now - start) / durationMs
+      const progress = Math.max(0, Math.min(1, rawProgress))
+      const eased = easeInOutCubic(progress)
+      const currentX = startX + (endX - startX) * eased
+      const currentY = startY + (endY - startY) * eased
+      fakeCursor.style.transform = `translate(${currentX}px, ${currentY}px)`
+
+      if (progress < 1) {
+        requestAnimationFrame(step)
+      } else {
+        fakeCursor.remove()
+        resolve(true)
+      }
+    }
+    requestAnimationFrame(step)
+  })
+}
+const animateMouseFromCenterToCoordinates = async (x, y, options = {}) => {
+  const durationMs = Number.isFinite(options.durationMs) ? options.durationMs : 1400
+  const startDelayMs = Number.isFinite(options.startDelayMs) ? options.startDelayMs : 120
+
+  return new Promise((resolve) => {
+    const startX = window.innerWidth / 2
+    const startY = window.innerHeight / 2
+
+    const fakeCursor = document.createElement('div')
+    fakeCursor.textContent = '▲'
+    fakeCursor.style.position = 'fixed'
+    fakeCursor.style.left = '0'
+    fakeCursor.style.top = '0'
+    fakeCursor.style.transform = `translate(${startX}px, ${startY}px)`
+    fakeCursor.style.transformOrigin = 'center center'
+    fakeCursor.style.fontSize = '24px'
+    fakeCursor.style.lineHeight = '1'
+    fakeCursor.style.color = '#111'
+    fakeCursor.style.textShadow = '0 0 4px rgba(255,255,255,0.9)'
+    fakeCursor.style.pointerEvents = 'none'
+    fakeCursor.style.zIndex = '100000'
+    fakeCursor.style.opacity = '0'
+
+    document.body.appendChild(fakeCursor)
+
+    const easeInOutCubic = (t) => {
+      return t < 0.5
+        ? 4 * t * t * t
+        : 1 - Math.pow(-2 * t + 2, 3) / 2
+    }
+
+    const start = performance.now() + startDelayMs
+    const step = (now) => {
+      if (now < start) {
+        requestAnimationFrame(step)
+        return
+      }
+
+      fakeCursor.style.opacity = '1'
+
+      const rawProgress = (now - start) / durationMs
+      const progress = Math.max(0, Math.min(1, rawProgress))
+      const eased = easeInOutCubic(progress)
+      const currentX = startX + (x - startX) * eased
+      const currentY = startY + (y - startY) * eased
+      fakeCursor.style.transform = `translate(${currentX}px, ${currentY}px)`
+
+      if (progress < 1) {
+        requestAnimationFrame(step)
+      } else {
+        fakeCursor.remove()
+        resolve(true)
+      }
+    }
+    requestAnimationFrame(step)
+  })
+}
+
+const animateMouseFromCenterToElement = async (targetEl, options = {}) => {
+  const durationMs = Number.isFinite(options.durationMs) ? options.durationMs : 1400
+  const startDelayMs = Number.isFinite(options.startDelayMs) ? options.startDelayMs : 120
+
+  return new Promise((resolve) => {
+    if (!(targetEl instanceof HTMLElement)) {
+      resolve(false)
+      return
+    }
+
+    const startX = window.innerWidth / 2
+    const startY = window.innerHeight / 2
+    const targetRect = targetEl.getBoundingClientRect()
+    const endX = targetRect.left + targetRect.width / 2
+    const endY = targetRect.top + targetRect.height / 2
+
+    const fakeCursor = document.createElement('div')
+    fakeCursor.textContent = '▲'
+    fakeCursor.style.position = 'fixed'
+    fakeCursor.style.left = '0'
+    fakeCursor.style.top = '0'
+    fakeCursor.style.transform = `translate(${startX}px, ${startY}px)`
+    fakeCursor.style.transformOrigin = 'center center'
+    fakeCursor.style.fontSize = '24px'
+    fakeCursor.style.lineHeight = '1'
+    fakeCursor.style.color = '#111'
+    fakeCursor.style.textShadow = '0 0 4px rgba(255,255,255,0.9)'
+    fakeCursor.style.pointerEvents = 'none'
+    fakeCursor.style.zIndex = '100000'
+    fakeCursor.style.opacity = '0'
+
+    document.body.appendChild(fakeCursor)
+
+    const easeInOutCubic = (t) => {
+      return t < 0.5
+        ? 4 * t * t * t
+        : 1 - Math.pow(-2 * t + 2, 3) / 2
+    }
+
+    const start = performance.now() + startDelayMs
+    const step = (now) => {
+      if (now < start) {
+        requestAnimationFrame(step)
+        return
+      }
+
+      fakeCursor.style.opacity = '1'
+
+      const rawProgress = (now - start) / durationMs
+      const progress = Math.max(0, Math.min(1, rawProgress))
+      const eased = easeInOutCubic(progress)
+      const x = startX + (endX - startX) * eased
+      const y = startY + (endY - startY) * eased
+      fakeCursor.style.transform = `translate(${x}px, ${y}px)`
+
+      if (progress < 1) {
+        requestAnimationFrame(step)
+        return
+      }
+
+      fakeCursor.style.transition = 'transform 120ms ease-out'
+      fakeCursor.style.transform = `translate(${endX}px, ${endY}px) scale(0.9)`
+
+      setTimeout(() => {
+        fakeCursor.remove()
+        resolve(true)
+      }, 180)
+    }
+
+    requestAnimationFrame(step)
+  })
+}
 
 export {
   makeDraggable,
   ck,
   rowAndColumnName,
   alpha,
-  // getDetailedSegmentsMap,
   getCommonSegmentsMap,
   createAudioManager,
   delay,
-  convertFromCanvasToClientCoordinates
+  convertFromCanvasToClientCoordinates,
+  animateMouseFromCenterToCoordinates,
+  animateMouseFromStartToEndCoordinates,
+  animateMouseFromCenterToElement
 }

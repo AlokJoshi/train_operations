@@ -24,7 +24,7 @@ class Game {
     { defaultName: 'Cyan', Color: 'rgba(0,255,255,0.5)' }
   ]
 
-  constructor(ctx, ctxTracks, ctxTemp, gridSize, OFFSET_X, OFFSET_Y) {
+  constructor(ctx, ctxTracks, ctxTemp, gridSize, OFFSET_X, OFFSET_Y, drawGridCallback) {
     this.ctx = ctx
     this.ctxTracks = ctxTracks
     this.ctxTemp = ctxTemp
@@ -33,6 +33,7 @@ class Game {
     this.gridSize = gridSize
     this.OFFSET_X = OFFSET_X
     this.OFFSET_Y = OFFSET_Y
+    this.drawGridCallback = drawGridCallback
     this.trains = []
     this.Flyovers = new Flyovers(ctxTracks, gridSize, OFFSET_X, OFFSET_Y)
     this.tracks = new Tracks(ctxTracks)
@@ -236,7 +237,9 @@ class Game {
         // Lane cycles as overlap grows: 0 -> 1 -> 2 -> 0 -> ...
         autoAssignedLane = maxExistingLinesOnAnySegment % 3
         // console.log(`[ParallelLane] overlapDepth=${maxExistingLinesOnAnySegment}, assignedLane=${autoAssignedLane}, trains=[${overlappingTrains}]`)
-        this.financials.incrementExpenses(this.getCurrentTimeIndex(), null, cost, 'Parallel Track Cost')
+        if(options.runningScriptedDemo !== true) {
+          this.financials.incrementExpenses(this.getCurrentTimeIndex(), null, cost, 'Parallel Track Cost')
+        }
       }
     }
 
@@ -308,11 +311,12 @@ class Game {
       visualLengthScale: options.visualLengthScale,
       maxVisualCoaches: options.maxVisualCoaches,
       // popups: this.popups,
-      trainInfo: this.trainInfo
+      trainInfo: this.trainInfo,
+      runningScriptedDemo: options.runningScriptedDemo ?? false,
     })
     const length = track.getTotalLength()
     const currentTimeIndex = this.getCurrentTimeIndex()
-    if (!options.partOfInitialSetup) {
+    if (!options.partOfInitialSetup && !options.runningScriptedDemo) {
       this.financials.incrementTrackCost(currentTimeIndex, trainNumber, length)
       this.financials.buyEngine(currentTimeIndex, trainNumber)
       this.financials.buyCoach(currentTimeIndex, trainNumber, numCoaches)
@@ -328,7 +332,7 @@ class Game {
     const trainElement = document.querySelector(`#train${trainNumber}`)
     if (trainElement) {
       if (nullIndex !== -1) {
-        trainElement.style.filter = "none"
+        trainElement.style.display = 'block'
       } else {
         trainElement.style.display = 'grid'
       }
@@ -396,6 +400,8 @@ class Game {
   }
 
   removeTrain(trainNumber) {
+    console.log(`Removing train ${trainNumber} in game.removeTrain(), with number of trains: ${this.trains.length}`)  
+
     if (trainNumber <= this.trains.length) {
       const train = this.trains[trainNumber - 1]
       if (train) {
@@ -413,7 +419,8 @@ class Game {
 
       const trainElement = document.querySelector(`#train${trainNumber}`)
       if (trainElement) {
-        trainElement.style.filter = "blur(5px)"
+        trainElement.style='display:none'
+        // trainElement.style.filter = "blur(5px)"
       }
       this.Flyovers.draw()
     }
@@ -422,6 +429,9 @@ class Game {
   displayAllTracksAndStations() {
     //clear the ctxTracks before redrawing all tracks and stations
     this.ctxTracks.clearRect(0, 0, this.ctxTracks.canvas.width, this.ctxTracks.canvas.height)
+    if(typeof this.drawGridCallback === 'function'){
+      this.drawGridCallback(this.ctxTracks)
+    }
     this.trains.forEach(train => {
       if (train) {
         train.track.drawUsingNewPositions()

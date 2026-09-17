@@ -55,7 +55,8 @@ class Train {
     visualLengthScale = 1,
     maxVisualCoaches,
     // popups,
-    trainInfo
+    trainInfo,
+    runningScriptedDemo = false
   } = {}) {
     this.ctx = ctx
     this.ctxTemp = ctxTemp
@@ -134,7 +135,7 @@ class Train {
     this.smokePuffs = []
     this.lastSmokeEmitTick = 0
     this.smokeSetting = 'high'
-
+    this.runningScriptedDemo = runningScriptedDemo
 
     this.updateUI()
 
@@ -221,7 +222,7 @@ class Train {
 
     const trainTypeEl = document.querySelector(`#lblTrainType${this.trainNumber}`)
     if (trainTypeEl) {
-      trainTypeEl.textContent = this.trainType === "passenger" ? "P" : "F"
+      trainTypeEl.textContent = this.trainType.toLowerCase() === "passenger" ? "P" : "F"
     }
 
     // Add train label in info widget once.
@@ -257,7 +258,10 @@ class Train {
   }
 
   upgradeEngine() {
-    if (this.upgradedEngine) return // already upgraded
+    if (this.upgradedEngine) {
+      swal('Engine already upgraded', '', 'info')
+      return // already upgraded
+    }
     this.financials.upgradeEngine(this.getCurrentTimeIndex(), this.trainNumber)
     this.upgradedEngine = true
     if (this.trainType === 'freight') {
