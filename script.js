@@ -1,10 +1,11 @@
 import { Game } from './Game.js'
 import { Track } from './Track.js'
 import { Intersections } from './Intersections.js'
-import { makeDraggable, alpha, delay, convertFromCanvasToClientCoordinates,
-         animateMouseFromCenterToCoordinates, animateMouseFromCenterToElement,
-         animateMouseFromStartToEndCoordinates
- } from './utility.js'
+import {
+  makeDraggable, alpha, delay, convertFromCanvasToClientCoordinates,
+  animateMouseFromCenterToElement,
+  animateMouseFromStartToEndCoordinates, speakAsync
+} from './utility.js'
 import { audioManager } from './audioManager.js'
 
 globalThis.globalTicks = 0
@@ -17,15 +18,20 @@ const OFFSET_X = 0
 const OFFSET_Y = 0
 const gridSize = 50
 
-const canvas = document.querySelector('#canvas')
-const ctx = canvas.getContext('2d')
+const canvas_Trains = document.querySelector('#canvas_trains')
+const ctx = canvas_Trains.getContext('2d')
 
+const canvasGrid = document.querySelector('#canvas_grid')
+const canvasDemoTracks = document.querySelector('#canvas_demo_tracks')
 const canvasTracks = document.querySelector('#canvas_tracks')
 const canvasResults = document.querySelector('#canvas_results')
 const canvasMaps1 = document.querySelector('#canvas_maps1')
 const canvasMaps2 = document.querySelector('#canvas_maps2')
 const canvasMaps3 = document.querySelector('#canvas_maps3')
 const canvasTemp = document.querySelector('#canvas_temp')
+
+const ctxGrid = canvasGrid.getContext('2d')
+const ctxDemoTracks = canvasDemoTracks.getContext('2d')
 const ctxTracks = canvasTracks.getContext('2d')
 const ctxResults = canvasResults.getContext('2d')
 const ctxMaps1 = canvasMaps1.getContext('2d')
@@ -33,8 +39,8 @@ const ctxMaps2 = canvasMaps2.getContext('2d')
 const ctxMaps3 = canvasMaps3.getContext('2d')
 const ctxTemp = canvasTemp.getContext('2d')
 
-canvas.height = canvasTracks.height = canvasTemp.height = canvasResults.height = canvasMaps1.height = canvasMaps2.height = canvasMaps3.height = CANVASHEIGHT + CANVASMARGIN
-canvas.width = canvasTracks.width = canvasTemp.width = canvasResults.width = canvasMaps1.width = canvasMaps2.width = canvasMaps3.width = CANVASWIDTH + CANVASMARGIN
+canvasDemoTracks.height = canvasGrid.height = canvas_Trains.height = canvasTracks.height = canvasTemp.height = canvasResults.height = canvasMaps1.height = canvasMaps2.height = canvasMaps3.height = CANVASHEIGHT + CANVASMARGIN
+canvasDemoTracks.width = canvasGrid.width = canvas_Trains.width = canvasTracks.width = canvasTemp.width = canvasResults.width = canvasMaps1.width = canvasMaps2.width = canvasMaps3.width = CANVASWIDTH + CANVASMARGIN
 
 let paused = true
 let startTrack = false
@@ -95,7 +101,26 @@ function setValidTrackPoints() {
 
 let intersections = new Intersections(CANVASWIDTH - OFFSET_X * 2, CANVASHEIGHT - OFFSET_Y * 2, gridSize, OFFSET_X, OFFSET_Y)
 
-const game = new Game(ctx, ctxTracks, ctxTemp, gridSize, OFFSET_X, OFFSET_Y, drawGrid)
+const game = new Game(ctx, ctxTracks, ctxTemp, ctxDemoTracks, gridSize, OFFSET_X, OFFSET_Y)
+
+//only for debugging. Remove this in production
+globalThis.hideTrains = (hide = true) => {
+  if (typeof ctx !== 'undefined') {
+    ctx.canvas.style.display = hide ? 'none' : 'block'
+  }
+}
+//only for debugging. Remove this in production
+globalThis.hideDemoTracks = (hide = true) => {
+  if (typeof ctxDemoTracks !== 'undefined') {
+    ctxDemoTracks.canvas.style.display = hide ? 'none' : 'block'
+  }
+}
+//only for debugging. Remove this in production
+globalThis.hideTracks = (hide = true) => {
+  if (typeof ctxTracks !== 'undefined') {
+    ctxTracks.canvas.style.display = hide ? 'none' : 'block'
+  }
+}
 
 window.setGameSoundEnabled = (enabled) => audioManager.setEnabled(enabled)
 
@@ -382,7 +407,7 @@ const drawScene = () => {
       }
     }
     ctx.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
-    game.draw()
+    game.draw(false)
     ctx.font = '14px Arial'
     ctx.fillStyle = 'black'
     ctx.fillText(`Ticks: ${globalThis.globalTicks}`, CANVASWIDTH - 150, 20)
@@ -437,12 +462,22 @@ window.addEventListener('load', () => {
     return false
   }
 
-  const startScriptedDemoToAddTrain = async () => {
+  const startScriptedDemoToAddTrainAndStation = async (points, stationPoints, delayMS = 3000, deleteTrain = true, displayMessages = true) => {
 
     runningScriptedDemo = true
+    //clear if tracks were previously drawn on the demo canvas
+    ctxDemoTracks.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
+    ctxTracks.canvas.style.display = 'none'
+    ctx.canvas.style.display = 'none'
+    ctxDemoTracks.canvas.style.display = 'block'
 
-    //close the Train dialog box if it is open
+    //close all the dialog boxes if they are open
     document.getElementById('buttonGroup1').style.display = 'none'
+    document.getElementById('buttonGroup2').style.display = 'none'
+    document.getElementById('buttonGroup3').style.display = 'none'
+    document.getElementById('buttonGroup4').style.display = 'none'
+    document.getElementById('buttonGroup5').style.display = 'none'
+    document.getElementById('buttonGroup7').style.display = 'none'
 
     await delay(1000)
     const gameWasRunning = !paused
@@ -450,157 +485,185 @@ window.addEventListener('load', () => {
       paused = true
     }
 
-    //show the letter T in Bold in the center of the screen for a few seconds
-    const tElement = document.createElement('div')
-    tElement.textContent = 'This is non-interactive demo. If Train Dialog box was open, it has been closed. If the game was running, it has been paused.'
-    tElement.style.position = 'fixed'
-    tElement.style.width = '50%'
-    tElement.style.top = '25%'
-    tElement.style.left = '50%'
-    tElement.style.transform = 'translate(-50%, -70%)'
-    tElement.style.fontSize = '32px'
-    tElement.style.fontWeight = 'bold'
-    tElement.style.color = 'black'
-    tElement.style.backgroundColor = 'rgba(255, 255, 255, 0.8)'
-    tElement.style.border = '2px solid black'
-    tElement.style.borderRadius = '8px'
-    tElement.style.zIndex = '1000'
-    document.body.appendChild(tElement)
-    
-    
-    await delay(3000)
-    tElement.textContent = 'Click on the T key on your keyboard to bring up the Train dialog box.'
-        
-    await delay(3000)
+    await speakAsync('This demo will guide you through adding a train and a few stations.')
+
+    await delay(delayMS)
+    await speakAsync('Press on the T key on your keyboard or click on the Train button (T) on the on-screen controls to bring up the Train dialog box.')
+
+    await delay(delayMS)
     // Use the same hotkey path as normal controls to avoid missing event.code.
     sendHotkeyToDocument('T')
-    
-    
-    tElement.textContent = 'Now click on the Start Track Spec. play button as shown below.'
-    
-    await delay(3000)
-    
+
+    await speakAsync('Now click on the Start Track Spec. play button.')
+
+    await delay(delayMS)
+
     // mouse movement animation is triggered after opening the train dialog.
     const startNewTrainPlayBtn = document.querySelector('#startTrack')
     if (startNewTrainPlayBtn instanceof HTMLElement) {
       const didAnimate = await animateMouseFromCenterToElement(startNewTrainPlayBtn)
       if (didAnimate && runningScriptedDemo) {
-          startNewTrainPlayBtn.click()
-          
-          tElement.textContent = 'This brings up an instructional message as to the process that you must follow. Read it carefully before clicking on OK'
-          await delay(3000)
+        startNewTrainPlayBtn.click()
 
-          // The Start New Train click opens an instructional swal; dismiss it for scripted playback.
-          await dismissVisibleSwal({ requireConfirm: true })
-          
-          tElement.textContent = 'Now click on the starting point from where you want the train to begin.'
+        await speakAsync('This brings up an instructional message on the process that you must follow. You will read it and then click on OK')
+        await delay(delayMS)
 
-          await delay(3000)
+        // The Start New Train click opens an instructional swal; dismiss it for scripted playback.
+        await dismissVisibleSwal({ requireConfirm: true })
 
-          //now animate the cursor movement from the center of the screen to a certain x,y coordinate on the canvas
-          const canvasTempEl = document.querySelector('#canvas_temp')
-          const targetRect = startNewTrainPlayBtn.getBoundingClientRect()
-          const playLeft=targetRect.left
-          const playTop = targetRect.top
+        await speakAsync('Now click on the starting point from where you want the train to begin.')
 
-          let {clientX: startX, clientY: startY} = convertFromCanvasToClientCoordinates(canvasTempEl,  playLeft, playTop)
-          let {clientX: endX, clientY: endY} = convertFromCanvasToClientCoordinates(canvasTempEl, 800, 400)
-          // let {clientX: clientX1, clientY: clientY1} = convertFromCanvasToClientCoordinates(canvasTempEl, 800, 400)
-          let didAnimateToCoordinates = await animateMouseFromStartToEndCoordinates(startX, startY, endX, endY)
-          
+        await delay(delayMS)
+
+        //now animate the cursor movement from the center of the screen to a certain x,y coordinate on the canvas
+        const canvasTempEl = document.querySelector('#canvas_temp')
+        const targetRect = startNewTrainPlayBtn.getBoundingClientRect()
+        const playLeft = targetRect.left
+        const playTop = targetRect.top
+
+        let { clientX: startX, clientY: startY } = convertFromCanvasToClientCoordinates(canvasTempEl, playLeft, playTop)
+
+
+
+        let clientPoint = {}
+        for (let i = 0; i < points.length; i++) {
+          await speakAsync('Click on the ' + (i == 0 ? 'starting' : 'next') + ' point of the route.')
+
+          let clientPoint = convertFromCanvasToClientCoordinates(canvasTempEl, points[i].x, points[i].y)
+          let didAnimateToCoordinates = await animateMouseFromStartToEndCoordinates(startX, startY, clientPoint.clientX, clientPoint.clientY)
+
           if (!didAnimateToCoordinates) {
             console.error('Failed to animate mouse to the specified coordinates')
             return false
           }
           // and send a click event at the final viewport coordinates on the canvas
-          let clickEvent = new MouseEvent('click', {clientX: endX,clientY: endY,bubbles: true,cancelable: true})
-          console.log('startTrack', 800, 400, endX, endY, canvasTempEl)
+          let clickEvent = new MouseEvent('click', { clientX: clientPoint.clientX, clientY: clientPoint.clientY, bubbles: true, cancelable: true })
           canvasTempEl.dispatchEvent(clickEvent)
-          
-          await delay(3000)
 
-          tElement.textContent = 'Now click on the next point to specify the route.'
-          
-          startX = endX
-          startY = endY
-          let {clientX: endX2, clientY:endY2} = convertFromCanvasToClientCoordinates(canvasTempEl, 1100, 400)
-          didAnimateToCoordinates = await animateMouseFromStartToEndCoordinates(startX, startY, endX2, endY2)
-          
-          if (!didAnimateToCoordinates) {
-            console.error('Failed to animate mouse to the specified coordinates')
-            return false
+          await delay(delayMS)
+          startX = clientPoint.clientX
+          startY = clientPoint.clientY
+        }
+
+        await delay(delayMS)
+        await speakAsync('You can continue adding points to the route. However, let us assume that you have finished adding all the points and that it time to finalize the route and flag-off the train.')
+
+        await delay(delayMS)
+
+        await speakAsync('Select the type of train - passenger or freight and the number of coaches or wagons and then click on the flag-off icon to start the train.')
+
+        await delay(delayMS)
+
+        const flagOffBtn = document.querySelector('#flagOff')
+        startX = clientPoint.clientX
+        startY = clientPoint.clientY
+        const flagOffBtnRect = flagOffBtn.getBoundingClientRect()
+        let { clientX: endX4, clientY: endY4 } = convertFromCanvasToClientCoordinates(canvasTempEl, flagOffBtnRect.left, flagOffBtnRect.top)
+        const didAnimate = await animateMouseFromStartToEndCoordinates(startX, startY, endX4, endY4)
+        if (didAnimate && runningScriptedDemo) {
+          flagOffBtn.click()
+          const messages = []
+          messages.push('In the actual game you will see the train moving along the route you specified unless the game is in a paused state.')
+          // messages.push('This finishes the demo. For this demo, the game was paused. The game will now be resumed.')
+          // messages.push('Changes made during the demo will now be reversed and you will return to the main game.')
+          await delay(delayMS)
+          for (const message of messages) {
+            await speakAsync(message)
+            await delay(delayMS)
           }
-          // and send a click event at the final viewport coordinates on the canvas
-          clickEvent = new MouseEvent('click', { clientX: endX2, clientY: endY2, bubbles: true, cancelable: true })
-          // console.log('startTrack', 1200, 400, endX2, endY2, canvasTempEl)
-          canvasTempEl.dispatchEvent(clickEvent)
-          
-          await delay(3000)
-          tElement.textContent = 'And click on the next point to specify the route.'
-          
-          startX = endX2
-          startY = endY2
-          let {clientX: endX3, clientY: endY3} = convertFromCanvasToClientCoordinates(canvasTempEl, 1100, 800)
-          didAnimateToCoordinates = await animateMouseFromStartToEndCoordinates(startX, startY, endX3, endY3)
-          
-          if (!didAnimateToCoordinates) {
-            console.error('Failed to animate mouse to the specified coordinates')
-            return false
+
+          const lastTrainNumber = game.trains.length
+          await speakAsync("Once you create a train, starting and ending stations are defined. But you can then add a station.");
+
+          await delay(delayMS)
+
+          await speakAsync("First step is to bring up the Stations dialog box by pressing the S key on your keyboard or by clicking on the S button in the on-screen green control panel.");
+
+          await delay(delayMS)
+
+          sendHotkeyToDocument('S')
+
+          await delay(delayMS)
+
+          await speakAsync(`Since the train that you added is train number ${lastTrainNumber}, you should now see it listed in the Station Dialog box. You will click on the T${lastTrainNumber} entry to view all the points where a station can be added.`)
+          await delay(delayMS)
+
+          const stationContainer = document.querySelector('#stationFortrain')
+          if (!stationContainer) {
+            console.error(`Station container not found`)
+            return
           }
-          // and send a click event at the final viewport coordinates on the canvas
-          clickEvent = new MouseEvent('click', { clientX: endX3, clientY: endY3, bubbles: true, cancelable: true })
-          // console.log('startTrack', 1100, 800, endX3, endY3, canvasTempEl)
-          canvasTempEl.dispatchEvent(clickEvent)
-          
-          await delay(3000)
-          tElement.textContent = 'It is now time to finalize the route and flag-off the train.'
-         
-          await delay(3000)
+          const stationElement = document.querySelector(`[data-value="${lastTrainNumber}"][data-role="station-train"]`);
+          if (!stationElement) {
+            console.error(`Station element for train number ${lastTrainNumber} not found`)
+            return
+          }
 
-          tElement.textContent = 'Click on the flag-off icon after selecting the type of train (passenger/freight) and number of coaches/wagons.'
-          
-          await delay(3000)
+          const didAnimate = await animateMouseFromCenterToElement(stationElement)
+          if (!didAnimate || !runningScriptedDemo) {
+            console.error(`Failed to animate mouse to station element for train number ${lastTrainNumber} or the scripted demo is no longer running.`)
+          }
 
-          const flagOffBtn = document.querySelector('#flagOff')
-          startX = endX3
-          startY = endY3
-          const flagOffBtnRect = flagOffBtn.getBoundingClientRect()
-          let {clientX: endX4, clientY: endY4} = convertFromCanvasToClientCoordinates(canvasTempEl, flagOffBtnRect.left , flagOffBtnRect.top)
-          const didAnimate = await animateMouseFromStartToEndCoordinates(startX, startY, endX4, endY4)
-          if (didAnimate && runningScriptedDemo) {
-            flagOffBtn.click()
-            messages = []
-            messages.push('You will see the train moving along the specified route. Here this is not the case only because we have paused the game.')
-            messages.push('You should now also see a new train entry in the train list in the Train Dialog box.')
-            messages.push('This finishes the demo. If the demo placed the game in a paused state, it will be now resumed.')
-            messages.push( 'Changes made during the demo will now be reversed and you will return to the main game.')
-            await delay(3000)
-            for (const message of messages) {
-              tElement.textContent = message
-              await delay(3000)
+          stationElement.click()
+
+          await speakAsync(`Now you can click on any of the green circles to add a new station at that location.`)
+          await speakAsync(`You will be asked to confirm the addition of the new station.`)
+          await speakAsync(`You can repeat this process to add multiple stations.`)
+          await delay(delayMS)
+          
+          for (let i = 0; i < stationPoints.length; i++) {
+            await speakAsync('Click on ' + (i==0?'first':'next') + 'point where you want to add a station.')
+            
+            let clientPoint = convertFromCanvasToClientCoordinates(canvasTempEl, stationPoints[i].x, stationPoints[i].y)
+            let didAnimateToCoordinates = await animateMouseFromStartToEndCoordinates(startX, startY, clientPoint.clientX, clientPoint.clientY)
+            
+            if (!didAnimateToCoordinates) {
+              console.error('Failed to animate mouse to the specified coordinates')
+              return false
             }
-
-            tElement.style.display = 'none'
-
-            // delete the last train that was added during the demo
-            const lastTrainNumber = game.trains.length
-            console.log(`Removing train with number ${lastTrainNumber}`)
-            removetrain(lastTrainNumber,false)
-
-            if (gameWasRunning) {
-              paused = false
-            }
+            // and send a click event at the final viewport coordinates on the canvas
+            let clickEvent = new MouseEvent('click', { clientX: clientPoint.clientX, clientY: clientPoint.clientY, bubbles: true, cancelable: true })
+            canvasTempEl.dispatchEvent(clickEvent)
+            
+            // reply in affirmative when the swal dialog appears to confirm the addition of the new station
+            await delay(delayMS) // wait for the swal dialog to appear
+            await dismissVisibleSwal({ requireConfirm: true })
+            
+            await delay(delayMS)
+            startX = clientPoint.clientX
+            startY = clientPoint.clientY
           }
-        tElement.style.display = 'none'
+          await delay(delayMS) // wait for the swal dialog to appear
+          await speakAsync(`After adding the new stations, you can click again on T${lastTrainNumber} entry to turn-off the list of possible station locations.`)
+          stationElement.click()
+          
+          await delay(delayMS) // wait for the swal dialog to appear
+          await speakAsync(`This concludes the demo.`)
+          
+          if (!deleteTrain) {
+            runningScriptedDemo = false
+            return lastTrainNumber
+          }
+
+          // delete the last train that was added during the demo
+          removetrain(lastTrainNumber, false)
+
+          await delay(delayMS)
+
+          if (gameWasRunning) {
+            paused = false
+          }
+
+          ctxTracks.canvas.style.display = 'block'
+          ctx.canvas.style.display = 'block'
+          ctxDemoTracks.canvas.style.display = 'none'
+        }
       }
     }
     runningScriptedDemo = false
-  }
+  };
 
-  const stopScriptedDemoToAddTrain = () => {
-  }
-
-  const displayPossibleStationLocations = (trainNumber) => {
+    const displayPossibleStationLocations = (trainNumber) => {
     const train = game.trains[trainNumber - 1]
     if (!train) {
       console.error(`Train with number ${trainNumber} not found`)
@@ -855,8 +918,15 @@ window.addEventListener('load', () => {
       toggleSound()
     } else if (event.code === 'KeyD') {
       //if the code is D then demo add train
-      startScriptedDemoToAddTrain()
-    }
+      const points = []
+      points.push({ x: 1200, y: 500 })
+      points.push({ x: 1000, y: 500 })
+      points.push({ x: 500, y: 1050 })
+      const stationPoints = []
+      stationPoints.push({ x: 600, y: 500 })
+      stationPoints.push({ x: 500, y: 900 })
+      startScriptedDemoToAddTrainAndStation(points, stationPoints, 500)
+    } 
   }
 
   startPausebutton.addEventListener('click', () => {
@@ -1085,6 +1155,7 @@ window.addEventListener('load', () => {
       }
       //clear the temporary canvas before drawing
       ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+
       train.track.drawUsingNewPositions(ctxTemp, 'rgba(255, 255, 0, 0.5)', 7)
     })
     infoForTrainContainer.addEventListener('mouseleave', (event) => {
@@ -1372,7 +1443,7 @@ window.addEventListener('load', () => {
   })
 
   document.querySelector('#canvas_temp').addEventListener('mousemove', (event) => {
-    if(runningScriptedDemo) return
+    if (runningScriptedDemo) return
     const point = getCanvasPoint(event)
     const row = alpha(Math.round((point.y - CANVASMARGIN) / gridSize))
     const col = alpha(Math.round((point.x - CANVASMARGIN) / gridSize))
@@ -1522,7 +1593,7 @@ window.addEventListener('load', () => {
   }
 
   //set up the grid
-  drawGrid(ctxTracks)
+  drawGrid(ctxGrid)
 
   const updateValidTrackPreview = (pathPositions, options = {}) => {
     const {
@@ -1823,11 +1894,11 @@ window.addEventListener('load', () => {
     }
     clearTrainExtensionState()
   }
-  window.removetrain = (trainnumber,confirm=true) => {
-    if(!confirm){
+  window.removetrain = (trainnumber, confirm = true) => {
+    if (!confirm) {
       ctxTracks.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       drawGrid(ctxTracks)
-      console.log(`Removing train ${trainnumber} in window.removetrain(${confirm})`)  
+      console.log(`Removing train ${trainnumber} in window.removetrain(${confirm})`)
       game.removeTrain(trainnumber)
       intersections.removeTrain(trainnumber)
       //clear intersections from ctxTemp for the removed train
@@ -1875,13 +1946,7 @@ window.addEventListener('load', () => {
       return
     }
 
-
-
-
-
     ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-
-
 
     // const speedEl = document.querySelector('#speed')
     const numCoachesEl = document.querySelector('#numcoaches')
@@ -1936,7 +2001,7 @@ window.addEventListener('load', () => {
     if (lblNumCoaches) {
       lblNumCoaches.textContent = numCoaches
     }
-    
+
     // we also update the UI so that the user is not able to click
     // on flag-off icon a second time.
     const flagOffIcon = document.querySelector('#flagOff')
@@ -2017,12 +2082,12 @@ window.addEventListener('load', () => {
   }
 
   window.clearTempCanvas = function () {
-    if(runningScriptedDemo || startTrack || startExtendTrain || startStation || startFlyover) return
+    if (runningScriptedDemo || startTrack || startExtendTrain || startStation || startFlyover) return
     ctxTemp.clearRect(0, 0, ctxTemp.canvas.width, ctxTemp.canvas.height)
   }
-  
+
   window.highlightTrainTrack = function (trainNumber, event) {
-    if(runningScriptedDemo || startTrack || startExtendTrain || startStation || startFlyover) return
+    if (runningScriptedDemo || startTrack || startExtendTrain || startStation || startFlyover) return
     const train = game.trains[trainNumber - 1]
     if (!train) {
       console.error(`Train with number ${trainNumber} not found`)
@@ -2375,7 +2440,7 @@ function drawCollisionFrame(state, t) {
   ctxTemp.restore()
 }
 
-function drawGrid(ctx=ctxTracks) {
+function drawGrid(ctx = ctxTracks) {
   const numCols = (CANVASWIDTH - 0.5 * CANVASMARGIN) / gridSize
   const numRows = (CANVASHEIGHT - 0.5 * CANVASMARGIN) / gridSize
   ctx.strokeStyle = 'rgba(0,0,0,0.1)'

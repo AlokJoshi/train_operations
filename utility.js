@@ -1,3 +1,33 @@
+// Define your global settings in one central place
+const GLOBAL_SPEECH_SETTINGS = {
+  rate: 1.2,   // Slightly faster
+  pitch: 1.0,
+  volume: 0.9,
+};
+
+// Use this function whenever you need to await speakAsync text
+function speakAsync(text) {
+  return new Promise((resolve, reject) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    // Apply global speech settings
+    // This event fires the exact millisecond the browser finishes speaking
+    utterance.rate = GLOBAL_SPEECH_SETTINGS.rate;
+    utterance.pitch = GLOBAL_SPEECH_SETTINGS.pitch;
+    utterance.volume = GLOBAL_SPEECH_SETTINGS.volume;
+
+    utterance.onend = () => {
+      resolve(); 
+    };
+
+    // Handle potential system errors (e.g., speech engine crash or interruption)
+    utterance.onerror = (event) => {
+      reject(event.error);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  });
+}
+
 function makeDraggable(element) {
   let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
 
@@ -807,5 +837,6 @@ export {
   convertFromCanvasToClientCoordinates,
   animateMouseFromCenterToCoordinates,
   animateMouseFromStartToEndCoordinates,
-  animateMouseFromCenterToElement
+  animateMouseFromCenterToElement,
+  speakAsync
 }

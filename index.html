@@ -15,8 +15,10 @@
 <body>
   <!-- <div id="gameStage" style="background-image: url('./engine.png'); background-size: 50px 50px;"> -->
   <div id="gameStage" style="background-image: url('./favicon.ico'); background-size: 50px 50px;">
+    <canvas id="canvas_grid"></canvas>
+    <canvas id="canvas_demo_tracks"></canvas>
     <canvas id="canvas_tracks"></canvas>
-    <canvas id="canvas"></canvas>
+    <canvas id="canvas_trains"></canvas>
     <canvas id="canvas_results"></canvas>
     <canvas id="canvas_maps1"></canvas>
     <canvas id="canvas_maps2"></canvas>
@@ -413,8 +415,8 @@
         aria-label="Show raw material demand map">Z</button>
       <button type="button" class="mobile-hotkey" data-hotkey="A" title="Toggle Audio"
         aria-label="Toggle audio">A<icon id="audio_is_on" class="fa fa-volume-up"></icon><icon id="audio_is_off" class="fa fa-volume-mute" style="display:none;"></icon></button>
-      <button type="button" class="mobile-hotkey" data-hotkey="D" title="Demo Add Train"
-        aria-label="Demo Add Station">D</button>
+      <button type="button" class="mobile-hotkey" data-hotkey="D" title="Demo Add Train and Stations"
+        aria-label="Demo Add Train and Stations">D</button>
     
       </div> <!-- End of buttonGroup6: Touch-friendly replacements for keyboard hotkeys -->
 
@@ -448,6 +450,10 @@
     <div id="buttonGroup8" style="display: none; position:fixed;">
       <span></span>
     </div><!-- End of buttonGroup8: Tooltip -->
+    
+    <div id="buttonGroup9" class="demoExplanation" style="display: none;">
+      
+    </div><!-- End of buttonGroup9: Demo Explanation -->
 
   </div> <!-- End of controls -->
   <script type="module" src="script.js"></script>

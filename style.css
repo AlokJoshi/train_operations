@@ -15,21 +15,22 @@
   box-sizing: content-box;
 }
 
-#canvas,#canvas_tracks,#canvas_results,#canvas_maps1,#canvas_maps2,#canvas_maps3,#canvas_temp{
+#canvas_demo_tracks,#canvas_grid,#canvas_trains,#canvas_tracks,#canvas_results,#canvas_maps1,#canvas_maps2,#canvas_maps3,#canvas_temp{
   width:2400px;
   height:1600px;
   position:absolute;
   top:24px;
   left:24px;
 }
-#canvas_tracks{
+#canvas_demo_tracks,#canvas_tracks{
   z-index: 1;
 }
-#canvas{
+#canvas_trains{
   opacity:1;
   z-index: 2;
 }
-#canvas_tracks{
+#canvas_grid{
+  z-index: 0;
   background-image:url('Dirt6.png');
   background-size:cover;
   pointer-events: none;
@@ -316,6 +317,21 @@ ul li {
 
 .add-subtract-coaches {
   cursor: pointer;
+}
+
+.demoExplanation {
+  position: fixed;
+  width:50%;
+  top:25%;
+  left:50%;
+  transform: translate(-50%, -70%);
+  font-size: 2em;
+  font-weight: bold;
+  color:black;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 2px solid black;
+  border-radius: 8px;
+  z-index: 1000;
 }
 
 @media (max-width: 900px) {

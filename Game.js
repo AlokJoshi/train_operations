@@ -1,6 +1,6 @@
 import { Train } from './Train.js'
 import { Track } from './Track.js'
-import { Tracks } from './Tracks.js'
+// import { Tracks } from './Tracks.js'
 import { Financials } from './Financials.js'
 import { Flyovers } from './Flyovers.js'
 import { Flyover } from './Flyover.js'
@@ -13,6 +13,9 @@ import { RawMaterialSupply } from './RawMaterialSupply.js'
 import { Popups } from "./Popups.js"
 import { TrainInfo } from './TrainInfo.js'
 import { getCommonSegmentsMap } from './utility.js'
+
+
+
 class Game {
 
   TRAINCONFIG = [
@@ -24,19 +27,22 @@ class Game {
     { defaultName: 'Cyan', Color: 'rgba(0,255,255,0.5)' }
   ]
 
-  constructor(ctx, ctxTracks, ctxTemp, gridSize, OFFSET_X, OFFSET_Y, drawGridCallback) {
+  constructor(ctx, ctxTracks, ctxTemp, ctxDemoTracks, gridSize, OFFSET_X, OFFSET_Y) {
     this.ctx = ctx
     this.ctxTracks = ctxTracks
     this.ctxTemp = ctxTemp
     this.canvasWidth = ctx.canvas.width
     this.canvasHeight = ctx.canvas.height
+    this.canvasDemoTracksWidth = ctxDemoTracks.canvas.width
+    this.canvasDemoTracksHeight = ctxDemoTracks.canvas.height
     this.gridSize = gridSize
+    this.ctxDemoTracks = ctxDemoTracks
     this.OFFSET_X = OFFSET_X
     this.OFFSET_Y = OFFSET_Y
-    this.drawGridCallback = drawGridCallback
+    // this.drawGridCallback = drawGridCallback
     this.trains = []
     this.Flyovers = new Flyovers(ctxTracks, gridSize, OFFSET_X, OFFSET_Y)
-    this.tracks = new Tracks(ctxTracks)
+    // this.tracks = new Tracks(ctxTracks)
     this.ticksPerTimeUnit = 10000
     this.totalTimeUnits = 100
     this.financials = new Financials(this.totalTimeUnits)
@@ -168,9 +174,9 @@ class Game {
     return this.financials.getFinancialSummaryByTrain(this.getCurrentTimeIndex())
   }
 
-  addTrack(track) {
-    this.tracks.add(track)
-  }
+  // addTrack(track) {
+  //   this.tracks.add(track)
+  // }
 
   setPossibleFlyoverLocations(locations) {
     this.Flyovers.setPossibleFlyoverLocations(locations)
@@ -266,15 +272,16 @@ class Game {
     const firstPosition = positions[0]
     const lastPosition = positions[positions.length - 1]
 
-    const track = new Track(this.ctxTracks, positions, '', this.gridSize, overlapMatches)
+    const trackCtx = options.runningScriptedDemo ? this.ctxDemoTracks : this.ctxTracks
+    const track = new Track(trackCtx, positions, '', this.gridSize, overlapMatches)
 
     if (firstPosition.x == lastPosition.x && firstPosition.y == lastPosition.y) {
       alert('The starting and ending positions are the same. Please choose different positions for the starting and ending points.')
       return
     } else {
       //we add stations at both starting and ending points
-      track.addStation(createStation(this.canvasWidth, this.canvasHeight, this.ctxTracks, firstPosition.x, firstPosition.y, this.gridSize, 0, trainNumber, 30))
-      track.addStation(createStation(this.canvasWidth, this.canvasHeight, this.ctxTracks, lastPosition.x, lastPosition.y, this.gridSize, 0, trainNumber, 30))
+      track.addStation(createStation(this.canvasWidth, this.canvasHeight, trackCtx, firstPosition.x, firstPosition.y, this.gridSize, 0, trainNumber, 30))
+      track.addStation(createStation(this.canvasWidth, this.canvasHeight, trackCtx, lastPosition.x, lastPosition.y, this.gridSize, 0, trainNumber, 30))
       intersections.updateIntersectionsWithStationLocation(firstPosition.y / this.gridSize, firstPosition.x / this.gridSize, true)
       intersections.updateIntersectionsWithStationLocation(lastPosition.y / this.gridSize, lastPosition.x / this.gridSize, true)
       if (!options.partOfInitialSetup) {
@@ -286,14 +293,13 @@ class Game {
     //   stations[1].distanceFromStart = track.totalLength
     // }
     this.validateUniqueStationDistances(track.stations.getAllStations(), trainNumber)
-    this.addTrack(track)
+    // this.addTrack(track)
     const colorConfig = this.TRAINCONFIG[(trainNumber - 1) % this.TRAINCONFIG.length]
     const color = options.color ?? colorConfig.Color
     const trainName = options.trainName ?? colorConfig.defaultName
     const train = new Train({
       ctx: this.ctx,
       ctxTemp: this.ctxTemp,
-      // speed: engineSpeed,
       track,
       color,
       numCoaches,
@@ -393,10 +399,10 @@ class Game {
   draw() {
     this.trains.forEach((train, index) => {
       if (train) {
+        // console.log(`Drawing train ${train.trainNumber}`)
         train.draw()
       }
     })
-    // this.checkForCollissions()
   }
 
   removeTrain(trainNumber) {
@@ -429,9 +435,9 @@ class Game {
   displayAllTracksAndStations() {
     //clear the ctxTracks before redrawing all tracks and stations
     this.ctxTracks.clearRect(0, 0, this.ctxTracks.canvas.width, this.ctxTracks.canvas.height)
-    if(typeof this.drawGridCallback === 'function'){
-      this.drawGridCallback(this.ctxTracks)
-    }
+    // if(typeof this.drawGridCallback === 'function'){
+    //   this.drawGridCallback(this.ctxTracks)
+    // }
     this.trains.forEach(train => {
       if (train) {
         train.track.drawUsingNewPositions()
