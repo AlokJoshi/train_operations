@@ -1,0 +1,376 @@
+*{
+  margin:0;
+  padding:0;
+}
+
+:root {
+  --train-control-size: 30px;
+}
+
+#gameStage{
+  position: relative;
+  width: 2448px;
+  height: 1648px;
+  padding: 24px;
+  box-sizing: content-box;
+}
+
+#canvas_demo_tracks,#canvas_grid,#canvas_trains,#canvas_tracks,#canvas_results,#canvas_maps1,#canvas_maps2,#canvas_maps3,#canvas_temp{
+  width:2400px;
+  height:1600px;
+  position:absolute;
+  top:24px;
+  left:24px;
+}
+#canvas_demo_tracks,#canvas_tracks{
+  z-index: 1;
+}
+#canvas_trains{
+  opacity:1;
+  z-index: 2;
+}
+#canvas_grid{
+  z-index: 0;
+  background-image:url('Dirt6.png');
+  background-size:cover;
+  pointer-events: none;
+}
+#canvas_results,#canvas_maps1,#canvas_maps2,#canvas_maps3{
+  background-color:rgba(0,0,0,0);
+  color:#eee;
+  pointer-events: none;
+  z-index: 3;
+}
+#canvas_temp {
+  z-index: 4;
+}
+#controls{
+  position:absolute;
+  top:800px;
+  left:0px;
+}
+button{
+  font-size: 1.5em;
+  background-color: rgba(0, 255, 0, 0.4);
+  color:#eee;
+  border-radius: 5px;
+}
+button:hover{
+  cursor:pointer;
+}
+.health{
+  width:20px;
+  height:20px;
+  background-color:green;
+} 
+
+#trainControlsContainer .trainControl i {
+  width: var(--train-control-size);
+  height: var(--train-control-size);
+  font-size: calc(var(--train-control-size) - 2px);
+  line-height: var(--train-control-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+#trainControlsContainer .healthWrap {
+  width: var(--train-control-size);
+  height: var(--train-control-size);
+  display: inline-flex;
+  align-items: stretch;
+  background-color: red;
+}
+
+#trainControlsContainer .health {
+  width: 100%;
+  height: 100%;
+}
+
+#controls {
+  position: fixed; /* Or relative if it's a child of a fixed element */
+  z-index: 9999;   /* Use a very high number to be safe */
+  pointer-events: auto;
+}
+
+.modal{
+  background-color:rgba(0,0,0,0.4);
+  padding:20px;
+  border-radius:10px;
+  color:#eee;
+  border-top: #222 10px solid;
+  z-index: 1000;
+}
+
+#buttonGroup1,
+#buttonGroup2,
+#buttonGroup1 input,
+#buttonGroup2 input {
+  pointer-events: auto;
+}
+#buttonGroup1,#buttonGroup2,#buttonGroup3,#buttonGroup4,#buttonGroup5 {
+  font-size: 1.2em;
+}
+
+#buttonGroup1,
+#buttonGroup2,
+#buttonGroup3,
+#buttonGroup4,
+#buttonGroup5, #buttonGroup6, #buttonGroup7 {
+  padding: 0;
+  overflow: hidden;
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #1f3a5b;
+  color: #fff;
+  padding: 10px 14px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.dialogTitle {
+  font-weight: 700;
+  justify-content: center;
+}
+
+.dialogClose {
+  cursor: pointer;
+}
+
+.dialogContent {
+  padding: 14px 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.trainsInfo1,.trainsInfo2 {
+  font-size: 15px;
+  /* width:150px; */
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #eee;
+  padding: 5px;
+}
+.trainsInfo2 {
+  font-size:12px;
+}
+.popupInfo {
+  position: absolute;
+  z-index: 1001;
+  pointer-events: auto;
+  background-color: rgba(100, 0, 0, 0.75);
+  color: #eee;
+  padding: 10px 12px;
+  border-radius: 8px;
+  max-width: 360px;
+  cursor:pointer;
+}
+
+.popupInfo.is-minimized .trainsInfo {
+  display: none;
+}
+
+.popupHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.popupToggle {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  border: 1px solid rgba(255,255,255,0.35);
+  background-color: rgba(17,17,17,0.9);
+}
+
+.popupToggle i {
+  font-size: 11px;
+}
+
+.stationName {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  background-color: #333;
+  color: #fff;
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 0;
+}
+
+.trainsInfo1 {
+  font-size: 1.2em;
+}
+
+.trainsInfo2 {
+  font-size: 1.0em;
+}
+
+/* Hide number input spinner arrows in the train controls dialog. */
+#buttonGroup1 input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+#buttonGroup1 input[type="number"]::-webkit-outer-spin-button,
+#buttonGroup1 input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.key {
+  font-size: 1.2em;
+  /* font-weight: bold; */
+  color: #fff;
+  border:1px solid black;
+  border-radius: 5px;
+  padding: 2px 4px;
+  background-color: #333;
+}
+.trainControl {
+  display:none;
+  /* flex-direction:row; 
+  justify-content:space-between; */
+}
+
+#buttonGroup6 {
+  width: auto;
+  align-items: center;
+  padding: 8px;
+  border-top-width: 4px;
+}
+
+.mobile-hotkey {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 10px;
+  background-color: rgba(30, 30, 30, 0.85);
+  color: #fff;
+  touch-action: manipulation;
+}
+p {
+  margin: 0 0 10px 0;
+  font-size:1.2em;
+}
+.dialogHeader {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+.dialogContent div {
+  margin-bottom: 5px;
+  font-size: 1.2em;
+}
+
+.infotrainoperations {
+  overflow-y: scroll;
+  overflow-x: auto;
+}
+
+.infotrainoperations table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.0em;
+  
+}
+.infotrainoperations th,
+.infotrainoperations td {
+  border: 1px solid #ccc;
+  padding: 2px;
+  text-align: center;
+}
+
+td {
+  text-align: center;
+  border: 1px solid #ccc;
+}
+
+ul li {
+  font-size: 1.2em;
+  margin-bottom: 5px;
+}
+
+#infoForTrain.selected {
+  font-weight: bold;
+  border: 2px solid #fff;
+}
+.upgraded {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.add-subtract-coaches {
+  cursor: pointer;
+}
+
+.demoExplanation {
+  position: fixed;
+  width:50%;
+  top:25%;
+  left:50%;
+  transform: translate(-50%, -70%);
+  font-size: 2em;
+  font-weight: bold;
+  color:black;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 2px solid black;
+  border-radius: 8px;
+  z-index: 1000;
+}
+
+@media (max-width: 900px) {
+  #buttonGroup6 {
+    left: 8px !important;
+    right: 8px;
+    top: auto !important;
+    bottom: 8px;
+    position: fixed;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(44px, 1fr));
+    gap: 8px;
+    z-index: 1002;
+  }
+
+  #buttonGroup4,
+  #buttonGroup5 {
+    left: 2vw !important;
+    top: 2vh !important;
+    width: 96vw !important;
+    max-height: 88vh;
+  }
+
+  .popupInfo {
+    position: fixed;
+    width: 90vw !important;
+    max-height: 80vh;
+    overflow-y: auto;
+    pointer-events: auto;
+    z-index: 1001;
+  }
+  .stationName {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-bottom: 0;
+  } 
+  .trainsInfo {
+    font-size: 1.2em;
+  }
+}
+
+

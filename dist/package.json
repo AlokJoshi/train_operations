@@ -1,0 +1,15 @@
+{
+  "name": "train-operations",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Train Operations game build setup with esbuild",
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "watch": "node esbuild.config.mjs --watch",
+    "dev": "node esbuild.config.mjs --watch --serve",
+    "clean": "node esbuild.config.mjs --clean-only"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.2"
+  }
+}
