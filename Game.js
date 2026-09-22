@@ -284,7 +284,7 @@ class Game {
       track.addStation(createStation(this.canvasWidth, this.canvasHeight, trackCtx, lastPosition.x, lastPosition.y, this.gridSize, 0, trainNumber, 30))
       intersections.updateIntersectionsWithStationLocation(firstPosition.y / this.gridSize, firstPosition.x / this.gridSize, true)
       intersections.updateIntersectionsWithStationLocation(lastPosition.y / this.gridSize, lastPosition.x / this.gridSize, true)
-      if (!options.partOfInitialSetup) {
+      if (!options.partOfInitialSetup && !options.runningScriptedDemo) {
         this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
         this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
       }
@@ -405,16 +405,54 @@ class Game {
     })
   }
 
+  hasOtherTrainStationAt(x, y, excludedTrainNumber) {
+    return this.trains.some((otherTrain, index) => {
+      if (!otherTrain) {
+        return false
+      }
+      const otherTrainNumber = index + 1
+      if (otherTrainNumber === excludedTrainNumber) {
+        return false
+      }
+      if (typeof otherTrain.track?.hasStation !== 'function') {
+        return false
+      }
+      return otherTrain.track.hasStation(x, y)
+    })
+  }
+
   removeTrain(trainNumber) {
     console.log(`Removing train ${trainNumber} in game.removeTrain(), with number of trains: ${this.trains.length}`)  
 
     if (trainNumber <= this.trains.length) {
       const train = this.trains[trainNumber - 1]
+      const stationLocations = new Set()
       if (train) {
         if (!train.isUserPaused()) {
           train.setUserPaused(true)
         }
+        const stations = train.track?.stations?.getAllStations?.() ?? []
+        stations.forEach((station) => {
+          stationLocations.add(`${station.x},${station.y}`)
+        })
       }
+
+      stationLocations.forEach((locationKey) => {
+        const [xStr, yStr] = locationKey.split(',')
+        const x = Number(xStr)
+        const y = Number(yStr)
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+          return
+        }
+        if (!this.hasOtherTrainStationAt(x, y, trainNumber)) {
+          train?.intersections?.updateIntersectionsWithStationLocation(
+            y / this.gridSize,
+            x / this.gridSize,
+            false
+          )
+        }
+      })
+
       // instead of removing the train from the array, we can set the null value for the train in the array. 
       // This way we can keep the train number consistent and avoid issues with train numbers changing after a train is removed.
       this.trains[trainNumber - 1] = null
@@ -455,7 +493,7 @@ class Game {
       const station = createStation(this.canvasWidth, this.canvasHeight, this.ctxTracks, x, y, this.gridSize, 0, trainNumber, stopDuration)
       train.addStation(station)
       train.intersections.updateIntersectionsWithStationLocation(y / this.gridSize, x / this.gridSize, true)
-      if (!options.partOfInitialSetup) {
+      if (!options.partOfInitialSetup && !options.runningScriptedDemo) {
         this.financials.addStation(this.getCurrentTimeIndex(), trainNumber)
       }
     }

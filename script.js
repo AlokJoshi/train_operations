@@ -462,47 +462,121 @@ window.addEventListener('load', () => {
     return false
   }
 
+  const shouldBlockUserInputDuringDemo = (event) => runningScriptedDemo && event?.isTrusted === true
+
+  const blockUserInputDuringDemo = (event) => {
+    if (!shouldBlockUserInputDuringDemo(event)) {
+      return
+    }
+    if (event.cancelable) {
+      event.preventDefault()
+    }
+    event.stopImmediatePropagation()
+  }
+
+  const blockedEventsDuringDemo = [
+    'keydown',
+    'keyup',
+    'keypress',
+    'click',
+    'dblclick',
+    'mousedown',
+    'mouseup',
+    'contextmenu',
+    'pointerdown',
+    'pointerup',
+    'pointermove',
+    'wheel',
+    'touchstart',
+    'touchmove',
+    'touchend'
+  ]
+
+  blockedEventsDuringDemo.forEach((eventName) => {
+    window.addEventListener(eventName, blockUserInputDuringDemo, true)
+  })
+
+  const demoInputLockOverlayId = 'demoInputLockOverlay'
+
+  const showDemoInputLockOverlay = () => {
+    let overlayEl = document.getElementById(demoInputLockOverlayId)
+    if (!overlayEl) {
+      overlayEl = document.createElement('div')
+      overlayEl.id = demoInputLockOverlayId
+      overlayEl.style.position = 'fixed'
+      overlayEl.style.top = '100px'
+      overlayEl.style.left = '50%'
+      overlayEl.style.transform = 'translateX(-50%)'
+      overlayEl.style.padding = '10px 16px'
+      overlayEl.style.background = 'rgba(245, 226, 10, 0.25)'
+      overlayEl.style.color = '#fff'
+      overlayEl.style.fontSize = '14px'
+      overlayEl.style.fontWeight = '600'
+      overlayEl.style.borderRadius = '8px'
+      overlayEl.style.zIndex = '10001'
+      overlayEl.style.pointerEvents = 'none'
+      overlayEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)'
+      overlayEl.textContent = 'Demo in progress: Turn on sound to hear the commentary. Also keyboard and mouse input are temporarily disabled.'
+      document.body.appendChild(overlayEl)
+    }
+    overlayEl.style.display = 'block'
+  }
+
+  const hideDemoInputLockOverlay = () => {
+    const overlayEl = document.getElementById(demoInputLockOverlayId)
+    if (overlayEl) {
+      overlayEl.style.display = 'none'
+    }
+  }
+
   const startScriptedDemoToAddTrainAndStation = async (points, stationPoints, delayMS = 3000, deleteTrain = true, displayMessages = true) => {
 
+    let gameWasRunning = false
     runningScriptedDemo = true
-    //clear if tracks were previously drawn on the demo canvas
-    ctxDemoTracks.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
-    ctxTracks.canvas.style.display = 'none'
-    ctx.canvas.style.display = 'none'
-    ctxDemoTracks.canvas.style.display = 'block'
+    showDemoInputLockOverlay()
 
-    //close all the dialog boxes if they are open
-    document.getElementById('buttonGroup1').style.display = 'none'
-    document.getElementById('buttonGroup2').style.display = 'none'
-    document.getElementById('buttonGroup3').style.display = 'none'
-    document.getElementById('buttonGroup4').style.display = 'none'
-    document.getElementById('buttonGroup5').style.display = 'none'
-    document.getElementById('buttonGroup7').style.display = 'none'
+    try {
+      //clear if tracks were previously drawn on the demo canvas
+      ctxDemoTracks.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT)
+      ctxTracks.canvas.style.display = 'none'
+      ctx.canvas.style.display = 'none'
+      ctxDemoTracks.canvas.style.display = 'block'
 
-    await delay(1000)
-    const gameWasRunning = !paused
-    if (gameWasRunning) {
-      paused = true
-    }
+      //close all the dialog boxes if they are open
+      document.getElementById('buttonGroup1').style.display = 'none'
+      document.getElementById('buttonGroup2').style.display = 'none'
+      document.getElementById('buttonGroup3').style.display = 'none'
+      document.getElementById('buttonGroup4').style.display = 'none'
+      document.getElementById('buttonGroup5').style.display = 'none'
+      document.getElementById('buttonGroup7').style.display = 'none'
 
-    await speakAsync('This demo will guide you through adding a train and a few stations.')
+      await delay(1000)
+      gameWasRunning = !paused
+      if (gameWasRunning) {
+        paused = true
+      }
 
-    await delay(delayMS)
-    await speakAsync('Press on the T key on your keyboard or click on the Train button (T) on the on-screen controls to bring up the Train dialog box.')
+      await speakAsync('This demo will guide you through adding a train and a few stations.')
 
-    await delay(delayMS)
-    // Use the same hotkey path as normal controls to avoid missing event.code.
-    sendHotkeyToDocument('T')
+      await delay(delayMS)
+      await speakAsync('Press on the T key on your keyboard or click on the Train button (T) on the on-screen control panel to bring up the Train dialog box.')
 
-    await speakAsync('Now click on the Start Track Spec. play button.')
+      await delay(delayMS)
+      // Use the same hotkey path as normal controls to avoid missing event.code.
+      sendHotkeyToDocument('T')
 
-    await delay(delayMS)
+      await speakAsync('Now click on the Start Track Spec. play button.')
 
-    // mouse movement animation is triggered after opening the train dialog.
-    const startNewTrainPlayBtn = document.querySelector('#startTrack')
-    if (startNewTrainPlayBtn instanceof HTMLElement) {
-      const didAnimate = await animateMouseFromCenterToElement(startNewTrainPlayBtn)
-      if (didAnimate && runningScriptedDemo) {
+      await delay(delayMS)
+
+      // mouse movement animation is triggered after opening the train dialog.
+      const startNewTrainPlayBtn = document.querySelector('#startTrack')
+      if (startNewTrainPlayBtn instanceof HTMLElement) {
+        let didAnimate = await animateMouseFromCenterToElement(startNewTrainPlayBtn)
+        if (!didAnimate || !runningScriptedDemo) {
+          console.error(`Failed to animate mouse to the Start Track Spec. play button or the scripted demo is no longer running.`)
+          return
+        }
         startNewTrainPlayBtn.click()
 
         await speakAsync('This brings up an instructional message on the process that you must follow. You will read it and then click on OK')
@@ -526,11 +600,12 @@ window.addEventListener('load', () => {
 
 
         let clientPoint = {}
+        let didAnimateToCoordinates = false
         for (let i = 0; i < points.length; i++) {
           await speakAsync('Click on the ' + (i == 0 ? 'starting' : 'next') + ' point of the route.')
 
-          let clientPoint = convertFromCanvasToClientCoordinates(canvasTempEl, points[i].x, points[i].y)
-          let didAnimateToCoordinates = await animateMouseFromStartToEndCoordinates(startX, startY, clientPoint.clientX, clientPoint.clientY)
+          clientPoint = convertFromCanvasToClientCoordinates(canvasTempEl, points[i].x, points[i].y)
+          didAnimateToCoordinates = await animateMouseFromStartToEndCoordinates(startX, startY, clientPoint.clientX, clientPoint.clientY)
 
           if (!didAnimateToCoordinates) {
             console.error('Failed to animate mouse to the specified coordinates')
@@ -555,115 +630,117 @@ window.addEventListener('load', () => {
         await delay(delayMS)
 
         const flagOffBtn = document.querySelector('#flagOff')
-        startX = clientPoint.clientX
-        startY = clientPoint.clientY
+        // startX = clientPoint.clientX
+        // startY = clientPoint.clientY
         const flagOffBtnRect = flagOffBtn.getBoundingClientRect()
         let { clientX: endX4, clientY: endY4 } = convertFromCanvasToClientCoordinates(canvasTempEl, flagOffBtnRect.left, flagOffBtnRect.top)
-        const didAnimate = await animateMouseFromStartToEndCoordinates(startX, startY, endX4, endY4)
-        if (didAnimate && runningScriptedDemo) {
-          flagOffBtn.click()
-          const messages = []
-          messages.push('In the actual game you will see the train moving along the route you specified unless the game is in a paused state.')
-          // messages.push('This finishes the demo. For this demo, the game was paused. The game will now be resumed.')
-          // messages.push('Changes made during the demo will now be reversed and you will return to the main game.')
-          await delay(delayMS)
-          for (const message of messages) {
-            await speakAsync(message)
-            await delay(delayMS)
-          }
-
-          const lastTrainNumber = game.trains.length
-          await speakAsync("Once you create a train, starting and ending stations are defined. But you can then add a station.");
-
-          await delay(delayMS)
-
-          await speakAsync("First step is to bring up the Stations dialog box by pressing the S key on your keyboard or by clicking on the S button in the on-screen green control panel.");
-
-          await delay(delayMS)
-
-          sendHotkeyToDocument('S')
-
-          await delay(delayMS)
-
-          await speakAsync(`Since the train that you added is train number ${lastTrainNumber}, you should now see it listed in the Station Dialog box. You will click on the T${lastTrainNumber} entry to view all the points where a station can be added.`)
-          await delay(delayMS)
-
-          const stationContainer = document.querySelector('#stationFortrain')
-          if (!stationContainer) {
-            console.error(`Station container not found`)
-            return
-          }
-          const stationElement = document.querySelector(`[data-value="${lastTrainNumber}"][data-role="station-train"]`);
-          if (!stationElement) {
-            console.error(`Station element for train number ${lastTrainNumber} not found`)
-            return
-          }
-
-          const didAnimate = await animateMouseFromCenterToElement(stationElement)
-          if (!didAnimate || !runningScriptedDemo) {
-            console.error(`Failed to animate mouse to station element for train number ${lastTrainNumber} or the scripted demo is no longer running.`)
-          }
-
-          stationElement.click()
-
-          await speakAsync(`Now you can click on any of the green circles to add a new station at that location.`)
-          await speakAsync(`You will be asked to confirm the addition of the new station.`)
-          await speakAsync(`You can repeat this process to add multiple stations.`)
-          await delay(delayMS)
-          
-          for (let i = 0; i < stationPoints.length; i++) {
-            await speakAsync('Click on ' + (i==0?'first':'next') + 'point where you want to add a station.')
-            
-            let clientPoint = convertFromCanvasToClientCoordinates(canvasTempEl, stationPoints[i].x, stationPoints[i].y)
-            let didAnimateToCoordinates = await animateMouseFromStartToEndCoordinates(startX, startY, clientPoint.clientX, clientPoint.clientY)
-            
-            if (!didAnimateToCoordinates) {
-              console.error('Failed to animate mouse to the specified coordinates')
-              return false
-            }
-            // and send a click event at the final viewport coordinates on the canvas
-            let clickEvent = new MouseEvent('click', { clientX: clientPoint.clientX, clientY: clientPoint.clientY, bubbles: true, cancelable: true })
-            canvasTempEl.dispatchEvent(clickEvent)
-            
-            // reply in affirmative when the swal dialog appears to confirm the addition of the new station
-            await delay(delayMS) // wait for the swal dialog to appear
-            await dismissVisibleSwal({ requireConfirm: true })
-            
-            await delay(delayMS)
-            startX = clientPoint.clientX
-            startY = clientPoint.clientY
-          }
-          await delay(delayMS) // wait for the swal dialog to appear
-          await speakAsync(`After adding the new stations, you can click again on T${lastTrainNumber} entry to turn-off the list of possible station locations.`)
-          stationElement.click()
-          
-          await delay(delayMS) // wait for the swal dialog to appear
-          await speakAsync(`This concludes the demo.`)
-          
-          if (!deleteTrain) {
-            runningScriptedDemo = false
-            return lastTrainNumber
-          }
-
-          // delete the last train that was added during the demo
-          removetrain(lastTrainNumber, false)
-
-          await delay(delayMS)
-
-          if (gameWasRunning) {
-            paused = false
-          }
-
-          ctxTracks.canvas.style.display = 'block'
-          ctx.canvas.style.display = 'block'
-          ctxDemoTracks.canvas.style.display = 'none'
+        didAnimateToCoordinates = await animateMouseFromStartToEndCoordinates(startX, startY, endX4, endY4)
+        if (!didAnimateToCoordinates || !runningScriptedDemo) {
+          console.error(`Failed to animate mouse to flag-off button or the scripted demo is no longer running.`)
+          return
         }
+        flagOffBtn.click()
+        const messages = []
+        messages.push('In the actual game you will see the train moving along the route you specified unless the game is in a paused state.')
+        await delay(delayMS)
+        for (const message of messages) {
+          await speakAsync(message)
+          await delay(delayMS)
+        }
+
+        const lastTrainNumber = game.trains.length
+        await speakAsync("Once you create a train, starting and ending stations are defined. But you can then add a station.");
+
+        await delay(delayMS)
+
+        await speakAsync("First step is to bring up the Stations dialog box by pressing the S key on your keyboard or by clicking on the S button in the on-screen, green, control panel.");
+
+        await delay(delayMS)
+
+        sendHotkeyToDocument('S')
+
+        await delay(delayMS)
+
+        await speakAsync(`Since the train that you added is train number ${lastTrainNumber}, you should now see it listed in the Station Dialog box. You will click on the T${lastTrainNumber} entry to view all the points where a station can be added.`)
+        await delay(delayMS)
+
+        const stationContainer = document.querySelector('#stationFortrain')
+        if (!stationContainer) {
+          console.error(`Station container not found`)
+          return
+        }
+        const stationElement = document.querySelector(`[data-value="${lastTrainNumber}"][data-role="station-train"]`);
+        if (!stationElement) {
+          console.error(`Station element for train number ${lastTrainNumber} not found`)
+          return
+        }
+
+        didAnimate = await animateMouseFromCenterToElement(stationElement)
+        if (!didAnimate || !runningScriptedDemo) {
+          console.error(`Failed to animate mouse to station element for train number ${lastTrainNumber} or the scripted demo is no longer running.`)
+        }
+
+        stationElement.click()
+
+        await speakAsync(`Now you can click on any of the green circles to add a new station at that location.`)
+        await speakAsync(`You will be asked to confirm the addition of the new station. During this demo, it is assumed that you are confirming the addition of the station.`)
+        await speakAsync(`You can repeat this process to add multiple stations.`)
+        await delay(delayMS)
+
+        for (let i = 0; i < stationPoints.length; i++) {
+          await speakAsync('Click on ' + (i == 0 ? 'first' : 'next') + 'point where you want to add a station.')
+
+          let clientPoint = convertFromCanvasToClientCoordinates(canvasTempEl, stationPoints[i].x, stationPoints[i].y)
+          didAnimateToCoordinates = await animateMouseFromStartToEndCoordinates(startX, startY, clientPoint.clientX, clientPoint.clientY)
+
+          if (!didAnimateToCoordinates) {
+            console.error('Failed to animate mouse to the specified coordinates')
+            return false
+          }
+          // and send a click event at the final viewport coordinates on the canvas
+          let clickEvent = new MouseEvent('click', { clientX: clientPoint.clientX, clientY: clientPoint.clientY, bubbles: true, cancelable: true })
+          canvasTempEl.dispatchEvent(clickEvent)
+
+          // reply in affirmative when the swal dialog appears to confirm the addition of the new station
+          await delay(3000) // wait for the swal dialog to appear
+          await dismissVisibleSwal({ requireConfirm: true })
+
+          await delay(delayMS)
+          startX = clientPoint.clientX
+          startY = clientPoint.clientY
+        }
+        await delay(delayMS) // wait for the swal dialog to appear
+        await speakAsync(`After adding the new stations, you can click again on T${lastTrainNumber} entry to turn-off the list of possible station locations.`)
+
+        // await delay(delayMS) // wait for the swal dialog to appear
+        await speakAsync(`This concludes the demo.`)
+
+        stationElement.click()
+
+        if (!deleteTrain) {
+          return lastTrainNumber
+        }
+
+        // delete the last train that was added during the demo
+        removetrain(lastTrainNumber, false)
+
+        await delay(delayMS)
+
       }
+
+    } finally {
+      if (gameWasRunning) {
+        paused = false
+      }
+      ctxTracks.canvas.style.display = 'block'
+      ctx.canvas.style.display = 'block'
+      ctxDemoTracks.canvas.style.display = 'none'
+      runningScriptedDemo = false
+      hideDemoInputLockOverlay()
     }
-    runningScriptedDemo = false
   };
 
-    const displayPossibleStationLocations = (trainNumber) => {
+  const displayPossibleStationLocations = (trainNumber) => {
     const train = game.trains[trainNumber - 1]
     if (!train) {
       console.error(`Train with number ${trainNumber} not found`)
@@ -919,14 +996,14 @@ window.addEventListener('load', () => {
     } else if (event.code === 'KeyD') {
       //if the code is D then demo add train
       const points = []
-      points.push({ x: 1200, y: 500 })
-      points.push({ x: 1000, y: 500 })
-      points.push({ x: 500, y: 1050 })
+      points.push({ x: 1200, y: 300 })
+      points.push({ x: 500, y: 300 })
+      points.push({ x: 500, y: 850 })
       const stationPoints = []
-      stationPoints.push({ x: 600, y: 500 })
-      stationPoints.push({ x: 500, y: 900 })
+      stationPoints.push({ x: 1000, y: 300 })
+      stationPoints.push({ x: 500, y: 700 })
       startScriptedDemoToAddTrainAndStation(points, stationPoints, 500)
-    } 
+    }
   }
 
   startPausebutton.addEventListener('click', () => {
@@ -1380,7 +1457,7 @@ window.addEventListener('load', () => {
             cancelButtonText: 'No'
           }).then((result) => {
             if (result.isConfirmed) {
-              game.addStation(selectedTrainNumber, x, y, `S${selectedTrainNumber}${String((x / gridSize) + 1).padStart(2, '0')}${String((y / gridSize) + 1).padStart(2, '0')}`, 30)
+              game.addStation(selectedTrainNumber, x, y, `S${selectedTrainNumber}${String((x / gridSize) + 1).padStart(2, '0')}${String((y / gridSize) + 1).padStart(2, '0')}`, 30, { runningScriptedDemo })
               // redisplay the list of possible station locations for the selected train
               game.displayAllTracksAndStations(drawGrid)
               displayPossibleStationLocations(selectedTrainNumber)
@@ -1895,9 +1972,12 @@ window.addEventListener('load', () => {
     clearTrainExtensionState()
   }
   window.removetrain = (trainnumber, confirm = true) => {
+    const activeTrackCtx = runningScriptedDemo ? ctxDemoTracks : ctxTracks
     if (!confirm) {
-      ctxTracks.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-      drawGrid(ctxTracks)
+      activeTrackCtx.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+      if (activeTrackCtx === ctxTracks) {
+        drawGrid(ctxTracks)
+      }
       console.log(`Removing train ${trainnumber} in window.removetrain(${confirm})`)
       game.removeTrain(trainnumber)
       intersections.removeTrain(trainnumber)
@@ -1915,8 +1995,10 @@ window.addEventListener('load', () => {
       cancelButtonText: 'No, keep it'
     }).then((result) => {
       if (result.isConfirmed) {
-        ctxTracks.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
-        drawGrid(ctxTracks)
+        activeTrackCtx.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+        if (activeTrackCtx === ctxTracks) {
+          drawGrid(ctxTracks)
+        }
         game.removeTrain(trainnumber)
         intersections.removeTrain(trainnumber)
         //clear intersections from ctxTemp for the removed train

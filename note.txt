@@ -158,3 +158,76 @@ Fastest practical target:
 If you want, I can apply the first two code-level wins now:
 1. switch audio to deferred preload
 2. lazy-load tutorial images/video on first open of the help modal
+
+I’m now applying the non-persistent demo fixes: skip demo financial charges, clear demo station intersection flags on removal, and make the demo function always clean up via finally even on early returns.
+
+Generating patch (69 lines) in 
+
+
+```
+
+```
+
+
+Generating patch (65 lines) in 
+
+
+```
+
+```
+I’ve applied both patches; next I’ll run diagnostics and verify line references so you can quickly review exactly what changed.
+
+Ran terminal command: Set-Location 'c:\ws\train_operations'; $i=1; Get-Content script.js | ForEach-Object { '{0,4}: {1}' -f $i, $_; $i++ } | Select-Object -Skip 460 -First 235
+
+Ran terminal command: Set-Location 'c:\ws\train_operations'; $i=1; Get-Content script.js | ForEach-Object { '{0,4}: {1}' -f $i, $_; $i++ } | Select-Object -Skip 1368 -First 30
+
+Ran terminal command: Set-Location 'c:\ws\train_operations'; $i=1; Get-Content Game.js | ForEach-Object { '{0,4}: {1}' -f $i, $_; $i++ } | Select-Object -Skip 276 -First 260
+
+Checked , , no problems found
+
+Read , lines 1 to 260
+
+Read , lines 1 to 280
+
+Implemented. The demo function now avoids permanent cost/intersection side effects and always restores state even on early exits.
+
+What I changed:
+
+1. Always restore demo state with try/finally in `script.js:465`
+- Wrapped `startScriptedDemoToAddTrainAndStation` in `try/finally`.
+- Guarantees these are reset even if the function returns early:
+  - `paused` (if game was running): `script.js:660`
+  - canvas visibility: `script.js:663`, `script.js:665`
+  - `runningScriptedDemo`: `script.js:666`
+
+2. Prevent station costs during scripted demo
+- Existing station add call from station-click flow now passes demo flag:
+  - `script.js:1387`
+- `Game.addStation` now skips financial charge when `runningScriptedDemo`:
+  - `Game.js:496`
+
+3. Prevent endpoint station charges for demo-created train
+- In `Game.addTrain`, start/end station charges are now skipped when scripted demo:
+  - `Game.js:287`
+
+4. Clean up station intersection markers when removing demo train
+- Added helper to check whether another train still has a station at same coordinate:
+  - `Game.js:408`
+- `Game.removeTrain` now clears intersection station flags for removed train’s stations only when no other train shares that station:
+  - `Game.js:429` through `Game.js:453`
+
+Validation:
+
+- No errors reported in:
+  - `script.js`
+  - `Game.js`
+
+Net effect for your request:
+
+- `startScriptedDemoToAddTrainAndStation` no longer leaves behind demo station costs.
+- It now reliably exits cleanly and restores UI/runtime demo flags.
+- It reduces leftover station intersection state from demo train deletion.
+
+If you want, next I can also make `removetrain(..., false)` redraw whichever track canvas is active (`ctxDemoTracks` during demo vs `ctxTracks` otherwise), so visual cleanup during demo is perfectly consistent.
+
+Made changes.
