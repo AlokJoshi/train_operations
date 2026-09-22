@@ -10,7 +10,7 @@ export const audioManager = createAudioManager(
     money: './money.mp3',
     pop: './pop.mp3',
     chugging: './chugging_sound.mp3',
-    horn: './horn.mp3',
+    // horn: './horn.mp3',
     traincollide: './traincollide.mp3',
     drumroll: './drumroll.mp3'
   },
