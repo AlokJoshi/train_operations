@@ -79,10 +79,9 @@ function scheduleDistantSteamAmbience(origin = 'loop', force = false, delay = 40
     withWhistle: Math.random() < 0.5
   }
 
-  const thisTick = globalThis.globalTicks
   // console.log(`[audio] scheduling distant steam (${origin}) at tick ${thisTick}`)
   setTimeout(async () => {
-    const played = await audioManager.playDistantSteamTrain(options)
+    await audioManager.playDistantSteamTrain(options)
     // console.log(`[audio] distant steam ${played ? 'played' : 'skipped'} (${origin}) at tick ${globalThis.globalTicks}`)
   }, ambientDelayMs)
 
@@ -125,6 +124,8 @@ window.setGameSoundEnabled = (enabled) => audioManager.setEnabled(enabled)
 
 let allowPageUnload = false
 
+const GAME_RESTART_WARNING = 'This will wipe out your progress in the game and restart from the beginning.'
+
 window.allowGamePageUnload = (allowed = true) => {
   allowPageUnload = !!allowed
   return allowPageUnload
@@ -135,7 +136,7 @@ window.addEventListener('beforeunload', (event) => {
     return
   }
   event.preventDefault()
-  event.returnValue = ''
+  event.returnValue = 'Refreshing or leaving this page will wipe out your game progress and restart the game.'
 })
 
 const controlsRoot = document.querySelector('#controls')
@@ -146,6 +147,37 @@ function blurFocusedControlElement() {
     activeElement.blur()
   }
 }
+
+async function requestGameRestart(source = 'restart') {
+  const title = source === 'refresh'
+    ? 'Refresh and restart game?'
+    : 'Restart game?'
+
+  if (typeof window.swal !== 'undefined' && typeof window.swal.fire === 'function') {
+    const result = await window.swal.fire({
+      icon: 'warning',
+      title,
+      text: GAME_RESTART_WARNING,
+      showCancelButton: true,
+      confirmButtonText: 'Restart',
+      cancelButtonText: 'Cancel'
+    })
+    if (!result.isConfirmed) {
+      return false
+    }
+  } else {
+    const confirmed = window.confirm(`${title}\n\n${GAME_RESTART_WARNING}`)
+    if (!confirmed) {
+      return false
+    }
+  }
+
+  window.allowGamePageUnload(true)
+  window.location.reload()
+  return true
+}
+
+window.restartGame = () => requestGameRestart('restart')
 
 if (typeof window.swal !== 'undefined' && typeof window.swal.fire === 'function') {
   const originalSwalFire = window.swal.fire.bind(window.swal)
@@ -526,16 +558,10 @@ window.addEventListener('load', () => {
 
     if (event.repeat || !event.code) return
 
-    const isKeyboardRefresh = event.code === 'F5' || ((event.ctrlKey || event.metaKey) && event.code === 'KeyR')
+    const isKeyboardRefresh = event.code === 'F5' || ((event.ctrlKey || event.metaKey))
     if (isKeyboardRefresh) {
       event.preventDefault()
-      if (typeof window.swal !== 'undefined' && typeof window.swal.fire === 'function') {
-        window.swal.fire({
-          icon: 'info',
-          title: 'Refresh blocked',
-          text: 'Use in-game controls to continue. Browser refresh restarts the game.'
-        })
-      }
+      void requestGameRestart('refresh')
       return
     }
 
@@ -869,6 +895,13 @@ window.addEventListener('load', () => {
     })
   })
 
+  const restartGameBtn = document.querySelector('#restartGameBtn')
+  if (restartGameBtn) {
+    restartGameBtn.addEventListener('click', () => {
+      void requestGameRestart('restart')
+    })
+  }
+
   const getCanvasPoint = (event) => {
     const rect = event.currentTarget.getBoundingClientRect()
     return {
@@ -908,7 +941,7 @@ window.addEventListener('load', () => {
   if (infoForTrainContainer) {
     infoForTrainContainer.addEventListener('click', (event) => {
       const target = event.target
-      if (!(target instanceof HTMLElement) || target.tagName !== 'SPAN') {
+      if (!(target instanceof HTMLElement) || target.tagName !== 'DIV') {
         return
       }
       const trainNumber = Number.parseInt(target.dataset.value, 10)

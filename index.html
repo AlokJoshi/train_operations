@@ -178,24 +178,15 @@
     </div> <!-- End of buttonGroup4: Results -->
 
     <div id="buttonGroup5" class="modal"
-      style="display:none; width:600px; height:900px; position:fixed; top:70px;left:400px; flex-direction:column; gap:10px">
+      style="display:none; width:600px; height:900px; position:fixed; top:70px;left:400px; 
+      flex-direction:column; gap:10px;background-color: rgba(0, 255, 0, 0.4);color:#111">
       <div class="dialogHeader">
         <span class="dialogTitle">How to play</span>
         <span class="dialogClose" onclick="document.getElementById('buttonGroup5').style.display='none';">
           <i class="fas fa-times" title="Close"></i>
         </span>
       </div>
-      <div id="soundControl" style="font-size: 1.2em; margin-top:6px;cursor:pointer;" onclick="toggleAudio()"><span
-          id="soundControlLabel">Audio: On</span> <i class="fas fa-volume-up" title="Audio On (click  to mute)"></i>
-      </div>
-      <div id="smokeControl" style="font-size: 1.2em; margin-top:6px;">
-        Steam Smoke:
-        <select id="smokeLevelControl" style="font-size: 1.2em;" aria-label="Steam smoke level">
-          <option value="off">Off</option>
-          <option value="low">Low</option>
-          <option value="high" selected>High</option>
-        </select>
-      </div>
+      
       <div class="dialogContent">
         <div style="display:flex; align-items:center; justify-content:center;">
           <button type="button" style="border-radius: 10px;padding:10px"
@@ -390,6 +381,17 @@
         <div style="display:flex; align-items:center; justify-content:center;">
           <button type="button" style="border-radius: 10px;padding:10px;" id="howToPlayStartBtn">Start/Pause</button>
         </div>
+        <div id="soundControl" style="font-size: 1.2em; margin-top:6px;cursor:pointer;" onclick="toggleAudio()"><span
+          id="soundControlLabel">Audio: On</span> <i class="fas fa-volume-up" title="Audio On (click  to mute)"></i>
+      </div>
+      <div id="smokeControl" style="font-size: 1.2em; margin-top:6px;">
+        Steam Smoke:
+        <select id="smokeLevelControl" style="font-size: 1.2em;" aria-label="Steam smoke level">
+          <option value="off">Off</option>
+          <option value="low">Low</option>
+          <option value="high" selected>High</option>
+        </select>
+      </div>
       </div>
     </div> <!-- End of buttonGroup5: Instructions -->
 
@@ -415,6 +417,7 @@
         aria-label="Toggle audio">A<icon id="audio_is_on" class="fa fa-volume-up"></icon><icon id="audio_is_off" class="fa fa-volume-mute" style="display:none;"></icon></button>
       <button type="button" class="mobile-hotkey" data-hotkey="D" title="Demo Add Train and Stations"
         aria-label="Demo Add Train and Stations">D</button>
+      <button type="button" class="mobile-hotkey" id="restartGameBtn" title="Restart Game" aria-label="Restart game">Restart</button>
     
       </div> <!-- End of buttonGroup6: Touch-friendly replacements for keyboard hotkeys -->
 
