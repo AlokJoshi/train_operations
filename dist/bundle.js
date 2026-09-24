@@ -1,661 +1,3 @@
-// utility.js
-var GLOBAL_SPEECH_SETTINGS = {
-  rate: 1.2,
-  // Slightly faster
-  pitch: 1,
-  volume: 0.9
-};
-function speakAsync(text) {
-  return new Promise((resolve, reject) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = GLOBAL_SPEECH_SETTINGS.rate;
-    utterance.pitch = GLOBAL_SPEECH_SETTINGS.pitch;
-    utterance.volume = GLOBAL_SPEECH_SETTINGS.volume;
-    utterance.onend = () => {
-      resolve();
-    };
-    utterance.onerror = (event) => {
-      reject(event.error);
-    };
-    window.speechSynthesis.speak(utterance);
-  });
-}
-function makeDraggable(element) {
-  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-  element.onmousedown = dragMouseDown;
-  function dragMouseDown(e) {
-    const interactiveSelector = "input, textarea, select, button, label, i, a";
-    if (e.target.closest(interactiveSelector)) {
-      return;
-    }
-    e.preventDefault();
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    document.onmouseup = closeDragElement;
-    document.onmousemove = elementDrag;
-  }
-  function elementDrag(e) {
-    e.preventDefault();
-    pos1 = pos3 - e.clientX;
-    pos2 = pos4 - e.clientY;
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    element.style.top = element.offsetTop - pos2 + "px";
-    element.style.left = element.offsetLeft - pos1 + "px";
-  }
-  function closeDragElement() {
-    document.onmouseup = null;
-    document.onmousemove = null;
-  }
-}
-function rowAndColumnName(x, y, gridSize2) {
-  const n = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const col = Math.floor(x / gridSize2);
-  const row = Math.floor(y / gridSize2);
-  const colName = alpha(col);
-  const rowName = alpha(row);
-  return [rowName, colName];
-}
-function alpha(index) {
-  const n = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  return (index >= n.length ? n[Math.floor(index / n.length - 1)] : "") + n[index % n.length];
-}
-function getDetailedSegmentsMap(positions, turningCircle = 100, gridSize2 = 50) {
-  if (!Array.isArray(positions) || positions.length < 2) {
-    return /* @__PURE__ */ new Map();
-  }
-  const segmentsMap = /* @__PURE__ */ new Map();
-  const modifiedPositions = [];
-  let firstx = positions[0].x;
-  let firsty = positions[0].y;
-  let secondx, secondy, thirdx, thirdy;
-  modifiedPositions.push({ x: firstx, y: firsty });
-  for (let i = 1; i < positions.length; i++) {
-    secondx = positions[i].x;
-    secondy = positions[i].y;
-    thirdx = positions[i + 1]?.x;
-    thirdy = positions[i + 1]?.y;
-    if (firstx === secondx && secondx === thirdx) {
-      if (i == positions.length - 1) {
-        modifiedPositions.push({ x: secondx, y: secondy });
-      }
-    } else if (firsty === secondy && secondy === thirdy) {
-      if (i == positions.length - 1) {
-        modifiedPositions.push({ x: secondx, y: secondy });
-      }
-    } else {
-      modifiedPositions.push({ x: secondx, y: secondy });
-      firstx = secondx;
-      firsty = secondy;
-    }
-  }
-  let startx, starty, endx, endy;
-  let newModifiedPositions = [];
-  let n = 0;
-  for (let i = 1; i < modifiedPositions.length; i++) {
-    startx = modifiedPositions[i - 1].x;
-    starty = modifiedPositions[i - 1].y;
-    newModifiedPositions.push({ x: startx, y: starty });
-    endx = modifiedPositions[i].x;
-    endy = modifiedPositions[i].y;
-    n = i == modifiedPositions.length - 1 ? 1 : 0;
-    if (endx === startx) {
-      const dir = endy > starty ? 1 : -1;
-      for (let j = 1; j < Math.abs(starty - endy) / gridSize2 + n; j++) {
-        newModifiedPositions.push({ x: startx, y: starty + j * gridSize2 * dir, direction: "vertical" });
-      }
-    }
-    if (endy === starty) {
-      const dir = endx > startx ? 1 : -1;
-      for (let j = 1; j < Math.abs(startx - endx) / gridSize2 + n; j++) {
-        newModifiedPositions.push({ x: startx + j * gridSize2 * dir, y: starty, direction: "horizontal" });
-      }
-    }
-    startx = endx;
-    starty = endy;
-  }
-  for (let j = 1; j < newModifiedPositions.length; j++) {
-    const prev = newModifiedPositions[j - 1];
-    const curr = newModifiedPositions[j];
-    if (j > 1 && (prev.direction == "vertical" || prev.direction == "horizontal") && curr.direction == null) {
-      prev.skip = true;
-      curr.skip = true;
-      if (j + 2 < newModifiedPositions.length) {
-        const next = newModifiedPositions[j + 1];
-        next.skip = true;
-      }
-    }
-  }
-  for (let j = 0; j < newModifiedPositions.length - 1; j++) {
-    const start = newModifiedPositions[j];
-    const end = newModifiedPositions[j + 1];
-    if (start.skip || end.skip) {
-      continue;
-    }
-    segmentsMap.set(`${start.x},${start.y}-${end.x},${end.y}`, { startx: start.x, starty: start.y, endx: end.x, endy: end.y });
-  }
-  return segmentsMap;
-}
-function getCommonSegmentsMap(positions1, positions2, turningCircle = 100, gridSize2 = 50) {
-  const segmentsMap1 = getDetailedSegmentsMap(positions1, turningCircle, gridSize2);
-  const segmentsMap2 = getDetailedSegmentsMap(positions2, turningCircle, gridSize2);
-  const commonSegmentsMap = /* @__PURE__ */ new Map();
-  for (const key of segmentsMap1.keys()) {
-    const keyAlternative = key.split("-").reverse().join("-");
-    if (segmentsMap2.has(key) || segmentsMap2.has(keyAlternative)) {
-      commonSegmentsMap.set(key, segmentsMap1.get(key));
-    }
-  }
-  return commonSegmentsMap;
-}
-async function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = {} } = {}) {
-  const sounds = /* @__PURE__ */ new Map();
-  let mediaUnlocked = false;
-  let audioEnabled = !!enabled;
-  let audioContext = null;
-  let audioPausedBySystem = false;
-  const resolvedHornDefaults = {
-    baseFrequency: 280,
-    duration: 1.7,
-    //0.7
-    volume: 0.12,
-    detune: 0,
-    ...hornDefaults
-  };
-  const getAudioContext = () => {
-    if (audioContext) return audioContext;
-    const AudioCtx = globalThis.AudioContext || globalThis.webkitAudioContext;
-    if (!AudioCtx) {
-      return null;
-    }
-    audioContext = new AudioCtx();
-    return audioContext;
-  };
-  const ensureWebAudioReady = async () => {
-    const ctx2 = getAudioContext();
-    if (!ctx2) {
-      return false;
-    }
-    if (ctx2.state === "suspended") {
-      try {
-        await ctx2.resume();
-      } catch {
-        return false;
-      }
-    }
-    return ctx2.state === "running";
-  };
-  Object.entries(audioSources).forEach(([key, source]) => {
-    if (!key || !source) {
-      return;
-    }
-    const audio = new Audio(source);
-    audio.preload = "auto";
-    sounds.set(key, audio);
-  });
-  const unlockAudio = async () => {
-    if (!audioEnabled || audioPausedBySystem) {
-      return false;
-    }
-    let unlocked = false;
-    if (!mediaUnlocked && sounds.size > 0) {
-      const firstAudio = sounds.values().next().value;
-      if (firstAudio) {
-        try {
-          firstAudio.muted = true;
-          firstAudio.currentTime = 0;
-          await firstAudio.play();
-          firstAudio.pause();
-          firstAudio.currentTime = 0;
-          firstAudio.muted = false;
-          mediaUnlocked = true;
-          unlocked = true;
-        } catch {
-        }
-      }
-    }
-    const webAudioReady = await ensureWebAudioReady();
-    return unlocked || mediaUnlocked || webAudioReady;
-  };
-  const playTrainHorn = async ({
-    trainNumber = 1,
-    baseFrequency = resolvedHornDefaults.baseFrequency,
-    duration = resolvedHornDefaults.duration,
-    volume = resolvedHornDefaults.volume,
-    detune = resolvedHornDefaults.detune
-  } = {}) => {
-    if (!audioEnabled || audioPausedBySystem) {
-      return false;
-    }
-    const ctx2 = getAudioContext();
-    if (!ctx2) {
-      return false;
-    }
-    if (!await ensureWebAudioReady()) {
-      return false;
-    }
-    const safeDuration = Math.min(2.5, Math.max(0.15, Number(duration) || resolvedHornDefaults.duration));
-    const safeVolume = Math.min(1, Math.max(0, Number(volume) || resolvedHornDefaults.volume));
-    const safeDetune = Math.max(-2400, Math.min(2400, Number(detune) || resolvedHornDefaults.detune));
-    const safeTrainNumber = Number.isFinite(trainNumber) ? trainNumber : 1;
-    const seed = Math.abs(Math.trunc(safeTrainNumber)) % 13 - 6;
-    const trainPitchFactor = Math.pow(2, seed / 36);
-    const fundamental = Math.max(80, Math.min(1200, (Number(baseFrequency) || resolvedHornDefaults.baseFrequency) * trainPitchFactor));
-    const now = ctx2.currentTime;
-    const attack = 0.04;
-    const decay = 0.16;
-    const release = 0.24;
-    const hold = Math.max(0, safeDuration - attack - decay - release);
-    const master = ctx2.createGain();
-    master.gain.setValueAtTime(1e-4, now);
-    master.gain.exponentialRampToValueAtTime(Math.max(1e-4, safeVolume), now + attack);
-    master.gain.exponentialRampToValueAtTime(Math.max(1e-4, safeVolume * 0.78), now + attack + decay);
-    master.gain.setValueAtTime(Math.max(1e-4, safeVolume * 0.78), now + attack + decay + hold);
-    master.gain.exponentialRampToValueAtTime(1e-4, now + safeDuration);
-    const bandpass = ctx2.createBiquadFilter();
-    bandpass.type = "bandpass";
-    bandpass.frequency.setValueAtTime(fundamental * 2.2, now);
-    bandpass.Q.setValueAtTime(0.9, now);
-    const osc1 = ctx2.createOscillator();
-    osc1.type = "sawtooth";
-    osc1.frequency.setValueAtTime(fundamental, now);
-    osc1.detune.setValueAtTime(safeDetune, now);
-    const osc2 = ctx2.createOscillator();
-    osc2.type = "square";
-    osc2.frequency.setValueAtTime(fundamental * 1.005, now);
-    osc2.detune.setValueAtTime(safeDetune + 4, now);
-    const lfo = ctx2.createOscillator();
-    lfo.type = "sine";
-    lfo.frequency.setValueAtTime(5.1, now);
-    const lfoGain = ctx2.createGain();
-    lfoGain.gain.setValueAtTime(10, now);
-    osc1.connect(bandpass);
-    osc2.connect(bandpass);
-    bandpass.connect(master);
-    master.connect(ctx2.destination);
-    lfo.connect(lfoGain);
-    lfoGain.connect(osc1.detune);
-    lfoGain.connect(osc2.detune);
-    try {
-      osc1.start(now);
-      osc2.start(now);
-      lfo.start(now);
-      osc1.stop(now + safeDuration);
-      osc2.stop(now + safeDuration);
-      lfo.stop(now + safeDuration);
-      const cleanupDelay = Math.ceil((safeDuration + 0.05) * 1e3);
-      setTimeout(() => {
-        try {
-          osc1.disconnect();
-          osc2.disconnect();
-          lfo.disconnect();
-          lfoGain.disconnect();
-          bandpass.disconnect();
-          master.disconnect();
-        } catch {
-        }
-      }, cleanupDelay);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-  const playDistantSteamTrain = async ({
-    duration = 8,
-    volume = 0.08,
-    chuffRate = 2.6,
-    pan = 0,
-    withWhistle = false
-  } = {}) => {
-    if (!audioEnabled || audioPausedBySystem) {
-      return false;
-    }
-    const ctx2 = getAudioContext();
-    if (!ctx2) {
-      return false;
-    }
-    if (!await ensureWebAudioReady()) {
-      return false;
-    }
-    const safeDuration = Math.min(20, Math.max(2, Number(duration) || 8));
-    const safeVolume = Math.min(1, Math.max(0, Number(volume) || 0.08));
-    const safeChuffRate = Math.min(5.5, Math.max(0.8, Number(chuffRate) || 2.6));
-    const safePan = Math.min(1, Math.max(-1, Number(pan) || 0));
-    const now = ctx2.currentTime;
-    const master = ctx2.createGain();
-    master.gain.setValueAtTime(1e-4, now);
-    master.gain.exponentialRampToValueAtTime(Math.max(1e-4, safeVolume), now + 0.8);
-    master.gain.setValueAtTime(Math.max(1e-4, safeVolume), now + Math.max(1.2, safeDuration - 1.2));
-    master.gain.exponentialRampToValueAtTime(1e-4, now + safeDuration);
-    const distanceFilter = ctx2.createBiquadFilter();
-    distanceFilter.type = "lowpass";
-    distanceFilter.frequency.setValueAtTime(1100, now);
-    distanceFilter.frequency.linearRampToValueAtTime(700, now + safeDuration);
-    distanceFilter.Q.setValueAtTime(0.8, now);
-    const outputNode = typeof ctx2.createStereoPanner === "function" ? ctx2.createStereoPanner() : null;
-    if (outputNode) {
-      outputNode.pan.setValueAtTime(safePan, now);
-    }
-    master.connect(distanceFilter);
-    if (outputNode) {
-      distanceFilter.connect(outputNode);
-      outputNode.connect(ctx2.destination);
-    } else {
-      distanceFilter.connect(ctx2.destination);
-    }
-    const noiseBufferLength = Math.ceil(ctx2.sampleRate * 2);
-    const noiseBuffer = ctx2.createBuffer(1, noiseBufferLength, ctx2.sampleRate);
-    const noiseData = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < noiseBufferLength; i++) {
-      noiseData[i] = (Math.random() * 2 - 1) * 0.5;
-    }
-    const steamNoise = ctx2.createBufferSource();
-    steamNoise.buffer = noiseBuffer;
-    steamNoise.loop = true;
-    const steamBand = ctx2.createBiquadFilter();
-    steamBand.type = "bandpass";
-    steamBand.frequency.setValueAtTime(320, now);
-    steamBand.Q.setValueAtTime(1.2, now);
-    const chuffGain = ctx2.createGain();
-    chuffGain.gain.setValueAtTime(1e-4, now);
-    const chuffInterval = 1 / safeChuffRate;
-    for (let t = 0; t < safeDuration; t += chuffInterval) {
-      const start = now + t;
-      const peak = 0.34 + Math.random() * 0.2;
-      chuffGain.gain.setValueAtTime(1e-4, start);
-      chuffGain.gain.exponentialRampToValueAtTime(peak, start + 0.03);
-      chuffGain.gain.exponentialRampToValueAtTime(1e-4, start + 0.16);
-    }
-    steamNoise.connect(steamBand);
-    steamBand.connect(chuffGain);
-    chuffGain.connect(master);
-    const rumbleOsc = ctx2.createOscillator();
-    rumbleOsc.type = "triangle";
-    rumbleOsc.frequency.setValueAtTime(72, now);
-    rumbleOsc.frequency.linearRampToValueAtTime(62, now + safeDuration);
-    const rumbleGain = ctx2.createGain();
-    rumbleGain.gain.setValueAtTime(0.015, now);
-    rumbleGain.gain.linearRampToValueAtTime(0.01, now + safeDuration);
-    rumbleOsc.connect(rumbleGain);
-    rumbleGain.connect(master);
-    let whistleOsc1 = null;
-    let whistleOsc2 = null;
-    let whistleGain = null;
-    if (withWhistle) {
-      const whistleStart = now + Math.min(Math.max(0.9, safeDuration * 0.25), safeDuration - 1.2);
-      const whistleDuration = Math.min(1.1, Math.max(0.55, safeDuration * 0.16));
-      whistleOsc1 = ctx2.createOscillator();
-      whistleOsc1.type = "sine";
-      whistleOsc1.frequency.setValueAtTime(430, whistleStart);
-      whistleOsc1.frequency.linearRampToValueAtTime(500, whistleStart + whistleDuration);
-      whistleOsc2 = ctx2.createOscillator();
-      whistleOsc2.type = "triangle";
-      whistleOsc2.frequency.setValueAtTime(865, whistleStart);
-      whistleOsc2.frequency.linearRampToValueAtTime(995, whistleStart + whistleDuration);
-      whistleGain = ctx2.createGain();
-      whistleGain.gain.setValueAtTime(1e-4, whistleStart);
-      whistleGain.gain.exponentialRampToValueAtTime(0.08, whistleStart + 0.12);
-      whistleGain.gain.exponentialRampToValueAtTime(1e-4, whistleStart + whistleDuration);
-      whistleOsc1.connect(whistleGain);
-      whistleOsc2.connect(whistleGain);
-      whistleGain.connect(master);
-      whistleOsc1.start(whistleStart);
-      whistleOsc2.start(whistleStart);
-      whistleOsc1.stop(whistleStart + whistleDuration);
-      whistleOsc2.stop(whistleStart + whistleDuration);
-    }
-    try {
-      steamNoise.start(now);
-      rumbleOsc.start(now);
-      steamNoise.stop(now + safeDuration);
-      rumbleOsc.stop(now + safeDuration);
-      const cleanupDelay = Math.ceil((safeDuration + 0.2) * 1e3);
-      setTimeout(() => {
-        try {
-          steamNoise.disconnect();
-          steamBand.disconnect();
-          chuffGain.disconnect();
-          rumbleOsc.disconnect();
-          rumbleGain.disconnect();
-          if (whistleOsc1) whistleOsc1.disconnect();
-          if (whistleOsc2) whistleOsc2.disconnect();
-          if (whistleGain) whistleGain.disconnect();
-          master.disconnect();
-          distanceFilter.disconnect();
-          if (outputNode) outputNode.disconnect();
-        } catch {
-        }
-      }, cleanupDelay);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-  const safePlay = async (soundKey, { volume = 1, loop = false, restart = true } = {}) => {
-    const audio = sounds.get(soundKey);
-    if (!audioEnabled || audioPausedBySystem || !audio) {
-      return false;
-    }
-    if (!mediaUnlocked) {
-      await unlockAudio();
-      if (!mediaUnlocked) {
-        return false;
-      }
-    }
-    try {
-      audio.volume = volume;
-      audio.loop = loop;
-      if (restart) {
-        audio.currentTime = 0;
-      }
-      await audio.play();
-      return true;
-    } catch {
-      return false;
-    }
-  };
-  const setEnabled = (nextEnabled) => {
-    audioEnabled = !!nextEnabled;
-    if (!audioEnabled) {
-      sounds.forEach((audio) => {
-        try {
-          audio.pause();
-          audio.currentTime = 0;
-        } catch {
-        }
-      });
-    }
-    return audioEnabled;
-  };
-  const pauseAllAudio = async () => {
-    audioPausedBySystem = true;
-    sounds.forEach((audio) => {
-      try {
-        audio.pause();
-        audio.currentTime = 0;
-      } catch {
-      }
-    });
-    if (audioContext && audioContext.state === "running") {
-      try {
-        await audioContext.suspend();
-      } catch {
-      }
-    }
-    return true;
-  };
-  const resumeAllAudio = async () => {
-    audioPausedBySystem = false;
-    if (!audioEnabled) {
-      return false;
-    }
-    return ensureWebAudioReady();
-  };
-  const toggleSound = (forceEnabled) => {
-    const nextEnabled = typeof forceEnabled === "boolean" ? forceEnabled : !audioEnabled;
-    return setEnabled(nextEnabled);
-  };
-  return {
-    unlockAudio,
-    safePlay,
-    playTrainHorn,
-    playDistantSteamTrain,
-    pauseAllAudio,
-    resumeAllAudio,
-    setEnabled,
-    toggleSound,
-    isEnabled: () => audioEnabled,
-    isPausedBySystem: () => audioPausedBySystem,
-    isUnlocked: () => {
-      const webAudioRunning = !!audioContext && audioContext.state === "running";
-      return mediaUnlocked || webAudioRunning;
-    },
-    getAudio: (soundKey) => sounds.get(soundKey) ?? null
-  };
-}
-var convertFromCanvasToClientCoordinates = (canvasEl, canvasX, canvasY) => {
-  if (!(canvasEl instanceof HTMLCanvasElement)) {
-    console.error("Invalid canvas element");
-    return null;
-  }
-  const canvasRect = canvasEl.getBoundingClientRect();
-  const clientX = canvasRect.left + canvasX;
-  const clientY = canvasRect.top + canvasY;
-  return { clientX, clientY };
-};
-var animateMouseFromStartToEndCoordinates = async (startX, startY, endX, endY, options = {}) => {
-  const durationMs = Number.isFinite(options.durationMs) ? options.durationMs : 1400;
-  const startDelayMs = Number.isFinite(options.startDelayMs) ? options.startDelayMs : 120;
-  return new Promise((resolve) => {
-    const fakeCursor = document.createElement("div");
-    fakeCursor.textContent = "\u25B2";
-    fakeCursor.style.position = "fixed";
-    fakeCursor.style.left = "0";
-    fakeCursor.style.top = "0";
-    fakeCursor.style.transform = `translate(${startX}px, ${startY}px)`;
-    fakeCursor.style.transformOrigin = "center center";
-    fakeCursor.style.fontSize = "24px";
-    fakeCursor.style.lineHeight = "1";
-    fakeCursor.style.color = "#111";
-    fakeCursor.style.textShadow = "0 0 4px rgba(255,255,255,0.9)";
-    fakeCursor.style.pointerEvents = "none";
-    fakeCursor.style.zIndex = "100000";
-    fakeCursor.style.opacity = "0";
-    document.body.appendChild(fakeCursor);
-    const easeInOutCubic = (t) => {
-      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    };
-    const start = performance.now() + startDelayMs;
-    const step = (now) => {
-      if (now < start) {
-        requestAnimationFrame(step);
-        return;
-      }
-      fakeCursor.style.opacity = "1";
-      const rawProgress = (now - start) / durationMs;
-      const progress = Math.max(0, Math.min(1, rawProgress));
-      const eased = easeInOutCubic(progress);
-      const currentX = startX + (endX - startX) * eased;
-      const currentY = startY + (endY - startY) * eased;
-      fakeCursor.style.transform = `translate(${currentX}px, ${currentY}px)`;
-      if (progress < 1) {
-        requestAnimationFrame(step);
-      } else {
-        fakeCursor.remove();
-        resolve(true);
-      }
-    };
-    requestAnimationFrame(step);
-  });
-};
-var animateMouseFromCenterToElement = async (targetEl, options = {}) => {
-  const durationMs = Number.isFinite(options.durationMs) ? options.durationMs : 1400;
-  const startDelayMs = Number.isFinite(options.startDelayMs) ? options.startDelayMs : 120;
-  return new Promise((resolve) => {
-    if (!(targetEl instanceof HTMLElement)) {
-      resolve(false);
-      return;
-    }
-    const startX = window.innerWidth / 2;
-    const startY = window.innerHeight / 2;
-    const targetRect = targetEl.getBoundingClientRect();
-    const endX = targetRect.left + targetRect.width / 2;
-    const endY = targetRect.top + targetRect.height / 2;
-    const fakeCursor = document.createElement("div");
-    fakeCursor.textContent = "\u25B2";
-    fakeCursor.style.position = "fixed";
-    fakeCursor.style.left = "0";
-    fakeCursor.style.top = "0";
-    fakeCursor.style.transform = `translate(${startX}px, ${startY}px)`;
-    fakeCursor.style.transformOrigin = "center center";
-    fakeCursor.style.fontSize = "24px";
-    fakeCursor.style.lineHeight = "1";
-    fakeCursor.style.color = "#111";
-    fakeCursor.style.textShadow = "0 0 4px rgba(255,255,255,0.9)";
-    fakeCursor.style.pointerEvents = "none";
-    fakeCursor.style.zIndex = "100000";
-    fakeCursor.style.opacity = "0";
-    document.body.appendChild(fakeCursor);
-    const easeInOutCubic = (t) => {
-      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    };
-    const start = performance.now() + startDelayMs;
-    const step = (now) => {
-      if (now < start) {
-        requestAnimationFrame(step);
-        return;
-      }
-      fakeCursor.style.opacity = "1";
-      const rawProgress = (now - start) / durationMs;
-      const progress = Math.max(0, Math.min(1, rawProgress));
-      const eased = easeInOutCubic(progress);
-      const x = startX + (endX - startX) * eased;
-      const y = startY + (endY - startY) * eased;
-      fakeCursor.style.transform = `translate(${x}px, ${y}px)`;
-      if (progress < 1) {
-        requestAnimationFrame(step);
-        return;
-      }
-      fakeCursor.style.transition = "transform 120ms ease-out";
-      fakeCursor.style.transform = `translate(${endX}px, ${endY}px) scale(0.9)`;
-      setTimeout(() => {
-        fakeCursor.remove();
-        resolve(true);
-      }, 180);
-    };
-    requestAnimationFrame(step);
-  });
-};
-
-// audioManager.js
-var ENABLE_SFX = true;
-var audioManager = createAudioManager(
-  {
-    beep: "./beep.mp3",
-    train: "./train.wav",
-    whistle: "./steam_engine_whistle.mp3",
-    money: "./money.mp3",
-    pop: "./pop.mp3",
-    chugging: "./chugging_sound.mp3",
-    // horn: './horn.mp3',
-    traincollide: "./traincollide.mp3",
-    drumroll: "./drumroll.mp3"
-  },
-  {
-    enabled: ENABLE_SFX,
-    hornDefaults: {
-      baseFrequency: 280,
-      duration: 1.75,
-      //0.75
-      volume: 0.12,
-      detune: 0
-    }
-  }
-);
-
 // Train.js
 globalThis.debugTrainNumber = null;
 globalThis.setDebugTrain = (trainNumber) => {
@@ -864,6 +206,29 @@ var Train = class _Train {
       flyoverSpan.style = "background-color:" + (this.trainType === "freight" ? "rgba(80,80,80,0.75)" : this.color) + ";cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block";
       flyoverContainer.appendChild(flyoverSpan);
     }
+    const tableBody = document.querySelector("#resultsBody");
+    if (tableBody) {
+      const row = document.createElement("tr");
+      row.style.backgroundColor = this.color;
+      row.setAttribute("onmousemove", `highlightTrainTrack(${this.trainNumber},event)`);
+      const trainCell = document.createElement("td");
+      trainCell.textContent = `T${this.trainNumber}`;
+      const revenueCell = document.createElement("td");
+      revenueCell.textContent = "0";
+      revenueCell.setAttribute("id", `revenue-cell-${this.trainNumber}`);
+      const expensesCell = document.createElement("td");
+      expensesCell.textContent = "0";
+      expensesCell.setAttribute("id", `expenses-cell-${this.trainNumber}`);
+      const profitCell = document.createElement("td");
+      profitCell.setAttribute("id", `profit-cell-${this.trainNumber}`);
+      profitCell.textContent = "0";
+      row.appendChild(trainCell);
+      row.appendChild(revenueCell);
+      row.appendChild(expensesCell);
+      row.appendChild(profitCell);
+      tableBody.appendChild(row);
+    }
+    tableBody.setAttribute("onmouseleave", "clearTempCanvas(event)");
   }
   upgradeEngine() {
     if (this.upgradedEngine) {
@@ -975,6 +340,7 @@ var Train = class _Train {
       this.remainingDwellTime--;
     }
     if (this.ticks < this.delayBeforeStart * 100) return;
+    this.delayBeforeStart = 0;
     this.dwellPaused = this.remainingDwellTime > 0 ? true : false;
     const countBeforeMove = this.count;
     if (this.ticks % currSpeed == 0 && !this.userPaused && !this.dwellPaused) {
@@ -2025,6 +1391,673 @@ var Track = class {
   }
 };
 
+// utility.js
+var GLOBAL_SPEECH_SETTINGS = {
+  rate: 1.2,
+  // Slightly faster
+  pitch: 1,
+  volume: 0.9
+};
+function speakAsync(text) {
+  return new Promise((resolve, reject) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = GLOBAL_SPEECH_SETTINGS.rate;
+    utterance.pitch = GLOBAL_SPEECH_SETTINGS.pitch;
+    utterance.volume = GLOBAL_SPEECH_SETTINGS.volume;
+    utterance.onend = () => {
+      resolve();
+    };
+    utterance.onerror = (event) => {
+      reject(event.error);
+    };
+    window.speechSynthesis.speak(utterance);
+  });
+}
+function makeDraggable(element) {
+  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+  element.onmousedown = dragMouseDown;
+  function dragMouseDown(e) {
+    const interactiveSelector = "input, textarea, select, button, label, i, a";
+    if (e.target.closest(interactiveSelector)) {
+      return;
+    }
+    e.preventDefault();
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    document.onmouseup = closeDragElement;
+    document.onmousemove = elementDrag;
+  }
+  function elementDrag(e) {
+    e.preventDefault();
+    pos1 = pos3 - e.clientX;
+    pos2 = pos4 - e.clientY;
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    element.style.top = element.offsetTop - pos2 + "px";
+    element.style.left = element.offsetLeft - pos1 + "px";
+  }
+  function closeDragElement() {
+    document.onmouseup = null;
+    document.onmousemove = null;
+  }
+}
+function rowAndColumnName(x, y, gridSize2) {
+  const n = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const col = Math.floor(x / gridSize2);
+  const row = Math.floor(y / gridSize2);
+  const colName = alpha(col);
+  const rowName = alpha(row);
+  return [rowName, colName];
+}
+function alpha(index) {
+  const n = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  return (index >= n.length ? n[Math.floor(index / n.length - 1)] : "") + n[index % n.length];
+}
+function getDetailedSegmentsMap(positions, turningCircle = 100, gridSize2 = 50) {
+  if (!Array.isArray(positions) || positions.length < 2) {
+    return /* @__PURE__ */ new Map();
+  }
+  const segmentsMap = /* @__PURE__ */ new Map();
+  const modifiedPositions = [];
+  let firstx = positions[0].x;
+  let firsty = positions[0].y;
+  let secondx, secondy, thirdx, thirdy;
+  modifiedPositions.push({ x: firstx, y: firsty });
+  for (let i = 1; i < positions.length; i++) {
+    secondx = positions[i].x;
+    secondy = positions[i].y;
+    thirdx = positions[i + 1]?.x;
+    thirdy = positions[i + 1]?.y;
+    if (firstx === secondx && secondx === thirdx) {
+      if (i == positions.length - 1) {
+        modifiedPositions.push({ x: secondx, y: secondy });
+      }
+    } else if (firsty === secondy && secondy === thirdy) {
+      if (i == positions.length - 1) {
+        modifiedPositions.push({ x: secondx, y: secondy });
+      }
+    } else {
+      modifiedPositions.push({ x: secondx, y: secondy });
+      firstx = secondx;
+      firsty = secondy;
+    }
+  }
+  let startx, starty, endx, endy;
+  let newModifiedPositions = [];
+  let n = 0;
+  for (let i = 1; i < modifiedPositions.length; i++) {
+    startx = modifiedPositions[i - 1].x;
+    starty = modifiedPositions[i - 1].y;
+    newModifiedPositions.push({ x: startx, y: starty });
+    endx = modifiedPositions[i].x;
+    endy = modifiedPositions[i].y;
+    n = i == modifiedPositions.length - 1 ? 1 : 0;
+    if (endx === startx) {
+      const dir = endy > starty ? 1 : -1;
+      for (let j = 1; j < Math.abs(starty - endy) / gridSize2 + n; j++) {
+        newModifiedPositions.push({ x: startx, y: starty + j * gridSize2 * dir, direction: "vertical" });
+      }
+    }
+    if (endy === starty) {
+      const dir = endx > startx ? 1 : -1;
+      for (let j = 1; j < Math.abs(startx - endx) / gridSize2 + n; j++) {
+        newModifiedPositions.push({ x: startx + j * gridSize2 * dir, y: starty, direction: "horizontal" });
+      }
+    }
+    startx = endx;
+    starty = endy;
+  }
+  for (let j = 1; j < newModifiedPositions.length; j++) {
+    const prev = newModifiedPositions[j - 1];
+    const curr = newModifiedPositions[j];
+    if (j > 1 && (prev.direction == "vertical" || prev.direction == "horizontal") && curr.direction == null) {
+      prev.skip = true;
+      curr.skip = true;
+      if (j + 2 < newModifiedPositions.length) {
+        const next = newModifiedPositions[j + 1];
+        next.skip = true;
+      }
+    }
+  }
+  for (let j = 0; j < newModifiedPositions.length - 1; j++) {
+    const start = newModifiedPositions[j];
+    const end = newModifiedPositions[j + 1];
+    if (start.skip || end.skip) {
+      continue;
+    }
+    segmentsMap.set(`${start.x},${start.y}-${end.x},${end.y}`, { startx: start.x, starty: start.y, endx: end.x, endy: end.y });
+  }
+  return segmentsMap;
+}
+function getCommonSegmentsMap(positions1, positions2, turningCircle = 100, gridSize2 = 50) {
+  const segmentsMap1 = getDetailedSegmentsMap(positions1, turningCircle, gridSize2);
+  const segmentsMap2 = getDetailedSegmentsMap(positions2, turningCircle, gridSize2);
+  const commonSegmentsMap = /* @__PURE__ */ new Map();
+  for (const key of segmentsMap1.keys()) {
+    const keyAlternative = key.split("-").reverse().join("-");
+    if (segmentsMap2.has(key) || segmentsMap2.has(keyAlternative)) {
+      commonSegmentsMap.set(key, segmentsMap1.get(key));
+    }
+  }
+  return commonSegmentsMap;
+}
+async function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = {}, soundGain = {} } = {}) {
+  const sounds = /* @__PURE__ */ new Map();
+  let mediaUnlocked = false;
+  let audioEnabled = !!enabled;
+  let audioContext = null;
+  let audioPausedBySystem = false;
+  let perSoundGain = { ...soundGain };
+  const resolvedHornDefaults = {
+    baseFrequency: 280,
+    duration: 1.7,
+    //0.7
+    volume: 0.12,
+    detune: 0,
+    ...hornDefaults
+  };
+  const getAudioContext = () => {
+    if (audioContext) return audioContext;
+    const AudioCtx = globalThis.AudioContext || globalThis.webkitAudioContext;
+    if (!AudioCtx) {
+      return null;
+    }
+    audioContext = new AudioCtx();
+    return audioContext;
+  };
+  const ensureWebAudioReady = async () => {
+    const ctx2 = getAudioContext();
+    if (!ctx2) {
+      return false;
+    }
+    if (ctx2.state === "suspended") {
+      try {
+        await ctx2.resume();
+      } catch {
+        return false;
+      }
+    }
+    return ctx2.state === "running";
+  };
+  Object.entries(audioSources).forEach(([key, source]) => {
+    if (!key || !source) {
+      return;
+    }
+    const audio = new Audio(source);
+    audio.preload = "auto";
+    sounds.set(key, audio);
+  });
+  const unlockAudio = async () => {
+    if (!audioEnabled || audioPausedBySystem) {
+      return false;
+    }
+    let unlocked = false;
+    if (!mediaUnlocked && sounds.size > 0) {
+      const firstAudio = sounds.values().next().value;
+      if (firstAudio) {
+        try {
+          firstAudio.muted = true;
+          firstAudio.currentTime = 0;
+          await firstAudio.play();
+          firstAudio.pause();
+          firstAudio.currentTime = 0;
+          firstAudio.muted = false;
+          mediaUnlocked = true;
+          unlocked = true;
+        } catch {
+        }
+      }
+    }
+    const webAudioReady = await ensureWebAudioReady();
+    return unlocked || mediaUnlocked || webAudioReady;
+  };
+  const playTrainHorn = async ({
+    trainNumber = 1,
+    baseFrequency = resolvedHornDefaults.baseFrequency,
+    duration = resolvedHornDefaults.duration,
+    volume = resolvedHornDefaults.volume,
+    detune = resolvedHornDefaults.detune
+  } = {}) => {
+    if (!audioEnabled || audioPausedBySystem) {
+      return false;
+    }
+    const ctx2 = getAudioContext();
+    if (!ctx2) {
+      return false;
+    }
+    if (!await ensureWebAudioReady()) {
+      return false;
+    }
+    const safeDuration = Math.min(2.5, Math.max(0.15, Number(duration) || resolvedHornDefaults.duration));
+    const safeVolume = Math.min(1, Math.max(0, Number(volume) || resolvedHornDefaults.volume));
+    const safeDetune = Math.max(-2400, Math.min(2400, Number(detune) || resolvedHornDefaults.detune));
+    const safeTrainNumber = Number.isFinite(trainNumber) ? trainNumber : 1;
+    const seed = Math.abs(Math.trunc(safeTrainNumber)) % 13 - 6;
+    const trainPitchFactor = Math.pow(2, seed / 36);
+    const fundamental = Math.max(80, Math.min(1200, (Number(baseFrequency) || resolvedHornDefaults.baseFrequency) * trainPitchFactor));
+    const now = ctx2.currentTime;
+    const attack = 0.04;
+    const decay = 0.16;
+    const release = 0.24;
+    const hold = Math.max(0, safeDuration - attack - decay - release);
+    const master = ctx2.createGain();
+    master.gain.setValueAtTime(1e-4, now);
+    master.gain.exponentialRampToValueAtTime(Math.max(1e-4, safeVolume), now + attack);
+    master.gain.exponentialRampToValueAtTime(Math.max(1e-4, safeVolume * 0.78), now + attack + decay);
+    master.gain.setValueAtTime(Math.max(1e-4, safeVolume * 0.78), now + attack + decay + hold);
+    master.gain.exponentialRampToValueAtTime(1e-4, now + safeDuration);
+    const bandpass = ctx2.createBiquadFilter();
+    bandpass.type = "bandpass";
+    bandpass.frequency.setValueAtTime(fundamental * 2.2, now);
+    bandpass.Q.setValueAtTime(0.9, now);
+    const osc1 = ctx2.createOscillator();
+    osc1.type = "sawtooth";
+    osc1.frequency.setValueAtTime(fundamental, now);
+    osc1.detune.setValueAtTime(safeDetune, now);
+    const osc2 = ctx2.createOscillator();
+    osc2.type = "square";
+    osc2.frequency.setValueAtTime(fundamental * 1.005, now);
+    osc2.detune.setValueAtTime(safeDetune + 4, now);
+    const lfo = ctx2.createOscillator();
+    lfo.type = "sine";
+    lfo.frequency.setValueAtTime(5.1, now);
+    const lfoGain = ctx2.createGain();
+    lfoGain.gain.setValueAtTime(10, now);
+    osc1.connect(bandpass);
+    osc2.connect(bandpass);
+    bandpass.connect(master);
+    master.connect(ctx2.destination);
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc1.detune);
+    lfoGain.connect(osc2.detune);
+    try {
+      osc1.start(now);
+      osc2.start(now);
+      lfo.start(now);
+      osc1.stop(now + safeDuration);
+      osc2.stop(now + safeDuration);
+      lfo.stop(now + safeDuration);
+      const cleanupDelay = Math.ceil((safeDuration + 0.05) * 1e3);
+      setTimeout(() => {
+        try {
+          osc1.disconnect();
+          osc2.disconnect();
+          lfo.disconnect();
+          lfoGain.disconnect();
+          bandpass.disconnect();
+          master.disconnect();
+        } catch {
+        }
+      }, cleanupDelay);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const playDistantSteamTrain = async ({
+    duration = 8,
+    volume = 0.08,
+    chuffRate = 2.6,
+    pan = 0,
+    withWhistle = false
+  } = {}) => {
+    if (!audioEnabled || audioPausedBySystem) {
+      return false;
+    }
+    const ctx2 = getAudioContext();
+    if (!ctx2) {
+      return false;
+    }
+    if (!await ensureWebAudioReady()) {
+      return false;
+    }
+    const safeDuration = Math.min(20, Math.max(2, Number(duration) || 8));
+    const safeVolume = Math.min(1, Math.max(0, Number(volume) || 0.08));
+    const safeChuffRate = Math.min(5.5, Math.max(0.8, Number(chuffRate) || 2.6));
+    const safePan = Math.min(1, Math.max(-1, Number(pan) || 0));
+    const now = ctx2.currentTime;
+    const master = ctx2.createGain();
+    master.gain.setValueAtTime(1e-4, now);
+    master.gain.exponentialRampToValueAtTime(Math.max(1e-4, safeVolume), now + 0.8);
+    master.gain.setValueAtTime(Math.max(1e-4, safeVolume), now + Math.max(1.2, safeDuration - 1.2));
+    master.gain.exponentialRampToValueAtTime(1e-4, now + safeDuration);
+    const distanceFilter = ctx2.createBiquadFilter();
+    distanceFilter.type = "lowpass";
+    distanceFilter.frequency.setValueAtTime(1100, now);
+    distanceFilter.frequency.linearRampToValueAtTime(700, now + safeDuration);
+    distanceFilter.Q.setValueAtTime(0.8, now);
+    const outputNode = typeof ctx2.createStereoPanner === "function" ? ctx2.createStereoPanner() : null;
+    if (outputNode) {
+      outputNode.pan.setValueAtTime(safePan, now);
+    }
+    master.connect(distanceFilter);
+    if (outputNode) {
+      distanceFilter.connect(outputNode);
+      outputNode.connect(ctx2.destination);
+    } else {
+      distanceFilter.connect(ctx2.destination);
+    }
+    const noiseBufferLength = Math.ceil(ctx2.sampleRate * 2);
+    const noiseBuffer = ctx2.createBuffer(1, noiseBufferLength, ctx2.sampleRate);
+    const noiseData = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseBufferLength; i++) {
+      noiseData[i] = (Math.random() * 2 - 1) * 0.5;
+    }
+    const steamNoise = ctx2.createBufferSource();
+    steamNoise.buffer = noiseBuffer;
+    steamNoise.loop = true;
+    const steamBand = ctx2.createBiquadFilter();
+    steamBand.type = "bandpass";
+    steamBand.frequency.setValueAtTime(320, now);
+    steamBand.Q.setValueAtTime(1.2, now);
+    const chuffGain = ctx2.createGain();
+    chuffGain.gain.setValueAtTime(1e-4, now);
+    const chuffInterval = 1 / safeChuffRate;
+    for (let t = 0; t < safeDuration; t += chuffInterval) {
+      const start = now + t;
+      const peak = 0.34 + Math.random() * 0.2;
+      chuffGain.gain.setValueAtTime(1e-4, start);
+      chuffGain.gain.exponentialRampToValueAtTime(peak, start + 0.03);
+      chuffGain.gain.exponentialRampToValueAtTime(1e-4, start + 0.16);
+    }
+    steamNoise.connect(steamBand);
+    steamBand.connect(chuffGain);
+    chuffGain.connect(master);
+    const rumbleOsc = ctx2.createOscillator();
+    rumbleOsc.type = "triangle";
+    rumbleOsc.frequency.setValueAtTime(72, now);
+    rumbleOsc.frequency.linearRampToValueAtTime(62, now + safeDuration);
+    const rumbleGain = ctx2.createGain();
+    rumbleGain.gain.setValueAtTime(0.015, now);
+    rumbleGain.gain.linearRampToValueAtTime(0.01, now + safeDuration);
+    rumbleOsc.connect(rumbleGain);
+    rumbleGain.connect(master);
+    let whistleOsc1 = null;
+    let whistleOsc2 = null;
+    let whistleGain = null;
+    if (withWhistle) {
+      const whistleStart = now + Math.min(Math.max(0.9, safeDuration * 0.25), safeDuration - 1.2);
+      const whistleDuration = Math.min(1.1, Math.max(0.55, safeDuration * 0.16));
+      whistleOsc1 = ctx2.createOscillator();
+      whistleOsc1.type = "sine";
+      whistleOsc1.frequency.setValueAtTime(430, whistleStart);
+      whistleOsc1.frequency.linearRampToValueAtTime(500, whistleStart + whistleDuration);
+      whistleOsc2 = ctx2.createOscillator();
+      whistleOsc2.type = "triangle";
+      whistleOsc2.frequency.setValueAtTime(865, whistleStart);
+      whistleOsc2.frequency.linearRampToValueAtTime(995, whistleStart + whistleDuration);
+      whistleGain = ctx2.createGain();
+      whistleGain.gain.setValueAtTime(1e-4, whistleStart);
+      whistleGain.gain.exponentialRampToValueAtTime(0.08, whistleStart + 0.12);
+      whistleGain.gain.exponentialRampToValueAtTime(1e-4, whistleStart + whistleDuration);
+      whistleOsc1.connect(whistleGain);
+      whistleOsc2.connect(whistleGain);
+      whistleGain.connect(master);
+      whistleOsc1.start(whistleStart);
+      whistleOsc2.start(whistleStart);
+      whistleOsc1.stop(whistleStart + whistleDuration);
+      whistleOsc2.stop(whistleStart + whistleDuration);
+    }
+    try {
+      steamNoise.start(now);
+      rumbleOsc.start(now);
+      steamNoise.stop(now + safeDuration);
+      rumbleOsc.stop(now + safeDuration);
+      const cleanupDelay = Math.ceil((safeDuration + 0.2) * 1e3);
+      setTimeout(() => {
+        try {
+          steamNoise.disconnect();
+          steamBand.disconnect();
+          chuffGain.disconnect();
+          rumbleOsc.disconnect();
+          rumbleGain.disconnect();
+          if (whistleOsc1) whistleOsc1.disconnect();
+          if (whistleOsc2) whistleOsc2.disconnect();
+          if (whistleGain) whistleGain.disconnect();
+          master.disconnect();
+          distanceFilter.disconnect();
+          if (outputNode) outputNode.disconnect();
+        } catch {
+        }
+      }, cleanupDelay);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const safePlay = async (soundKey, { volume = 1, loop = false, restart = true } = {}) => {
+    const audio = sounds.get(soundKey);
+    if (!audioEnabled || audioPausedBySystem || !audio) {
+      return false;
+    }
+    if (!mediaUnlocked) {
+      await unlockAudio();
+      if (!mediaUnlocked) {
+        return false;
+      }
+    }
+    try {
+      const requestedVolume = Number(volume);
+      const normalizedVolume = Number.isFinite(requestedVolume) ? Math.min(1, Math.max(0, requestedVolume)) : 1;
+      const configuredGain = Number(perSoundGain[soundKey]);
+      const normalizedGain = Number.isFinite(configuredGain) ? Math.min(1, Math.max(0, configuredGain)) : 1;
+      audio.volume = normalizedVolume * normalizedGain;
+      audio.loop = loop;
+      if (restart) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+      await audio.play();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const setEnabled = (nextEnabled) => {
+    audioEnabled = !!nextEnabled;
+    if (!audioEnabled) {
+      sounds.forEach((audio) => {
+        try {
+          audio.pause();
+          audio.currentTime = 0;
+        } catch {
+        }
+      });
+    }
+    return audioEnabled;
+  };
+  const pauseAllAudio = async () => {
+    audioPausedBySystem = true;
+    sounds.forEach((audio) => {
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+      } catch {
+      }
+    });
+    if (audioContext && audioContext.state === "running") {
+      try {
+        await audioContext.suspend();
+      } catch {
+      }
+    }
+    return true;
+  };
+  const resumeAllAudio = async () => {
+    audioPausedBySystem = false;
+    if (!audioEnabled) {
+      return false;
+    }
+    return ensureWebAudioReady();
+  };
+  const toggleSound = (forceEnabled) => {
+    const nextEnabled = typeof forceEnabled === "boolean" ? forceEnabled : !audioEnabled;
+    return setEnabled(nextEnabled);
+  };
+  return {
+    unlockAudio,
+    safePlay,
+    playTrainHorn,
+    playDistantSteamTrain,
+    pauseAllAudio,
+    resumeAllAudio,
+    setEnabled,
+    toggleSound,
+    isEnabled: () => audioEnabled,
+    isPausedBySystem: () => audioPausedBySystem,
+    isUnlocked: () => {
+      const webAudioRunning = !!audioContext && audioContext.state === "running";
+      return mediaUnlocked || webAudioRunning;
+    },
+    getAudio: (soundKey) => sounds.get(soundKey) ?? null
+  };
+}
+var convertFromCanvasToClientCoordinates = (canvasEl, canvasX, canvasY) => {
+  if (!(canvasEl instanceof HTMLCanvasElement)) {
+    console.error("Invalid canvas element");
+    return null;
+  }
+  const canvasRect = canvasEl.getBoundingClientRect();
+  const clientX = canvasRect.left + canvasX;
+  const clientY = canvasRect.top + canvasY;
+  return { clientX, clientY };
+};
+var animateMouseFromStartToEndCoordinates = async (startX, startY, endX, endY, options = {}) => {
+  const durationMs = Number.isFinite(options.durationMs) ? options.durationMs : 1400;
+  const startDelayMs = Number.isFinite(options.startDelayMs) ? options.startDelayMs : 120;
+  return new Promise((resolve) => {
+    const fakeCursor = document.createElement("div");
+    fakeCursor.textContent = "\u25B2";
+    fakeCursor.style.position = "fixed";
+    fakeCursor.style.left = "0";
+    fakeCursor.style.top = "0";
+    fakeCursor.style.transform = `translate(${startX}px, ${startY}px)`;
+    fakeCursor.style.transformOrigin = "center center";
+    fakeCursor.style.fontSize = "24px";
+    fakeCursor.style.lineHeight = "1";
+    fakeCursor.style.color = "#111";
+    fakeCursor.style.textShadow = "0 0 4px rgba(255,255,255,0.9)";
+    fakeCursor.style.pointerEvents = "none";
+    fakeCursor.style.zIndex = "100000";
+    fakeCursor.style.opacity = "0";
+    document.body.appendChild(fakeCursor);
+    const easeInOutCubic = (t) => {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    };
+    const start = performance.now() + startDelayMs;
+    const step = (now) => {
+      if (now < start) {
+        requestAnimationFrame(step);
+        return;
+      }
+      fakeCursor.style.opacity = "1";
+      const rawProgress = (now - start) / durationMs;
+      const progress = Math.max(0, Math.min(1, rawProgress));
+      const eased = easeInOutCubic(progress);
+      const currentX = startX + (endX - startX) * eased;
+      const currentY = startY + (endY - startY) * eased;
+      fakeCursor.style.transform = `translate(${currentX}px, ${currentY}px)`;
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        fakeCursor.remove();
+        resolve(true);
+      }
+    };
+    requestAnimationFrame(step);
+  });
+};
+var animateMouseFromCenterToElement = async (targetEl, options = {}) => {
+  const durationMs = Number.isFinite(options.durationMs) ? options.durationMs : 1400;
+  const startDelayMs = Number.isFinite(options.startDelayMs) ? options.startDelayMs : 120;
+  return new Promise((resolve) => {
+    if (!(targetEl instanceof HTMLElement)) {
+      resolve(false);
+      return;
+    }
+    const startX = window.innerWidth / 2;
+    const startY = window.innerHeight / 2;
+    const targetRect = targetEl.getBoundingClientRect();
+    const endX = targetRect.left + targetRect.width / 2;
+    const endY = targetRect.top + targetRect.height / 2;
+    const fakeCursor = document.createElement("div");
+    fakeCursor.textContent = "\u25B2";
+    fakeCursor.style.position = "fixed";
+    fakeCursor.style.left = "0";
+    fakeCursor.style.top = "0";
+    fakeCursor.style.transform = `translate(${startX}px, ${startY}px)`;
+    fakeCursor.style.transformOrigin = "center center";
+    fakeCursor.style.fontSize = "24px";
+    fakeCursor.style.lineHeight = "1";
+    fakeCursor.style.color = "#111";
+    fakeCursor.style.textShadow = "0 0 4px rgba(255,255,255,0.9)";
+    fakeCursor.style.pointerEvents = "none";
+    fakeCursor.style.zIndex = "100000";
+    fakeCursor.style.opacity = "0";
+    document.body.appendChild(fakeCursor);
+    const easeInOutCubic = (t) => {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    };
+    const start = performance.now() + startDelayMs;
+    const step = (now) => {
+      if (now < start) {
+        requestAnimationFrame(step);
+        return;
+      }
+      fakeCursor.style.opacity = "1";
+      const rawProgress = (now - start) / durationMs;
+      const progress = Math.max(0, Math.min(1, rawProgress));
+      const eased = easeInOutCubic(progress);
+      const x = startX + (endX - startX) * eased;
+      const y = startY + (endY - startY) * eased;
+      fakeCursor.style.transform = `translate(${x}px, ${y}px)`;
+      if (progress < 1) {
+        requestAnimationFrame(step);
+        return;
+      }
+      fakeCursor.style.transition = "transform 120ms ease-out";
+      fakeCursor.style.transform = `translate(${endX}px, ${endY}px) scale(0.9)`;
+      setTimeout(() => {
+        fakeCursor.remove();
+        resolve(true);
+      }, 180);
+    };
+    requestAnimationFrame(step);
+  });
+};
+
+// audioManager.js
+var ENABLE_SFX = true;
+var audioManager = createAudioManager(
+  {
+    beep: "./beep.mp3",
+    train: "./train.wav",
+    whistle: "./steam_engine_whistle.mp3",
+    money: "./money.mp3",
+    pop: "./pop.mp3",
+    chugging: "./chugging_sound.mp3",
+    traincollide: "./traincollide.mp3",
+    drumroll: "./drumroll.mp3"
+  },
+  {
+    enabled: ENABLE_SFX,
+    soundGain: {
+      money: 0.35,
+      drumroll: 0.3
+    },
+    hornDefaults: {
+      baseFrequency: 280,
+      duration: 1.75,
+      //0.75
+      volume: 0.12,
+      detune: 0
+    }
+  }
+);
+
 // Financials.js
 var Financials = class _Financials {
   // track maintenance cost is calculated based on the distance traveled by the train on the track. 
@@ -2090,10 +2123,10 @@ var Financials = class _Financials {
       const prevCashInHand = this.cashInHand;
       this.cashInHand += amount;
       if (Math.floor(this.cashInHand / 1e6) > Math.floor(prevCashInHand / 1e6)) {
-        audioManager.safePlay("money", { volume: 0.2, restart: true });
+        audioManager.safePlay("money", { volume: 0.05, restart: true });
       }
       if (Math.floor(this.cashInHand / 1e8) > Math.floor(prevCashInHand / 1e8)) {
-        audioManager.safePlay("drumroll", { volume: 0.2, restart: true });
+        audioManager.safePlay("drumroll", { volume: 0.05, restart: true });
       }
     }
   }
@@ -2105,10 +2138,6 @@ var Financials = class _Financials {
       this.profit[timeIndex][trainIndex] -= amount;
       this.cashInHand -= amount;
     }
-  }
-  updateProfit(timeIndex, trainIndex) {
-  }
-  incrementTimeUnit() {
   }
   getCumFinancialSummaryByTrain() {
     return {
@@ -3213,7 +3242,7 @@ var Game = class {
       }
     }
   }
-  async addTrain(positions, numCoaches, delayBeforeStart, intersections2, options = {}) {
+  async addTrain(positions, numCoaches, delayBeforeStart = 0, intersections2, options = {}) {
     const overlapMatches = [];
     let useParallelTrack = false;
     let numSegments = 0;
@@ -3480,7 +3509,6 @@ var Game = class {
   incrementTimeUnit() {
     this.rawmaterialSupply.incrementTimeUnit();
     this.rawmaterialDemand.incrementTimeUnit();
-    this.financials.incrementTimeUnit();
   }
   extendTrain(trainNumber, positionsForExtendTrain) {
     const train = this.trains[trainNumber - 1];
@@ -3503,7 +3531,7 @@ var Game = class {
       title: "Enable Parallel Track?",
       text: `The new train overlaps with existing train(s): ${overlappingTrains}. ${numSegments} segments overlap. Enabling parallel-track mode will add $${cost.toLocaleString("en-US")} to track costs. If you do not
       add parallel tracks, you will have to manually manage collisions.`,
-      icon: "question",
+      ...typeof window.getTrainIconSwalOptions === "function" ? window.getTrainIconSwalOptions() : { icon: "question" },
       showCancelButton: true,
       confirmButtonText: "Enable Parallel Track",
       cancelButtonText: "Manage Collisions Manually"
@@ -3890,6 +3918,14 @@ function blurFocusedControlElement() {
     activeElement.blur();
   }
 }
+var getTrainIconSwalOptions = () => ({
+  icon: "question",
+  iconHtml: '<i class="fas fa-train" aria-hidden="true"></i>',
+  customClass: {
+    icon: "swal2-train-icon"
+  }
+});
+window.getTrainIconSwalOptions = getTrainIconSwalOptions;
 async function requestGameRestart(source = "restart") {
   const title = source === "refresh" ? "Refresh and restart game?" : "Restart game?";
   if (typeof window.swal !== "undefined" && typeof window.swal.fire === "function") {
@@ -4046,13 +4082,14 @@ var getMinNumFreightWagons = () => game.getMinNumFreightWagons();
 var getMaxNumCoaches = () => game.getMaxNumCoaches();
 var getMaxNumFreightWagons = () => game.getMaxNumFreightWagons();
 var initializeDefaultTrains = async () => {
+  const preconfiguredTrainStartStaggerTicks = 3;
   let positions = [
     { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
     { x: CANVASMARGIN + 1450, y: CANVASMARGIN + 500 },
     { x: CANVASMARGIN + 1450, y: CANVASMARGIN + 1e3 },
     { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 1e3 }
   ];
-  await game.addTrain(positions, 7, 0, intersections, { trainType: "passenger", partOfInitialSetup: true });
+  await game.addTrain(positions, 7, 0 * preconfiguredTrainStartStaggerTicks, intersections, { trainType: "passenger", partOfInitialSetup: true });
   positions = [
     { x: CANVASMARGIN + 250, y: CANVASMARGIN + 250 },
     { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 250 },
@@ -4060,8 +4097,8 @@ var initializeDefaultTrains = async () => {
   ];
   let trainNumber = await game.addTrain(
     positions,
-    1,
-    0,
+    10,
+    1 * preconfiguredTrainStartStaggerTicks,
     intersections,
     { trainType: "passenger", partOfInitialSetup: true }
   );
@@ -4072,12 +4109,13 @@ var initializeDefaultTrains = async () => {
   ];
   trainNumber = await game.addFreightTrain(
     positions,
-    30,
-    0,
+    15,
+    2 * preconfiguredTrainStartStaggerTicks,
     intersections,
     { partOfInitialSetup: true }
   );
   game.addStation(trainNumber, 1800, 600, `S${trainNumber}1907`, 30, { partOfInitialSetup: true });
+  game.addStation(trainNumber, 1450, 600, `S${trainNumber}1907`, 30, { partOfInitialSetup: true });
 };
 await initializeDefaultTrains();
 var drawScene = () => {
@@ -4260,6 +4298,18 @@ window.addEventListener("load", () => {
       ctxMaps2.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN);
       ctxMaps3.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN);
       return;
+    }
+    if (startTrack && event.key === "Escape") {
+      if (positions.length > 0) {
+        positions.pop();
+        updateCanvasTemp(positions[positions.length - 1]?.x, positions[positions.length - 1]?.y);
+      }
+    }
+    if (startExtendTrain && event.key === "Escape") {
+      if (positionsForExtendTrain.length > 0) {
+        positionsForExtendTrain.pop();
+        updateCanvasTempForExtendTrain();
+      }
     }
     if (event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA") {
       return;
@@ -4601,6 +4651,21 @@ window.addEventListener("load", () => {
       train.track.drawUsingNewPositions(ctxTemp, "rgba(255, 255, 0, 0.5)", 7);
     });
     infoForTrainContainer.addEventListener("mouseleave", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement) || target.tagName !== "DIV") {
+        return;
+      }
+      const trainNumber = Number.parseInt(target.dataset.value, 10);
+      if (!Number.isInteger(trainNumber)) {
+        return;
+      }
+      const train = game.trains[trainNumber - 1];
+      if (!train) {
+        return;
+      }
+      ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN);
+    });
+    infoForTrainContainer.addEventListener("mouseleave", (event) => {
       ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN);
     });
   }
@@ -4780,7 +4845,7 @@ window.addEventListener("load", () => {
           swal.fire({
             title: `Add Station for Train ${selectedTrainNumber}`,
             text: `Do you want to add a Station for Train ${selectedTrainNumber} at (Row ${alpha(y / gridSize)}, Col ${alpha(x / gridSize)})?`,
-            icon: "question",
+            ...getTrainIconSwalOptions(),
             showCancelButton: true,
             confirmButtonText: "Yes",
             cancelButtonText: "No"
@@ -4823,7 +4888,7 @@ window.addEventListener("load", () => {
         swal.fire({
           title: `Add Flyover`,
           text: `Do you want to add a Flyover at (Row ${alpha(y / gridSize)}, Col ${alpha(x / gridSize)})?`,
-          icon: "question",
+          ...getTrainIconSwalOptions(),
           showCancelButton: true,
           confirmButtonText: "Yes",
           cancelButtonText: "No"
@@ -5209,10 +5274,6 @@ window.addEventListener("load", () => {
     updateSoundControlUI(true);
   };
   window.cancelTrainExtension = (trainnumber) => {
-    const selectedTrainNumber = getActiveTrainExtensionTrainNumber(trainnumber);
-    if (selectedTrainNumber) {
-      console.log(`Cancelling extension for train ${selectedTrainNumber}`);
-    }
     const extendTrainEl = document.querySelector("#trainExtensionControls" + trainnumber);
     if (extendTrainEl) {
       extendTrainEl.style.display = "none";
@@ -5479,7 +5540,7 @@ window.addEventListener("load", () => {
       title: `Upgrade Engine for Train ${trainNumber}`,
       text: `Upgrading the engine will increase the speed of the train. This will allow the train to move faster and reduce the travel time between stations. 
     However, this will cost you $${costOfUpgrade.toLocaleString("en-US")}. Do you want to upgrade the engine?`,
-      icon: "question",
+      ...getTrainIconSwalOptions(),
       showCancelButton: true,
       confirmButtonText: "Yes",
       cancelButtonText: "No"
@@ -5719,21 +5780,16 @@ function displayFinancialResults() {
   document.getElementById("cashInHand").textContent = Math.floor(cashInHand / 1e6);
   const financialSummary = game.getCumFinancialSummaryByTrain();
   const tableBody = document.querySelector("#resultsBody");
-  tableBody.replaceChildren();
   financialSummary.totalRevenue.forEach((revenue, index) => {
     if (revenue > 0 || financialSummary.totalExpenses[index] > 0) {
-      const colorConfig = game.TRAINCONFIG[index % game.TRAINCONFIG.length];
-      const row = document.createElement("tr");
-      row.style.backgroundColor = game.trains[index]?.trainType === "freight" ? "rgba(80,80,80,0.75)" : colorConfig.Color;
       const expenses = financialSummary.totalExpenses[index];
       const profit = financialSummary.profit[index];
-      row.innerHTML = `
-        <td>${index + 1}</td>
-        <td>${Math.floor(revenue / 1e6)}</td>
-        <td>${Math.floor(expenses / 1e6)}</td>
-        <td>${Math.floor(profit / 1e6)}</td>
-      `;
-      tableBody.appendChild(row);
+      const revenueCell = tableBody.querySelector(`#revenue-cell-${index + 1}`);
+      const expensesCell = tableBody.querySelector(`#expenses-cell-${index + 1}`);
+      const profitCell = tableBody.querySelector(`#profit-cell-${index + 1}`);
+      if (revenueCell) revenueCell.textContent = Math.floor(revenue / 1e6);
+      if (expensesCell) expensesCell.textContent = Math.floor(expenses / 1e6);
+      if (profitCell) profitCell.textContent = Math.floor(profit / 1e6);
     }
   });
 }

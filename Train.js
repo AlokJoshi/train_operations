@@ -1,5 +1,4 @@
 "use strict";
-import { audioManager } from './audioManager.js'
 
 globalThis.debugTrainNumber = null
 
@@ -9,8 +8,6 @@ globalThis.setDebugTrain = (trainNumber) => {
   console.log(`[debug] monitoring train ${globalThis.debugTrainNumber ?? 'none'}`)
 }
 
-// createAudioManager(audioSources, options) returns an object with play, pause, stop, and other audio control methods.
-// it already has 2 sounds, beep and train
 class Train {
   static lengthEngine = 40
   static widthEngine = 14
@@ -255,6 +252,31 @@ class Train {
       flyoverSpan.style = 'background-color:' + (this.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : this.color) + ';cursor:pointer;font-size:1.0em;padding:2px;margin:1px;border:1px solid black;display:inline-block'
       flyoverContainer.appendChild(flyoverSpan)
     }
+
+    //update the UI in the Results dialog box
+    const tableBody = document.querySelector('#resultsBody')
+    if (tableBody) {
+      const row = document.createElement('tr')
+      row.style.backgroundColor = this.color
+      row.setAttribute('onmousemove', `highlightTrainTrack(${this.trainNumber},event)`)
+      const trainCell = document.createElement('td')
+      trainCell.textContent = `T${this.trainNumber}`
+      const revenueCell = document.createElement('td')
+      revenueCell.textContent = "0"
+      revenueCell.setAttribute('id', `revenue-cell-${this.trainNumber}`)
+      const expensesCell = document.createElement('td')
+      expensesCell.textContent = "0"
+      expensesCell.setAttribute('id', `expenses-cell-${this.trainNumber}`)
+      const profitCell = document.createElement('td')
+      profitCell.setAttribute('id', `profit-cell-${this.trainNumber}`)
+      profitCell.textContent = "0"
+      row.appendChild(trainCell)
+      row.appendChild(revenueCell)
+      row.appendChild(expensesCell)
+      row.appendChild(profitCell)
+      tableBody.appendChild(row)
+    }
+    tableBody.setAttribute('onmouseleave', 'clearTempCanvas(event)')
   }
 
   upgradeEngine() {
@@ -405,9 +427,8 @@ class Train {
     //train is not drawn till this.ticks reach a certain level
     if (this.ticks < this.delayBeforeStart * 100) return
 
-    //Also we do not draw the train unless the whole train has reached the starting point. 
-    //This is to avoid the train appearing to be cut off at the beginning of the track
-    // if (segment && segment.startDistance < this.trainlength) return
+    //we want the delayBeforeStart to only apply the first time the train starts moving.
+    this.delayBeforeStart = 0
 
     // we have to set the position of the engine based on 
     // how far it has moved on the tracks

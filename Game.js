@@ -206,7 +206,7 @@ class Game {
     }
   }
 
-  async addTrain(positions, numCoaches, delayBeforeStart, intersections, options = {}) {
+  async addTrain(positions, numCoaches, delayBeforeStart = 0, intersections, options = {}) {
     const overlapMatches = []
     let useParallelTrack = false
     let numSegments = 0
@@ -521,7 +521,7 @@ class Game {
     this.rawmaterialSupply.incrementTimeUnit()
     this.rawmaterialDemand.incrementTimeUnit()
 
-    this.financials.incrementTimeUnit()
+    // this.financials.incrementTimeUnit()
   }
 
   extendTrain(trainNumber, positionsForExtendTrain) {
@@ -547,7 +547,7 @@ class Game {
       title: 'Enable Parallel Track?',
       text: `The new train overlaps with existing train(s): ${overlappingTrains}. ${numSegments} segments overlap. Enabling parallel-track mode will add $${cost.toLocaleString('en-US')} to track costs. If you do not
       add parallel tracks, you will have to manually manage collisions.`,
-      icon: 'question',
+      ...(typeof window.getTrainIconSwalOptions === 'function' ? window.getTrainIconSwalOptions() : { icon: 'question' }),
       showCancelButton: true,
       confirmButtonText: 'Enable Parallel Track',
       cancelButtonText: 'Manage Collisions Manually'

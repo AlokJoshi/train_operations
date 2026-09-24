@@ -66,10 +66,10 @@ class Financials {
       const prevCashInHand = this.cashInHand
       this.cashInHand += amount
       if(Math.floor(this.cashInHand/1000000) > Math.floor(prevCashInHand/1000000)) {
-        audioManager.safePlay('money', { volume: 0.2, restart: true })
+        audioManager.safePlay('money', { volume: 0.05, restart: true })
       }
       if(Math.floor(this.cashInHand/100000000) > Math.floor(prevCashInHand/100000000)) {
-        audioManager.safePlay('drumroll', { volume: 0.2, restart: true })
+        audioManager.safePlay('drumroll', { volume: 0.05, restart: true })
       }
     }
   }
@@ -78,20 +78,9 @@ class Financials {
       this.totalExpenses[timeIndex][trainIndex] += amount
       this.cumCostByTrain[trainIndex] += amount
       this.cumProfitByTrain[trainIndex] -= amount
-      // this.updateProfit(timeIndex, trainIndex)
       this.profit[timeIndex][trainIndex] -= amount
       this.cashInHand -= amount
-      // if(trainIndex === 1){
-      //   console.log(`Expenses incremented by $${amount.toLocaleString('en-US')} Train ${trainIndex + 1} Reason: ${reason} | Cash in Hand: $${this.cashInHand.toLocaleString('en-US')}`)
-      // }
     }
-  }
-  updateProfit(timeIndex, trainIndex) {
-    // this.profit[timeIndex][trainIndex] = this.totalRevenue[timeIndex][trainIndex] - this.totalExpenses[timeIndex][trainIndex]
-  }
-
-  incrementTimeUnit() {
-    
   }
 
   getCumFinancialSummaryByTrain() {

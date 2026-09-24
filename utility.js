@@ -197,12 +197,13 @@ async function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = {} } = {}) {
+function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = {}, soundGain = {} } = {}) {
   const sounds = new Map()
   let mediaUnlocked = false
   let audioEnabled = !!enabled
   let audioContext = null
   let audioPausedBySystem = false
+  let perSoundGain = { ...soundGain }
 
   const resolvedHornDefaults = {
     baseFrequency: 280,
@@ -545,9 +546,19 @@ function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = 
     }
 
     try {
-      audio.volume = volume
+      const requestedVolume = Number(volume)
+      const normalizedVolume = Number.isFinite(requestedVolume)
+        ? Math.min(1, Math.max(0, requestedVolume))
+        : 1
+      const configuredGain = Number(perSoundGain[soundKey])
+      const normalizedGain = Number.isFinite(configuredGain)
+        ? Math.min(1, Math.max(0, configuredGain))
+        : 1
+
+      audio.volume = normalizedVolume * normalizedGain
       audio.loop = loop
       if (restart) {
+        audio.pause()
         audio.currentTime = 0
       }
       await audio.play()

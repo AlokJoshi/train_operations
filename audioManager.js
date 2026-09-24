@@ -10,12 +10,15 @@ export const audioManager = createAudioManager(
     money: './money.mp3',
     pop: './pop.mp3',
     chugging: './chugging_sound.mp3',
-    // horn: './horn.mp3',
     traincollide: './traincollide.mp3',
     drumroll: './drumroll.mp3'
   },
   {
     enabled: ENABLE_SFX,
+    soundGain: {
+      money: 0.35,
+      drumroll: 0.3
+    },
     hornDefaults: {
       baseFrequency: 280,
       duration: 1.75, //0.75

@@ -54,7 +54,6 @@ let showingHowToPlay = false
 let click_error = 20
 let validTrackPoints = new Set()
 let validStartingPoints = new Set()
-// let positionsForExtendTrain = [] removed on 9/1/26
 const collisionAnimations = new Map()
 let collisionAnimationFrameId = null
 const collisionAnimationDurationMs = 3000
@@ -147,6 +146,16 @@ function blurFocusedControlElement() {
     activeElement.blur()
   }
 }
+
+const getTrainIconSwalOptions = () => ({
+  icon: 'question',
+  iconHtml: '<i class="fas fa-train" aria-hidden="true"></i>',
+  customClass: {
+    icon: 'swal2-train-icon'
+  }
+})
+
+window.getTrainIconSwalOptions = getTrainIconSwalOptions
 
 async function requestGameRestart(source = 'restart') {
   const title = source === 'refresh'
@@ -338,6 +347,8 @@ const getMaxNumFreightWagons = () => game.getMaxNumFreightWagons()
 
 
 const initializeDefaultTrains = async () => {
+  const preconfiguredTrainStartStaggerTicks = 3
+
   let positions = [
     { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 },
     { x: CANVASMARGIN + 1450, y: CANVASMARGIN + 500 },
@@ -345,14 +356,14 @@ const initializeDefaultTrains = async () => {
     { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 1000 }
   ]
 
-  await game.addTrain(positions, 7, 0, intersections, { trainType: 'passenger', partOfInitialSetup: true })
+  await game.addTrain(positions, 7, 0 * preconfiguredTrainStartStaggerTicks, intersections, { trainType: 'passenger', partOfInitialSetup: true })
 
   positions = [
     { x: CANVASMARGIN + 250, y: CANVASMARGIN + 250 },
     { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 250 },
     { x: CANVASMARGIN + 1200, y: CANVASMARGIN + 500 }
   ]
-  let trainNumber = await game.addTrain(positions, 1, 0, intersections,
+  let trainNumber = await game.addTrain(positions, 10, 1 * preconfiguredTrainStartStaggerTicks, intersections,
     { trainType: 'passenger', partOfInitialSetup: true })
   // game.addStation(trainNumber, 500, 300, `S${trainNumber}0604`, 30, { partOfInitialSetup: true })
   // game.addStation(trainNumber, 1200, 900, `S${trainNumber}1310`, 30, { partOfInitialSetup: true })
@@ -362,9 +373,10 @@ const initializeDefaultTrains = async () => {
     { x: CANVASMARGIN + 1900, y: CANVASMARGIN + 600 },
     { x: CANVASMARGIN + 300, y: CANVASMARGIN + 600 }
   ]
-  trainNumber = await game.addFreightTrain(positions, 30, 0, intersections,
+  trainNumber = await game.addFreightTrain(positions, 15, 2 * preconfiguredTrainStartStaggerTicks, intersections,
     { partOfInitialSetup: true })
   game.addStation(trainNumber, 1800, 600, `S${trainNumber}1907`, 30, { partOfInitialSetup: true })
+  game.addStation(trainNumber, 1450, 600, `S${trainNumber}1907`, 30, { partOfInitialSetup: true })
 }
 
 await initializeDefaultTrains()
@@ -576,6 +588,24 @@ window.addEventListener('load', () => {
       ctxMaps2.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       ctxMaps3.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
       return;
+    }
+
+    if(startTrack && event.key === 'Escape') {
+      // remove the last clicked position for the track
+      if (positions.length > 0) {
+        positions.pop()
+        // Redraw the track canvas after removing the last position
+        updateCanvasTemp(positions[positions.length - 1]?.x, positions[positions.length - 1]?.y)
+      }
+    }
+
+    if(startExtendTrain && event.key === 'Escape') {
+      // remove the last clicked position for the track
+      if (positionsForExtendTrain.length > 0) {
+        positionsForExtendTrain.pop()
+        // Redraw the track canvas after removing the last position
+        updateCanvasTempForExtendTrain()
+      }
     }
 
     // NEW: Do nothing if the user is typing in an input or textarea
@@ -976,8 +1006,25 @@ window.addEventListener('load', () => {
     })
     infoForTrainContainer.addEventListener('mouseleave', (event) => {
       //clear the temporary once the mouse leaves the train info element
+      // highlight the train track
+      const target = event.target
+      if (!(target instanceof HTMLElement) || target.tagName !== 'DIV') {
+        return
+      }
+      const trainNumber = Number.parseInt(target.dataset.value, 10)
+      if (!Number.isInteger(trainNumber)) {
+        return
+      }
+      const train = game.trains[trainNumber - 1]
+      if (!train) {
+        return
+      }
+      //clear the temporary canvas before drawing
       ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
     })
+    infoForTrainContainer.addEventListener('mouseleave', (event) => {
+      ctxTemp.clearRect(0, 0, CANVASWIDTH + CANVASMARGIN, CANVASHEIGHT + CANVASMARGIN)
+    })  
   }
 
   const stationForTrainContainer = document.querySelector('#stationFortrain')
@@ -1190,7 +1237,7 @@ window.addEventListener('load', () => {
           swal.fire({
             title: `Add Station for Train ${selectedTrainNumber}`,
             text: `Do you want to add a Station for Train ${selectedTrainNumber} at (Row ${alpha((y / gridSize))}, Col ${alpha((x / gridSize))})?`,
-            icon: 'question',
+            ...getTrainIconSwalOptions(),
             showCancelButton: true,
             confirmButtonText: 'Yes',
             cancelButtonText: 'No'
@@ -1238,7 +1285,7 @@ window.addEventListener('load', () => {
         swal.fire({
           title: `Add Flyover`,
           text: `Do you want to add a Flyover at (Row ${alpha((y / gridSize))}, Col ${alpha((x / gridSize))})?`,
-          icon: 'question',
+          ...getTrainIconSwalOptions(),
           showCancelButton: true,
           confirmButtonText: 'Yes',
           cancelButtonText: 'No'
@@ -1700,10 +1747,6 @@ window.addEventListener('load', () => {
   }
 
   window.cancelTrainExtension = (trainnumber) => {
-    const selectedTrainNumber = getActiveTrainExtensionTrainNumber(trainnumber)
-    if (selectedTrainNumber) {
-      console.log(`Cancelling extension for train ${selectedTrainNumber}`)
-    }
     const extendTrainEl = document.querySelector('#trainExtensionControls' + trainnumber)
     if (extendTrainEl) {
       extendTrainEl.style.display = 'none'
@@ -2019,7 +2062,7 @@ window.addEventListener('load', () => {
       title: `Upgrade Engine for Train ${trainNumber}`,
       text: `Upgrading the engine will increase the speed of the train. This will allow the train to move faster and reduce the travel time between stations. 
     However, this will cost you $${costOfUpgrade.toLocaleString('en-US')}. Do you want to upgrade the engine?`,
-      icon: 'question',
+      ...getTrainIconSwalOptions(),
       showCancelButton: true,
       confirmButtonText: 'Yes',
       cancelButtonText: 'No'
@@ -2316,22 +2359,22 @@ function displayFinancialResults() {
   document.getElementById('cashInHand').textContent = Math.floor(cashInHand / 1000000)
   const financialSummary = game.getCumFinancialSummaryByTrain()
   const tableBody = document.querySelector('#resultsBody')
-  tableBody.replaceChildren()
+  // tableBody.replaceChildren()
   financialSummary.totalRevenue.forEach((revenue, index) => {
     if (revenue > 0 || financialSummary.totalExpenses[index] > 0) {
-      const colorConfig = game.TRAINCONFIG[(index) % game.TRAINCONFIG.length]
-      const row = document.createElement('tr')
-      row.style.backgroundColor = game.trains[index]?.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : colorConfig.Color
+      // const colorConfig = game.TRAINCONFIG[(index) % game.TRAINCONFIG.length]
+      // const row = document.createElement('tr')
+      // row.style.backgroundColor = game.trains[index]?.trainType === 'freight' ? 'rgba(80,80,80,0.75)' : colorConfig.Color
       // row.style.color = colorConfig.textColor
       const expenses = financialSummary.totalExpenses[index]
       const profit = financialSummary.profit[index]
-      row.innerHTML = `
-        <td>${index + 1}</td>
-        <td>${Math.floor(revenue / 1000000)}</td>
-        <td>${Math.floor(expenses / 1000000)}</td>
-        <td>${Math.floor(profit / 1000000)}</td>
-      `
-      tableBody.appendChild(row)
+      const revenueCell = tableBody.querySelector(`#revenue-cell-${index + 1}`)
+      const expensesCell = tableBody.querySelector(`#expenses-cell-${index + 1}`)
+      const profitCell = tableBody.querySelector(`#profit-cell-${index + 1}`)
+
+      if (revenueCell) revenueCell.textContent = Math.floor(revenue / 1000000)
+      if (expensesCell) expensesCell.textContent = Math.floor(expenses / 1000000)
+      if (profitCell) profitCell.textContent = Math.floor(profit / 1000000)
     }
   })
 }
