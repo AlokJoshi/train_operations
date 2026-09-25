@@ -7,7 +7,8 @@
     "build": "node esbuild.config.mjs",
     "watch": "node esbuild.config.mjs --watch",
     "dev": "node esbuild.config.mjs --watch --serve",
-    "clean": "node esbuild.config.mjs --clean-only"
+    "clean": "node esbuild.config.mjs --clean-only",
+    "server": "node server/server.js"
   },
   "devDependencies": {
     "esbuild": "^0.24.2"

@@ -139,6 +139,47 @@ window.addEventListener('beforeunload', (event) => {
 })
 
 const controlsRoot = document.querySelector('#controls')
+const gameStageRoot = document.querySelector('#gameStage')
+
+function fitGameUiToViewport() {
+  if (!gameStageRoot) {
+    return
+  }
+
+  const designWidth = gameStageRoot.offsetWidth
+  const designHeight = gameStageRoot.offsetHeight
+  if (designWidth <= 0 || designHeight <= 0) {
+    return
+  }
+
+  const viewportPadding = 8
+  const availableWidth = Math.max(1, window.innerWidth - viewportPadding * 2)
+  const availableHeight = Math.max(1, window.innerHeight - viewportPadding * 2)
+  const scale = Math.min(availableWidth / designWidth, availableHeight / designHeight, 1)
+  const offsetX = Math.max(viewportPadding, Math.floor((window.innerWidth - designWidth * scale) / 2))
+  const offsetY = Math.max(viewportPadding, Math.floor((window.innerHeight - designHeight * scale) / 2))
+  const transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`
+
+  gameStageRoot.style.position = 'fixed'
+  gameStageRoot.style.left = '0'
+  gameStageRoot.style.top = '0'
+  gameStageRoot.style.transformOrigin = 'top left'
+  gameStageRoot.style.transform = transform
+
+  if (controlsRoot) {
+    controlsRoot.style.position = 'fixed'
+    controlsRoot.style.left = '0'
+    controlsRoot.style.top = '0'
+    controlsRoot.style.transformOrigin = 'top left'
+    controlsRoot.style.transform = transform
+  }
+}
+
+window.addEventListener('resize', fitGameUiToViewport)
+window.addEventListener('orientationchange', fitGameUiToViewport)
+window.addEventListener('load', fitGameUiToViewport)
+
+requestAnimationFrame(fitGameUiToViewport)
 
 function blurFocusedControlElement() {
   const activeElement = document.activeElement
@@ -934,9 +975,11 @@ window.addEventListener('load', () => {
 
   const getCanvasPoint = (event) => {
     const rect = event.currentTarget.getBoundingClientRect()
+    const scaleX = event.currentTarget.width / rect.width
+    const scaleY = event.currentTarget.height / rect.height
     return {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top
+      x: (event.clientX - rect.left) * scaleX,
+      y: (event.clientY - rect.top) * scaleY
     }
   }
 
@@ -1648,7 +1691,7 @@ window.addEventListener('load', () => {
     setTimeout(() => {
       clearCollision(event.col, event.row, collisionAnimationStartedAt)
       showCustomAlert(`Collision detected between train ${event.train1} and train 
-        ${event.train2} at intersection (${alpha(event.col + 1)},${alpha(event.row + 1)}).
+        ${event.train2} at intersection (${alpha(event.col)},${alpha(event.row)}).
         Trains will be out of service temporarily for repairs.`)
     }, 5000)
     //we want to inform the train about the collision and set its state to 

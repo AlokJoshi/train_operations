@@ -256,25 +256,29 @@ class Train {
     //update the UI in the Results dialog box
     const tableBody = document.querySelector('#resultsBody')
     if (tableBody) {
-      const row = document.createElement('tr')
-      row.style.backgroundColor = this.color
-      row.setAttribute('onmousemove', `highlightTrainTrack(${this.trainNumber},event)`)
-      const trainCell = document.createElement('td')
-      trainCell.textContent = `T${this.trainNumber}`
-      const revenueCell = document.createElement('td')
-      revenueCell.textContent = "0"
-      revenueCell.setAttribute('id', `revenue-cell-${this.trainNumber}`)
-      const expensesCell = document.createElement('td')
-      expensesCell.textContent = "0"
-      expensesCell.setAttribute('id', `expenses-cell-${this.trainNumber}`)
-      const profitCell = document.createElement('td')
-      profitCell.setAttribute('id', `profit-cell-${this.trainNumber}`)
-      profitCell.textContent = "0"
-      row.appendChild(trainCell)
-      row.appendChild(revenueCell)
-      row.appendChild(expensesCell)
-      row.appendChild(profitCell)
-      tableBody.appendChild(row)
+      const trainRow = document.querySelector(`#train-row-${this.trainNumber}`)
+      if (!trainRow) {
+        const row = document.createElement('tr')
+        row.style.backgroundColor = this.color
+        row.setAttribute('id', `train-row-${this.trainNumber}`)
+        row.setAttribute('onmousemove', `highlightTrainTrack(${this.trainNumber},event)`)
+        const trainCell = document.createElement('td')
+        trainCell.textContent = `T${this.trainNumber}`
+        const revenueCell = document.createElement('td')
+        revenueCell.textContent = "0"
+        revenueCell.setAttribute('id', `revenue-cell-${this.trainNumber}`)
+        const expensesCell = document.createElement('td')
+        expensesCell.textContent = "0"
+        expensesCell.setAttribute('id', `expenses-cell-${this.trainNumber}`)
+        const profitCell = document.createElement('td')
+        profitCell.setAttribute('id', `profit-cell-${this.trainNumber}`)
+        profitCell.textContent = "0"
+        row.appendChild(trainCell)
+        row.appendChild(revenueCell)
+        row.appendChild(expensesCell)
+        row.appendChild(profitCell)
+        tableBody.appendChild(row)
+      }
     }
     tableBody.setAttribute('onmouseleave', 'clearTempCanvas(event)')
   }
@@ -480,16 +484,16 @@ class Train {
       const isAtStation = ((Math.abs(x - station.x) < 5) && (Math.abs(y - station.y) < 5))
       // console.log(x, y, station.x, station.y, startStationLocationKey, endStationLocationKey, isAtStation)
       if (!isAtStation) continue
-      
+
       const isTerminalForCurrentDirection = (!this.isReturning && station.stationNumber === maxStationNumber) || (this.isReturning && station.stationNumber === minStationNumber)
       const isTerminalStation = station.stationNumber === minStationNumber || station.stationNumber === maxStationNumber
       const trainIsReturning = isTerminalForCurrentDirection ? !this.isReturning : this.isReturning
       if (this.trainType == 'passenger') {
         const stationVisitKey = `${Math.round(station.x)},${Math.round(station.y)}`
-        
-        
-        
-        
+
+
+
+
         let totalDeboarding = 0
         let totalBoarding = 0
         const thisStationKey = `${station.stationNumber}`
@@ -1062,7 +1066,7 @@ class Train {
       this.passengerMap.clear()
     }
   }
-  
+
   getNumStations() {
     //used for calculating the station maintenance/operating cost for this train.
     return this.stations.length
