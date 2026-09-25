@@ -140,6 +140,15 @@ window.addEventListener('beforeunload', (event) => {
 
 const controlsRoot = document.querySelector('#controls')
 const gameStageRoot = document.querySelector('#gameStage')
+const cursorTooltipEl = document.querySelector('#buttonGroup8')
+
+if (cursorTooltipEl && cursorTooltipEl.parentElement !== document.body) {
+  // Keep tooltip outside transformed UI layers so it follows viewport cursor coordinates.
+  document.body.appendChild(cursorTooltipEl)
+  cursorTooltipEl.style.position = 'fixed'
+  cursorTooltipEl.style.pointerEvents = 'none'
+  cursorTooltipEl.style.zIndex = '20000'
+}
 
 function fitGameUiToViewport() {
   if (!gameStageRoot) {
@@ -1362,7 +1371,7 @@ window.addEventListener('load', () => {
       return
     }
     buttonGroup8el.style.display = 'block'
-    // buttonGroup8 is fixed-position, so place it in viewport coordinates.
+    // Tooltip is fixed-position on document.body, so place it in viewport coordinates.
     buttonGroup8el.style.left = `${event.clientX + 11}px`
     buttonGroup8el.style.top = `${event.clientY + 15}px`
     label.textContent = `${col},${row}`
