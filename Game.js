@@ -357,8 +357,17 @@ class Game {
         }
       }
     }
+    // if number of trains reach maximum allowed, hide the new train specification element
+    if (this.trains.length >= this.maxTrains) {
+      const newTrainSpecificationEl = document.querySelector('#newTrainSpecification')
+      if (newTrainSpecificationEl) {
+        newTrainSpecificationEl.style.display = 'none'
+      }
+    }
+
     return trainNumber
   }
+
 
   async addFreightTrain(positions, numCoaches, delayBeforeStart, intersections, options = {}) {
     return this.addTrain(positions, numCoaches, delayBeforeStart, intersections, {
@@ -467,6 +476,14 @@ class Game {
         // trainElement.style.filter = "blur(5px)"
       }
       this.Flyovers.draw()
+    }
+
+    // if the number of trains is less than the maximum allowed, show the new train specification element
+    if (this.trains.filter(train => train !== null).length < this.maxTrains) {
+      const newTrainSpecificationEl = document.querySelector('#newTrainSpecification')
+      if (newTrainSpecificationEl) {
+        newTrainSpecificationEl.style.display = 'grid'
+      }
     }
   }
 
