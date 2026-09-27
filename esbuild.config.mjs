@@ -21,7 +21,7 @@ async function cleanDist() {
 
 function rewriteIndexHtml(html) {
   return html.replace(
-    /<script\s+type="module"\s+src="script\.js"\s*><\/script>/i,
+    /<script\s+type="module"\s+src="(?:(?:\.\/)?(?:dist\/)?bundle\.js|script\.js)"\s*><\/script>/i,
     '<script type="module" src="./bundle.js"></script>'
   )
 }
