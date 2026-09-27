@@ -533,6 +533,8 @@ function createAudioManager(audioSources = {}, { enabled = true, hornDefaults = 
   }
 
   const safePlay = async (soundKey, { volume = 1, loop = false, restart = true } = {}) => {
+    // Log the attempt to play a sound for debugging purposes and show the call stack.
+    // console.log('Attempting to play sound:', soundKey, 'stack:', new Error().stack)
     const audio = sounds.get(soundKey)
     if (!audioEnabled || audioPausedBySystem || !audio) {
       return false

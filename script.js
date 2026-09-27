@@ -3,7 +3,7 @@ import { Track } from './Track.js'
 import { Intersections } from './Intersections.js'
 import { createDemoController } from './demo.js'
 import {
-  makeDraggable, alpha
+  makeDraggable, alpha, delay
 } from './utility.js'
 import { audioManager } from './audioManager.js'
 
@@ -58,33 +58,62 @@ const collisionAnimations = new Map()
 let collisionAnimationFrameId = null
 const collisionAnimationDurationMs = 3000
 const collisionClearRadius = 96
-let nextDistantSteamTick = 0
+const DISTANT_STEAM_LOOP_GAP_MS = 600
+const DISTANT_STEAM_LOOP_OPTIONS = {
+  duration: 18,
+  volume: 0.12,
+  chuffRate: 2.2,
+  pan: 0,
+  withWhistle: false
+}
 
-function scheduleDistantSteamAmbience(origin = 'loop', force = false, delay = 400 + Math.random() * 1200) {
-  if (!audioManager.isEnabled()) {
+let distantSteamLoopRunId = 0
+let distantSteamLoopRunning = false
+
+function shouldRunDistantSteamLoop() {
+  return !paused && audioManager.isEnabled() && !audioManager.isPausedBySystem()
+}
+
+async function runDistantSteamLoop(runId) {
+  if (distantSteamLoopRunning) {
     return
   }
 
-  if (!force && globalThis.globalTicks < nextDistantSteamTick) {
+  distantSteamLoopRunning = true
+  try {
+    while (runId === distantSteamLoopRunId) {
+      if (!shouldRunDistantSteamLoop()) {
+        return
+      }
+
+      const options = {
+        ...DISTANT_STEAM_LOOP_OPTIONS,
+        pan: Math.random() * 0.6 - 0.3
+      }
+      await audioManager.playDistantSteamTrain(options)
+
+      if (runId !== distantSteamLoopRunId) {
+        return
+      }
+
+      await delay(DISTANT_STEAM_LOOP_GAP_MS)
+    }
+  } finally {
+    distantSteamLoopRunning = false
+  }
+}
+
+function syncDistantSteamLoop() {
+  if (shouldRunDistantSteamLoop()) {
+    if (!distantSteamLoopRunning) {
+      distantSteamLoopRunId += 1
+      void runDistantSteamLoop(distantSteamLoopRunId)
+    }
     return
   }
 
-  const ambientDelayMs = delay
-  const options = {
-    duration: 30 + Math.random() * 20,
-    volume: 0.57 + Math.random() * 0.03,
-    chuffRate: 4.0 + Math.random() * 0.8,
-    pan: Math.random() * 2 - 1,
-    withWhistle: Math.random() < 0.5
-  }
-
-  // console.log(`[audio] scheduling distant steam (${origin}) at tick ${thisTick}`)
-  setTimeout(async () => {
-    await audioManager.playDistantSteamTrain(options)
-    // console.log(`[audio] distant steam ${played ? 'played' : 'skipped'} (${origin}) at tick ${globalThis.globalTicks}`)
-  }, ambientDelayMs)
-
-  nextDistantSteamTick = globalThis.globalTicks + 1800 + Math.floor(Math.random() * 1600)
+  // Bump the run id so the active loop exits after the current sound cycle.
+  distantSteamLoopRunId += 1
 }
 
 function setValidTrackPoints() {
@@ -119,7 +148,11 @@ globalThis.hideTracks = (hide = true) => {
   }
 }
 
-window.setGameSoundEnabled = (enabled) => audioManager.setEnabled(enabled)
+window.setGameSoundEnabled = (enabled) => {
+  const isEnabled = audioManager.setEnabled(enabled)
+  syncDistantSteamLoop()
+  return isEnabled
+}
 
 let allowPageUnload = false
 
@@ -472,10 +505,9 @@ const drawScene = () => {
         }
       })
 
-      scheduleDistantSteamAmbience('time-unit')
-
       if (currentTimeUnit === 100) {
         paused = true
+        syncDistantSteamLoop()
         swal.fire({
           title: 'Game Ended',
           text: `The game has ended after ${game.totalTimeUnits} periods. 
@@ -848,6 +880,7 @@ window.addEventListener('load', () => {
     if (enabled && !audioManager.isUnlocked()) {
       await audioManager.unlockAudio()
     }
+    syncDistantSteamLoop()
     updateSoundControlUI(enabled)
     const audioEnabledEl = document.querySelector('#audio_is_on')
     const audioDisabledEl = document.querySelector('#audio_is_off')
@@ -918,6 +951,7 @@ window.addEventListener('load', () => {
       startPauseButton.classList.add('fa-play')
     }
     paused = !paused
+    syncDistantSteamLoop()
 
     if (!wasPaused && paused) {
       audioManager.pauseAllAudio().then(() => {
@@ -929,10 +963,11 @@ window.addEventListener('load', () => {
     if (wasPaused && !paused) {
       audioManager.resumeAllAudio().then((resumed) => {
         // console.log(`[audio] system resume ${resumed ? 'succeeded' : 'failed'}`)
+        syncDistantSteamLoop()
       })
       audioManager.unlockAudio().then((unlocked) => {
         // console.log(`[audio] unlock ${unlocked ? 'succeeded' : 'failed'}`)
-        scheduleDistantSteamAmbience('resume', true)
+        syncDistantSteamLoop()
       })
     }
   }
