@@ -18,15 +18,19 @@
 <body>
   <!-- <div id="gameStage" style="background-image: url('./engine.png'); background-size: 50px 50px;"> -->
   <div id="gameStage" style="background-image: url('./favicon.ico'); background-size: 50px 50px;background-blend-mode: lighten; background-color: rgba(255, 255, 255, 0.5);">
-    <canvas id="canvas_grid"></canvas>
-    <canvas id="canvas_demo_tracks"></canvas>
-    <canvas id="canvas_tracks"></canvas>
-    <canvas id="canvas_trains"></canvas>
-    <canvas id="canvas_results"></canvas>
-    <canvas id="canvas_maps1"></canvas>
-    <canvas id="canvas_maps2"></canvas>
-    <canvas id="canvas_maps3"></canvas>
-    <canvas id="canvas_temp"></canvas>
+    <div id="gameWorld">
+      <div id="gameWorldContent">
+        <canvas id="canvas_grid"></canvas>
+        <canvas id="canvas_demo_tracks"></canvas>
+        <canvas id="canvas_tracks"></canvas>
+        <canvas id="canvas_trains"></canvas>
+        <canvas id="canvas_results"></canvas>
+        <canvas id="canvas_maps1"></canvas>
+        <canvas id="canvas_maps2"></canvas>
+        <canvas id="canvas_maps3"></canvas>
+        <canvas id="canvas_temp"></canvas>
+      </div>
+    </div>
   </div>
   <div id="controls">
     <div id="buttonGroup1" class="modal"
@@ -109,7 +113,6 @@
         <span class="dialogTitle">Flyovers</span>
         <span class="dialogClose">
           <i class="fas fa-times" title="Close" id="closeFlyover" onclick="closeflyover();"></i>
-          <!-- <i class="fas fa-times" title="Close"></i> -->
         </span>
       </div>
       <div class="dialogContent">
@@ -420,6 +423,10 @@
         aria-label="Toggle audio">A<icon id="audio_is_on" class="fa fa-volume-up"></icon><icon id="audio_is_off" class="fa fa-volume-mute" style="display:none;"></icon></button>
       <button type="button" class="mobile-hotkey" data-hotkey="D" title="Demo Add Train and Stations"
         aria-label="Demo Add Train and Stations">D</button>
+      <button type="button" class="mobile-hotkey zoom-control" id="zoomOutBtn" title="Zoom Out" aria-label="Zoom out">-</button>
+      <button type="button" class="mobile-hotkey zoom-control" id="zoomInBtn" title="Zoom In" aria-label="Zoom in">+</button>
+      <button type="button" class="mobile-hotkey zoom-control" id="zoomResetBtn" title="Reset Zoom" aria-label="Reset zoom to 100 percent">100%</button>
+      <span id="zoomLevelLabel" class="zoom-level" aria-live="polite">100%</span>
       <button type="button" class="mobile-hotkey" id="restartGameBtn" title="Restart Game" aria-label="Restart game">Restart</button>
     
       </div> <!-- End of buttonGroup6: Touch-friendly replacements for keyboard hotkeys -->

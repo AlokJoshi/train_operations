@@ -173,7 +173,82 @@ window.addEventListener('beforeunload', (event) => {
 
 const controlsRoot = document.querySelector('#controls')
 const gameStageRoot = document.querySelector('#gameStage')
+const gameWorldRoot = document.querySelector('#gameWorld')
+const gameWorldContentRoot = document.querySelector('#gameWorldContent')
 const cursorTooltipEl = document.querySelector('#buttonGroup8')
+
+const MIN_GAME_ZOOM = 0.5
+const MAX_GAME_ZOOM = 2.5
+const GAME_ZOOM_STEP = 0.1
+let gameZoomLevel = 1
+
+function clampGameZoom(level) {
+  const numericLevel = Number(level)
+  if (!Number.isFinite(numericLevel)) {
+    return gameZoomLevel
+  }
+  return Math.min(MAX_GAME_ZOOM, Math.max(MIN_GAME_ZOOM, numericLevel))
+}
+
+function updateZoomLevelLabel() {
+  const zoomLevelLabelEl = document.querySelector('#zoomLevelLabel')
+  if (zoomLevelLabelEl) {
+    zoomLevelLabelEl.textContent = `${Math.round(gameZoomLevel * 100)}`
+  }
+}
+
+function applyGameZoomLayout() {
+  if (!gameWorldRoot || !gameWorldContentRoot) {
+    return
+  }
+  gameWorldRoot.style.width = `${Math.round(CANVASWIDTH * gameZoomLevel)}px`
+  gameWorldRoot.style.height = `${Math.round(CANVASHEIGHT * gameZoomLevel)}px`
+  gameWorldContentRoot.style.transform = `scale(${gameZoomLevel})`
+  updateZoomLevelLabel()
+}
+
+function setGameZoom(level, options = {}) {
+  if (!gameStageRoot || !gameWorldRoot || !gameWorldContentRoot) {
+    return gameZoomLevel
+  }
+
+  const nextZoom = clampGameZoom(level)
+  if (Math.abs(nextZoom - gameZoomLevel) < 0.0001) {
+    return gameZoomLevel
+  }
+
+  const { anchorX, anchorY } = options
+  const stageRect = gameStageRoot.getBoundingClientRect()
+  const localAnchorX = Number.isFinite(anchorX)
+    ? anchorX - stageRect.left
+    : stageRect.width / 2
+  const localAnchorY = Number.isFinite(anchorY)
+    ? anchorY - stageRect.top
+    : stageRect.height / 2
+
+  const worldXBeforeZoom = (gameStageRoot.scrollLeft + localAnchorX) / gameZoomLevel
+  const worldYBeforeZoom = (gameStageRoot.scrollTop + localAnchorY) / gameZoomLevel
+
+  gameZoomLevel = nextZoom
+  applyGameZoomLayout()
+
+  const targetScrollLeft = (worldXBeforeZoom * gameZoomLevel) - localAnchorX
+  const targetScrollTop = (worldYBeforeZoom * gameZoomLevel) - localAnchorY
+
+  const maxScrollLeft = Math.max(0, gameWorldRoot.scrollWidth - gameStageRoot.clientWidth)
+  const maxScrollTop = Math.max(0, gameWorldRoot.scrollHeight - gameStageRoot.clientHeight)
+  gameStageRoot.scrollLeft = Math.max(0, Math.min(maxScrollLeft, targetScrollLeft))
+  gameStageRoot.scrollTop = Math.max(0, Math.min(maxScrollTop, targetScrollTop))
+
+  return gameZoomLevel
+}
+
+function nudgeGameZoom(delta, options = {}) {
+  return setGameZoom(gameZoomLevel + delta, options)
+}
+
+window.setGameZoom = (level) => setGameZoom(level)
+window.resetGameZoom = () => setGameZoom(1)
 
 if (cursorTooltipEl && cursorTooltipEl.parentElement !== document.body) {
   // Keep tooltip outside transformed UI layers so it follows viewport cursor coordinates.
@@ -200,6 +275,8 @@ function fitGameUiToViewport() {
     controlsRoot.style.top = '0'
     controlsRoot.style.transform = 'none'
   }
+
+  applyGameZoomLayout()
 }
 
 window.addEventListener('resize', fitGameUiToViewport)
@@ -207,6 +284,7 @@ window.addEventListener('orientationchange', fitGameUiToViewport)
 window.addEventListener('load', fitGameUiToViewport)
 
 requestAnimationFrame(fitGameUiToViewport)
+applyGameZoomLayout()
 
 function blurFocusedControlElement() {
   const activeElement = document.activeElement
@@ -1002,6 +1080,21 @@ window.addEventListener('load', () => {
       void requestGameRestart('restart')
     })
   }
+
+  const zoomOutBtn = document.querySelector('#zoomOutBtn')
+  const zoomInBtn = document.querySelector('#zoomInBtn')
+  const zoomResetBtn = document.querySelector('#zoomResetBtn')
+
+  zoomOutBtn?.addEventListener('click', () => {
+    nudgeGameZoom(-GAME_ZOOM_STEP)
+  })
+  zoomInBtn?.addEventListener('click', () => {
+    nudgeGameZoom(GAME_ZOOM_STEP)
+  })
+  zoomResetBtn?.addEventListener('click', () => {
+    setGameZoom(1)
+  })
+  updateZoomLevelLabel()
 
   const getCanvasPoint = (event) => {
     const rect = event.currentTarget.getBoundingClientRect()
