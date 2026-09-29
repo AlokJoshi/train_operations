@@ -188,32 +188,17 @@ function fitGameUiToViewport() {
     return
   }
 
-  const designWidth = gameStageRoot.offsetWidth
-  const designHeight = gameStageRoot.offsetHeight
-  if (designWidth <= 0 || designHeight <= 0) {
-    return
-  }
-
-  const viewportPadding = 8
-  const availableWidth = Math.max(1, window.innerWidth - viewportPadding * 2)
-  const availableHeight = Math.max(1, window.innerHeight - viewportPadding * 2)
-  const scale = Math.min(availableWidth / designWidth, availableHeight / designHeight, 1)
-  const offsetX = Math.max(viewportPadding, Math.floor((window.innerWidth - designWidth * scale) / 2))
-  const offsetY = Math.max(viewportPadding, Math.floor((window.innerHeight - designHeight * scale) / 2))
-  const transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`
-
+  // Stage is intentionally a native scroll viewport; do not auto-scale.
   gameStageRoot.style.position = 'fixed'
   gameStageRoot.style.left = '0'
   gameStageRoot.style.top = '0'
-  gameStageRoot.style.transformOrigin = 'top left'
-  gameStageRoot.style.transform = transform
+  gameStageRoot.style.transform = 'none'
 
   if (controlsRoot) {
     controlsRoot.style.position = 'fixed'
     controlsRoot.style.left = '0'
     controlsRoot.style.top = '0'
-    controlsRoot.style.transformOrigin = 'top left'
-    controlsRoot.style.transform = transform
+    controlsRoot.style.transform = 'none'
   }
 }
 
@@ -477,9 +462,10 @@ const drawScene = () => {
       ctxResults.save()
       ctxResults.font = '600px Arial'
       ctxResults.fillStyle = 'black'
-      ctxResults.globalAlpha = 0.2
-      const textMetrics = ctxResults.measureText(`${currentTimeUnit}`)
-      ctxResults.fillText(`${currentTimeUnit}`, CANVASWIDTH / 2 - textMetrics.width / 2, CANVASHEIGHT / 2 - textMetrics.actualBoundingBoxDescent / 2)
+      ctxResults.globalAlpha = 0.1
+      ctxResults.textAlign = 'center'
+      ctxResults.textBaseline = 'middle'
+      ctxResults.fillText(`${currentTimeUnit}`, CANVASWIDTH / 2, CANVASHEIGHT / 2)
       ctxResults.restore()
 
       // all existing trains sound their horn at the beginning of each time period..
@@ -1584,27 +1570,27 @@ window.addEventListener('load', () => {
 
     if (pathPositions.length === 1) {
       if (increasingRow || decreasingRow) {
-        for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
+        for (let row = 0; row <= CANVASHEIGHT / gridSize; row++) { //changed on 9/28
           if ((decreasingRow && row < lastRow - 1) || (increasingRow && row > lastRow + 1)) {
             drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
             validTrackPoints.add(`${last_x},${row * gridSize}`)
           }
         }
       } else if (increasingCol || decreasingCol) {
-        for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
+        for (let col = 0; col <= CANVASWIDTH / gridSize; col++) { //changed on 9/28
           if ((decreasingCol && col < lastCol - 1) || (increasingCol && col > lastCol + 1)) {
             drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
             validTrackPoints.add(`${col * gridSize},${last_y}`)
           }
         }
       } else {
-        for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
+        for (let row = 0; row <= CANVASHEIGHT / gridSize; row++) { //changed on 9/28
           if (Math.abs(row - lastRow) >= 4) {
             drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
             validTrackPoints.add(`${last_x},${row * gridSize}`)
           }
         }
-        for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
+        for (let col = 0; col <= CANVASWIDTH / gridSize; col++) { //changed on 9/28
           if (Math.abs(col - lastCol) >= 4) {
             drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
             validTrackPoints.add(`${col * gridSize},${last_y}`)
@@ -1616,7 +1602,7 @@ window.addEventListener('load', () => {
 
     if (increasingCol || decreasingCol) {
       if (Math.abs(lastCol - (x_before_last_x / gridSize)) >= 4 || pathPositions.length <= 2) {
-        for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
+        for (let row = 0; row <= CANVASHEIGHT / gridSize; row++) { //changed on 9/28
           if (Math.abs(row - lastRow) < 4) {
             continue
           }
@@ -1625,7 +1611,7 @@ window.addEventListener('load', () => {
         }
       }
 
-      for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
+      for (let col = 0; col <= CANVASWIDTH / gridSize; col++) { //changed on 9/28
         if ((increasingCol && col > lastCol) || (decreasingCol && col < lastCol)) {
           drawHollowCircle(ctxTemp, col * gridSize, last_y, click_error, `rgb(9, 108, 2)`)
           validTrackPoints.add(`${col * gridSize},${last_y}`)
@@ -1635,7 +1621,7 @@ window.addEventListener('load', () => {
 
     if (increasingRow || decreasingRow) {
       if (Math.abs(lastRow - (y_before_last_y / gridSize)) >= 4 || pathPositions.length <= 2) {
-        for (let col = 0; col < CANVASWIDTH / gridSize; col++) {
+        for (let col = 0; col <= CANVASWIDTH / gridSize; col++) { //changed on 9/28
           if (Math.abs(col - lastCol) < 4) {
             continue
           }
@@ -1644,7 +1630,7 @@ window.addEventListener('load', () => {
         }
       }
 
-      for (let row = 0; row < CANVASHEIGHT / gridSize; row++) {
+      for (let row = 0; row <= CANVASHEIGHT / gridSize; row++) { //changed on 9/28
         if ((increasingRow && row > lastRow) || (decreasingRow && row < lastRow)) {
           drawHollowCircle(ctxTemp, last_x, row * gridSize, click_error, `rgb(9, 108, 2)`)
           validTrackPoints.add(`${last_x},${row * gridSize}`)

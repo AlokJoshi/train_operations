@@ -29,40 +29,75 @@ function speakAsync(text) {
 }
 
 function makeDraggable(element) {
-  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+  let pos3 = 0, pos4 = 0
+  let dragScaleX = 1
+  let dragScaleY = 1
 
   // You can use the whole div or a specific handle to drag
-  element.onmousedown = dragMouseDown;
+  element.onmousedown = dragMouseDown
+
+  function getCumulativeTransformScale(node) {
+    let scaleX = 1
+    let scaleY = 1
+    let current = node
+
+    while (current && current !== document.body) {
+      const transform = window.getComputedStyle(current).transform
+      if (transform && transform !== 'none') {
+        try {
+          const matrix = new DOMMatrixReadOnly(transform)
+          scaleX *= Math.abs(matrix.a) || 1
+          scaleY *= Math.abs(matrix.d) || 1
+        } catch {
+          // Ignore malformed transform values and keep best-known scale.
+        }
+      }
+      current = current.parentElement
+    }
+
+    return {
+      scaleX: scaleX || 1,
+      scaleY: scaleY || 1
+    }
+  }
 
   function dragMouseDown(e) {
+    if (e.button !== 0) {
+      return
+    }
     const interactiveSelector = 'input, textarea, select, button, label, i, a'
     if (e.target.closest(interactiveSelector)) {
       return
     }
-    e.preventDefault();
+    e.preventDefault()
+
+    const scale = getCumulativeTransformScale(element)
+    dragScaleX = scale.scaleX
+    dragScaleY = scale.scaleY
+
     // Get cursor position at startup
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    document.onmouseup = closeDragElement;
-    document.onmousemove = elementDrag;
+    pos3 = e.clientX
+    pos4 = e.clientY
+    document.addEventListener('mouseup', closeDragElement)
+    document.addEventListener('mousemove', elementDrag)
   }
 
   function elementDrag(e) {
-    e.preventDefault();
-    // Calculate new cursor position
-    pos1 = pos3 - e.clientX;
-    pos2 = pos4 - e.clientY;
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    // Set the element's new position
-    element.style.top = (element.offsetTop - pos2) + "px";
-    element.style.left = (element.offsetLeft - pos1) + "px";
+    e.preventDefault()
+    const deltaX = (e.clientX - pos3) / dragScaleX
+    const deltaY = (e.clientY - pos4) / dragScaleY
+    pos3 = e.clientX
+    pos4 = e.clientY
+
+    // Compensate for parent scale transform so cursor stays anchored to the dragged element.
+    element.style.top = `${element.offsetTop + deltaY}px`
+    element.style.left = `${element.offsetLeft + deltaX}px`
   }
 
   function closeDragElement() {
     // Stop moving when mouse button is released
-    document.onmouseup = null;
-    document.onmousemove = null;
+    document.removeEventListener('mouseup', closeDragElement)
+    document.removeEventListener('mousemove', elementDrag)
   }
 
 }
