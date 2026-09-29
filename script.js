@@ -1392,9 +1392,8 @@ window.addEventListener('load', () => {
       return
     }
     buttonGroup8el.style.display = 'block'
-    // Tooltip is fixed-position on document.body, so place it in viewport coordinates.
-    buttonGroup8el.style.left = `${event.clientX + 11}px`
-    buttonGroup8el.style.top = `${event.clientY + 15}px`
+    buttonGroup8el.style.left = Math.abs(point.x - CANVASMARGIN-CANVASWIDTH)>gridSize?`${event.clientX + 11}px`:`${event.clientX - 35}px`;
+    buttonGroup8el.style.top = Math.abs(point.y - CANVASMARGIN-CANVASHEIGHT)>gridSize?`${event.clientY + 15}px`:`${event.clientY - 40}px`
     label.textContent = `${col},${row}`
 
     if (startTrack) {

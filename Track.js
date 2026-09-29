@@ -402,7 +402,7 @@ class Track {
     ctx.restore()
   }
 
-  drawUsingNewPositions(ctx = this.ctxTracks, color = 'rgb(255,0,255)', lineWidth = 3) {
+  drawUsingNewPositions(ctx = this.ctxTracks, color = 'rgb(0,0,0)', lineWidth = 5) {
 
     ctx.save()
     //draw the thick single line as backdrop
@@ -419,7 +419,7 @@ class Track {
     ctx.save()
 
     //draw the thin single lline
-    ctx.strokeStyle = 'rgb(0,0,50)'
+    ctx.strokeStyle = 'rgb(252, 137, 5)'
     ctx.lineWidth = 1
     ctx.beginPath()
     ctx.moveTo(this.newPositions[0].x, this.newPositions[0].y)
