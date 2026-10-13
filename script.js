@@ -826,7 +826,7 @@ window.addEventListener('load', () => {
             ctxMaps2.fillStyle = 'rgba(255,255,0,0.5)'
             ctxMaps2.fill()
             if (p.rawmaterial > 100000) {
-              const txt = `${Math.round(p.rawmaterial / 1000)} K`
+              const txt = `${Math.round(p.rawmaterial / 1000)}`
               ctxMaps2.font = '15px Arial'
               ctxMaps2.fillStyle = 'black'
               const textMetrics = ctxMaps2.measureText(txt)
@@ -857,7 +857,7 @@ window.addEventListener('load', () => {
 
             ctxMaps3.font = '20px Arial'
             ctxMaps3.fillStyle = 'white'
-            const txt = `${Math.floor(p.rawmaterial / 1000)} K`
+            const txt = `${Math.floor(p.rawmaterial / 1000)}`
             const textMetrics = ctxMaps3.measureText(txt)
             ctxMaps3.fillText(txt, p.x - textMetrics.width / 2, p.y + 10)
           }

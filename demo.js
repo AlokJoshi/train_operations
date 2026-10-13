@@ -165,6 +165,7 @@ export function createDemoController(options) {
       if (startNewTrainPlayBtn instanceof HTMLElement) {
         let didAnimate = await animateMouseFromCenterToElement(startNewTrainPlayBtn)
         if (!didAnimate || !getRunningScriptedDemo()) {
+          await speakAsync('Sorry, something went wrong.')
           console.error('Failed to animate mouse to the Start Track Spec. play button or the scripted demo is no longer running.')
           return
         }
@@ -175,16 +176,21 @@ export function createDemoController(options) {
 
         await dismissVisibleSwal({ requireConfirm: true })
 
+        await delay(delayMS)
+        await speakAsync(`You are now ready to select the starting point for the train. Before doing this let us remove
+          the Train Dialog box so that it allows you to select points below the dialog box. You can do this by clicking on T on your keyboard`)
+        
+        await delay(delayMS)
+        sendHotkey('T')
+
         await speakAsync('Now click on the starting point from where you want the train to begin.')
 
         await delay(delayMS)
 
         const canvasTempEl = document.querySelector('#canvas_temp')
         const targetRect = startNewTrainPlayBtn.getBoundingClientRect()
-        const playLeft = targetRect.left
-        const playTop = targetRect.top
-
-        let { clientX: startX, clientY: startY } = convertFromCanvasToClientCoordinates(canvasTempEl, playLeft, playTop)
+        let startX = targetRect.left + (targetRect.width / 2)
+        let startY = targetRect.top + (targetRect.height / 2)
 
         let clientPoint = {}
         let didAnimateToCoordinates = false
@@ -208,8 +214,11 @@ export function createDemoController(options) {
 
         await delay(delayMS)
         await speakAsync('You can continue adding points to the route. However, let us assume that you have finished adding all the points and that it time to finalize the route and flag-off the train.')
+        await delay(delayMS)
+        await speakAsync('Now, let us proceed to finalize the route and flag-off the train. To do this you need to click on T on your keyboard to get back the Train Dialog box.')
 
         await delay(delayMS)
+        sendHotkey('T')
 
         await speakAsync('Select the type of train - passenger or freight and the number of coaches or wagons and then click on the flag-off icon to start the train.')
 
@@ -217,7 +226,8 @@ export function createDemoController(options) {
 
         const flagOffBtn = document.querySelector('#flagOff')
         const flagOffBtnRect = flagOffBtn.getBoundingClientRect()
-        const { clientX: endX4, clientY: endY4 } = convertFromCanvasToClientCoordinates(canvasTempEl, flagOffBtnRect.left, flagOffBtnRect.top)
+        const endX4 = flagOffBtnRect.left + (flagOffBtnRect.width / 2)
+        const endY4 = flagOffBtnRect.top + (flagOffBtnRect.height / 2)
         didAnimateToCoordinates = await animateMouseFromStartToEndCoordinates(startX, startY, endX4, endY4)
         if (!didAnimateToCoordinates || !getRunningScriptedDemo()) {
           console.error('Failed to animate mouse to flag-off button or the scripted demo is no longer running.')
@@ -250,31 +260,40 @@ export function createDemoController(options) {
 
         const stationContainer = document.querySelector('#stationFortrain')
         if (!stationContainer) {
+          await speakAsync('Sorry, something went wrong.')
           console.error('Station container not found')
           return
         }
         const stationElement = document.querySelector(`[data-value="${lastTrainNumber}"][data-role="station-train"]`)
         if (!stationElement) {
+          await speakAsync('Sorry, something went wrong.')
           console.error(`Station element for train number ${lastTrainNumber} not found`)
           return
         }
-
+        
         didAnimate = await animateMouseFromCenterToElement(stationElement)
         if (!didAnimate || !getRunningScriptedDemo()) {
+          await speakAsync('Sorry, something went wrong.')
           console.error(`Failed to animate mouse to station element for train number ${lastTrainNumber} or the scripted demo is no longer running.`)
         }
 
         stationElement.click()
 
-        await speakAsync('Now you can click on any of the green circles to add a new station at that location.')
-        await speakAsync('You will be asked to confirm the addition of the new station. During this demo, it is assumed that you are confirming the addition of the station.')
-        await speakAsync('You can repeat this process to add multiple stations.')
+        await speakAsync('Now you can click on any of the green circles to add a new station at that location. In case the Station Dialog box is coming in your way, you can move it aside by dragging it.')
+        await speakAsync('Also, you will be asked to confirm the addition of the new station. During this demo, it is assumed that you are confirming the addition of the station.')
+        await speakAsync(`You can repeat this process to add multiple stations. Here we will be adding ${stationPoints.length} stations.`)
         await delay(delayMS)
 
         for (let i = 0; i < stationPoints.length; i++) {
-          await speakAsync('Click on ' + (i == 0 ? 'first' : 'next') + 'point where you want to add a station.')
+          await speakAsync('Click on ' + (i == 0 ? 'first' : 'next') + ' point where you want to add a station.')
 
           clientPoint = convertFromCanvasToClientCoordinates(canvasTempEl, stationPoints[i].x, stationPoints[i].y)
+          if (!clientPoint) {
+            await speakAsync('Sorry, something went wrong.')
+            console.error('Failed to convert canvas coordinates to client coordinates')
+            return false
+          }
+
           didAnimateToCoordinates = await animateMouseFromStartToEndCoordinates(startX, startY, clientPoint.clientX, clientPoint.clientY)
 
           if (!didAnimateToCoordinates) {
@@ -295,9 +314,16 @@ export function createDemoController(options) {
         await delay(delayMS)
         await speakAsync(`After adding the new stations, you can click again on T${lastTrainNumber} entry to turn-off the list of possible station locations.`)
 
-        await speakAsync('This concludes the demo.')
-
+        await delay(delayMS)
+        didAnimate = await animateMouseFromCenterToElement(stationElement)
+        if (!didAnimate || !getRunningScriptedDemo()) {
+          await speakAsync('Sorry, something went wrong.')
+          console.error(`Failed to animate mouse to station element for train number ${lastTrainNumber} or the scripted demo is no longer running.`)
+        }
         stationElement.click()
+        await delay(delayMS)
+        
+        await speakAsync('This concludes the demo.')
 
         if (!deleteTrain) {
           return lastTrainNumber

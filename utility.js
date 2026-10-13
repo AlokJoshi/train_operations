@@ -681,8 +681,12 @@ const convertFromCanvasToClientCoordinates = (canvasEl, canvasX, canvasY) => {
     return null
   }
   const canvasRect = canvasEl.getBoundingClientRect()
-  const clientX = canvasRect.left + canvasX
-  const clientY = canvasRect.top + canvasY
+  // canvasX/canvasY must be in intrinsic canvas pixels (the same space used for drawing APIs).
+  // We map them to viewport client pixels using current rendered size, which also handles zoom.
+  const scaleX = canvasRect.width / canvasEl.width
+  const scaleY = canvasRect.height / canvasEl.height
+  const clientX = canvasRect.left + (canvasX * scaleX)
+  const clientY = canvasRect.top + (canvasY * scaleY)
   return { clientX, clientY }
 }
 
