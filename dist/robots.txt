@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: http://playtraingame.com/sitemap.xml
